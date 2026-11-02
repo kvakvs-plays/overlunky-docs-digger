@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(docs-digger CXX)
+project(docs-digger C CXX)
 
 # C++23: complete enough in MSVC, clang-cl and GCC >= 14 / Clang >= 19 (Debian 13, Ubuntu 24.04 with g++-14,
 # Ubuntu 26.04). C++26 is not yet complete in any stable toolchain.
@@ -10,6 +10,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Everything downloaded (LLVM, FetchContent sources, the analyzer venv) lives here, so build/ stays disposable.
 set(THIRDPARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
 
+include(cmake/Download.cmake)
+
 # Prebuilt Clang/LLVM development package (static libs + CMake configs).
 # On Windows it is downloaded once into thirdparty/ unless Clang_DIR is given.
 # On Linux, Clang comes from distro packages or the Docker image (Clang_DIR / CMAKE_PREFIX_PATH).
@@ -17,42 +19,58 @@ set(DOCS_DIGGER_LLVM_VERSION "23.1.2")
 
 if(WIN32 AND NOT Clang_DIR)
   set(LLVM_PACKAGE "clang+llvm-${DOCS_DIGGER_LLVM_VERSION}-x86_64-pc-windows-msvc")
-  set(LLVM_ARCHIVE_SHA256 "8fb91cdc44fcbbdcf6b3ffd0a1f9859abd14a3c3aae4423c2b6d4a4f90bf0095")
-  set(LLVM_ROOT_DIR "${THIRDPARTY_DIR}/${LLVM_PACKAGE}")
-
-  if(NOT EXISTS "${LLVM_ROOT_DIR}/lib/cmake/clang/ClangConfig.cmake")
-    set(LLVM_ARCHIVE "${THIRDPARTY_DIR}/${LLVM_PACKAGE}.tar.xz")
-    if(NOT EXISTS "${LLVM_ARCHIVE}")
-      message(STATUS "Downloading ${LLVM_PACKAGE}.tar.xz (~860 MB)...")
-      file(DOWNLOAD
-        "https://github.com/llvm/llvm-project/releases/download/llvmorg-${DOCS_DIGGER_LLVM_VERSION}/${LLVM_PACKAGE}.tar.xz"
-        "${LLVM_ARCHIVE}.part"
-        EXPECTED_HASH SHA256=${LLVM_ARCHIVE_SHA256}
-        SHOW_PROGRESS
-        STATUS DOWNLOAD_STATUS)
-      list(GET DOWNLOAD_STATUS 0 DOWNLOAD_CODE)
-      if(NOT DOWNLOAD_CODE EQUAL 0)
-        file(REMOVE "${LLVM_ARCHIVE}.part")
-        message(FATAL_ERROR "Downloading ${LLVM_PACKAGE} failed: ${DOWNLOAD_STATUS}")
-      endif()
-      file(RENAME "${LLVM_ARCHIVE}.part" "${LLVM_ARCHIVE}")
-    endif()
-
-    message(STATUS "Unpacking ${LLVM_PACKAGE}...")
-    file(ARCHIVE_EXTRACT INPUT "${LLVM_ARCHIVE}" DESTINATION "${THIRDPARTY_DIR}")
-    if(NOT EXISTS "${LLVM_ROOT_DIR}/lib/cmake/clang/ClangConfig.cmake")
-      message(FATAL_ERROR "${LLVM_PACKAGE} has no lib/cmake/clang/ClangConfig.cmake after unpacking")
-    endif()
-    file(REMOVE "${LLVM_ARCHIVE}")
-  endif()
-
-  set(Clang_DIR "${LLVM_ROOT_DIR}/lib/cmake/clang")
-  set(LLVM_DIR "${LLVM_ROOT_DIR}/lib/cmake/llvm")
+  dd_fetch_archive(
+    "https://github.com/llvm/llvm-project/releases/download/llvmorg-${DOCS_DIGGER_LLVM_VERSION}/${LLVM_PACKAGE}.tar.xz"
+    "8fb91cdc44fcbbdcf6b3ffd0a1f9859abd14a3c3aae4423c2b6d4a4f90bf0095"
+    "${THIRDPARTY_DIR}" "${LLVM_PACKAGE}/lib/cmake/clang/ClangConfig.cmake")
+  set(Clang_DIR "${THIRDPARTY_DIR}/${LLVM_PACKAGE}/lib/cmake/clang")
+  set(LLVM_DIR "${THIRDPARTY_DIR}/${LLVM_PACKAGE}/lib/cmake/llvm")
 endif()
 
 find_package(Clang REQUIRED CONFIG)
 message(STATUS "Using LLVM ${LLVM_PACKAGE_VERSION} from ${LLVM_DIR}")
 message(STATUS "Using Clang from ${Clang_DIR}")
+
+if(WIN32 AND NOT TARGET ZLIB::ZLIB)
+  include(cmake/Compression.cmake)
+endif()
+
+# overlunky checkout: tests use its sol2 headers; dig.bat configures it for the compile database.
+# DD_OVERLUNKY_ROOT (environment) is the one setting both read; the default is the Playlunky submodule next door.
+set(DD_DEFAULT_OVERLUNKY_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../Playlunky/submodules/overlunky")
+if(DEFINED ENV{DD_OVERLUNKY_ROOT})
+  set(DD_DEFAULT_OVERLUNKY_ROOT "$ENV{DD_OVERLUNKY_ROOT}")
+endif()
+set(OVERLUNKY_ROOT "${DD_DEFAULT_OVERLUNKY_ROOT}" CACHE PATH "overlunky source root")
+
+# --- docs-digger ------------------------------------------------------------------------------------------------
+add_executable(docs-digger
+  src/bindings.cpp
+  src/bindings.hpp
+  src/main.cpp
+  src/model.hpp
+  src/source_root.cpp
+  src/source_root.hpp)
+target_include_directories(docs-digger SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND "${LLVM_DEFINITIONS}")
+target_compile_definitions(docs-digger PRIVATE ${LLVM_DEFINITIONS_LIST}
+  # Clang's builtin headers (stddef.h, intrinsics) for the same version as the linked libraries.
+  "DOCS_DIGGER_RESOURCE_DIR=\"${LLVM_LIBRARY_DIR}/clang/${LLVM_VERSION_MAJOR}\"")
+target_link_libraries(docs-digger PRIVATE clangTooling clangASTMatchers clangFrontend clangAST clangBasic)
+# Match the LLVM libraries: no RTTI (classes derive from LLVM's), static runtime in every configuration because
+# the package is Release-only (a Debug runtime or debug iterators would not link).
+set_target_properties(docs-digger PROPERTIES MSVC_RUNTIME_LIBRARY MultiThreaded)
+if(MSVC)
+  target_compile_options(docs-digger PRIVATE /GR- /W4 /WX)
+  # Deep template instantiation (sol2) overflows the 1 MB default stack; LLVM links its own tools the same way.
+  target_link_options(docs-digger PRIVATE /STACK:10000000)
+else()
+  target_compile_options(docs-digger PRIVATE -fno-rtti -Wall -Wextra -Werror)
+endif()
+
+# --- Tests ------------------------------------------------------------------------------------------------------
+enable_testing()
+add_subdirectory(tests)
 
 # --- Quality gate (quality.bat): clang-format and Lizard everywhere, clang-tidy only with a compile database --------
 # check-* targets look at changed files and includers of changed headers; check-*-all at all of src/ (and tests/).

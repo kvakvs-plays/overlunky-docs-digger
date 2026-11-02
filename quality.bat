@@ -34,7 +34,7 @@ if errorlevel 1 exit /b 1
 
 rem Configure only: clang-tidy needs compile_commands.json, not built objects.
 if exist "%ROOT%build\quality\CMakeCache.txt" goto check
-cmake -S "%ROOT%." -B "%ROOT%build\quality" -G Ninja -DCMAKE_BUILD_TYPE=Debug ^
+cmake -S "%ROOT%." -B "%ROOT%build\quality" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang-cl ^
     -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
 if errorlevel 1 exit /b 1
 

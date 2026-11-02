@@ -20,6 +20,7 @@ extracted data just has to carry every detail the current generator has, plus th
   support libraries for everything they can do. Write custom code only for the sol2-specific binding
   patterns.
 - When implementing steps, if the scope is too broad, add substeps to the plan.
+- Commit with message prefix "[plan]" and have full plan title in the message
 
 ---
 
@@ -53,8 +54,10 @@ and the Lua naming is applied at the output stage, reusing the existing `replace
 
 **Clang LibTooling + ASTMatchers (C++ API), with output written using `llvm::json`.**
 
-- `clang::tooling::CommonOptionsParser` + `ClangTool` read `compile_commands.json` and handle all of
-  CLI, include paths and defines. We write no build-system glue.
+- `ClangTool` reads `compile_commands.json` and handles include paths and defines. We write no build-system
+  glue. The CLI uses own `llvm::cl` options (`-p`, sources, `--extra-arg`, `--` for a fixed database) instead
+  of `CommonOptionsParser`: that one loads the `-p` database only when source paths are listed, and parsing a
+  selection of the database without listing files is the normal use (found in DIG-0).
 - `ast_matchers::MatchFinder` lets each extraction pass be a declarative matcher plus a short callback.
   This is far less code than walking cursors with the libclang C API.
 - The C API (`libclang`, which is what the local `C:\Program Files\LLVM` 23.1.2 install has) is
@@ -81,19 +84,30 @@ and the Lua naming is applied at the output stage, reusing the existing `replace
   stable across majors.
 - The local `C:\Program Files\LLVM` installer ships no Clang C++ libraries and no `ClangConfig.cmake`,
   so it can't be used. Use the official `clang+llvm-<ver>-x86_64-pc-windows-msvc.tar.xz` release
-  archive, which ships the static libraries and `lib/cmake/{llvm,clang}`. **(Verify in DIG-0.)** Point
-  CMake at it with `-DClang_DIR=<root>/lib/cmake/clang`.
-- `CMakeLists.txt` is roughly 20 lines: `find_package(Clang REQUIRED CONFIG)`, `add_executable`,
-  `target_link_libraries(... clangTooling clangASTMatchers clangFrontend clangAST clangBasic)`, and
-  `LLVM_ENABLE_RTTI`/`/EHsc` flags copied from `LLVMConfig`.
+  archive, which ships the static libraries and `lib/cmake/{llvm,clang}`. Point CMake at it with
+  `-DClang_DIR=<root>/lib/cmake/clang`. Verified in DIG-0; what the package needs from us:
+  - it is Release-only with the static runtime (`/MT`) and no RTTI: the digger uses `/MT` in every
+    configuration and `/GR-`;
+  - its LLVMSupport links zlib and zstd, which it does not ship: `cmake/Compression.cmake` builds both from
+    pinned sources in `thirdparty/`;
+  - Clang's builtin headers are found through `-resource-dir=<package>/lib/clang/<major>`;
+  - deep sol2 template instantiation needs a 10 MB stack (`/STACK`, as LLVM's own tools).
 
 ### Input: compilation database
 
 - Overlunky is Windows-only (Windows SDK, Detours, MSVC STL). The digger must therefore run on
   **Windows**, with clang-cl driver semantics and the MSVC headers available.
 - Produce `compile_commands.json` by configuring overlunky with
-  `cmake -G Ninja -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`. Only configure;
-  no build is needed unless a target turns out to have generated headers. **(Verify in DIG-0.)**
+  `cmake -G Ninja -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_EXPORT_COMPILE_COMMANDS=ON` (`cmake/OverlunkyDatabase.cmake`,
+  run by `dig.bat`). Only configure; verified in DIG-0:
+  - sol2 would download the Lua sources at build time; `LUA_LOCAL_DIR` points it at the pinned copy in
+    `thirdparty/` instead, so no build is needed and nothing is downloaded into `build/`;
+  - `spel2_api` uses a precompiled header; the digger drops the `/Yu` and `/Fp` flags and keeps the `/FI` of
+    the generated `cmake_pch.hxx`, so every TU still sees the same headers;
+  - overlunky is built with Clang 17, and two dependencies fail with Clang 23. The digger always adds
+    `-fdelayed-template-parsing` (sol2 3.3.0 `optional<T&>::emplace` names a missing member) and
+    `-fexperimental-new-constant-interpreter` (fmt's `FMT_STRING` pointer arithmetic on string literals,
+    rejected by the classic evaluator since CWG2765). With both, all 50 script TUs parse with 0 errors.
 - Process every translation unit under `src/game_api/script/**` (and `src/game_api/*.cpp` where
   needed) instead of the hand-maintained `header_files`/`api_files` lists. Headers are reached through
   includes. Results are filtered to declarations and statements located under `src/game_api/`.
@@ -108,17 +122,23 @@ and the Lua naming is applied at the output stage, reusing the existing `replace
 ```
 F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunky root as an argument)
   CMakeLists.txt          standalone; downloads pinned Clang/LLVM into thirdparty/ on Windows
-  thirdparty/             git-ignored; unpacked clang+llvm release
+  thirdparty/             git-ignored; every download (LLVM, zlib, zstd, Lua, analyzer venv)
   README.md               how to get LLVM, generate compile_commands.json, run
+  build.bat, test.bat     build / build + CTest (clang-cl, Ninja Multi-Config, build/digger)
+  dig.bat                 overlunky compile database (build/overlunky) + run the digger on it
+  quality.bat             clang-format, Lizard, clang-tidy gate
+  cmake/                  downloads, zlib/zstd build, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
-  src/main.cpp            CommonOptionsParser, ClangTool, register passes, merge, write JSON
+  src/main.cpp            CLI, ClangTool per TU, register passes, merge, write output
   src/model.hpp           plain structs for the data model + toJSON() overloads (llvm::json)
+  src/source_root.cpp     --root: which files results may come from, root-relative paths
   src/types.cpp           QualType -> TypeInfo (section 4)
   src/comments.cpp        comment lookup for decls/statements, directive parsing
   src/bindings.cpp        passes B1-B4 (lua[...] = ..., usertypes, enums, misc)
   src/callbacks.cpp       passes C1-C6 (callback signatures, nil semantics)
   tests/fixtures/*.cpp    small sources using the real sol2 headers from <overlunky>/src/sol2
-  tests/expected/*.json   golden outputs
+  tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
+  tests/RunGolden.cmake   runs one fixture and compares; DD_UPDATE_GOLDEN=1 rewrites the golden file
   tools/parity.py         loads <overlunky>/docs/parse_source.py results, diffs them with digger JSON (reuses the old parser as the oracle)
 ```
 
@@ -289,28 +309,38 @@ when its own definition of done and the common one below are both met.
       "Using LLVM 23.1.2").
 - [x] Quality gate: `.clang-format`, `.clang-tidy`, `quality.bat` (clang-format, Lizard, clang-tidy) with pinned
       analyzers in `thirdparty/venv-quality`.
-- [ ] `docs-digger` executable target: links `clangTooling clangASTMatchers clangFrontend clangAST clangBasic`;
-      RTTI and exception flags match `LLVMConfig` (`LLVM_ENABLE_RTTI`).
-- [ ] Build scripts for daily use (build and test, like `quality.bat`), so agents don't retype configure commands.
-- [ ] CTest wiring: `enable_testing()` and one CMake helper that runs the digger on a fixture and compares the
-      result with its golden file using `cmake -E compare_files`. One trivial fixture proves it works.
-- [ ] Configure overlunky with `cmake -G Ninja -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
-      (configure only). Check whether any TU needs generated headers; if so, document the build step needed.
-- [ ] CLI via `CommonOptionsParser`: `-p <dir with compile_commands.json>`, output path, and the default TU
-      selection `src/game_api/script/**` taken from the database.
-- [ ] Parse every selected TU with zero error diagnostics. Record any `--extra-arg` flags that were needed and why.
-- [ ] Skeleton matcher prints every `lua[...] = ...` key path with `file:line`.
-- [ ] Measure parse time per TU and in total; record it in section 7 and decide: sequential `ClangTool` or
-      `AllTUsToolExecutor`.
-- [ ] `README.md`: build, generate overlunky's `compile_commands.json`, run.
+- [x] `docs-digger` executable target: links `clangTooling clangASTMatchers clangFrontend clangAST clangBasic`;
+      RTTI and exception flags match `LLVMConfig` (`LLVM_ENABLE_RTTI`). Also needed: `/MT`, zlib and zstd, the
+      resource dir and a 10 MB stack (section 2, toolchain acquisition).
+- [x] Build scripts for daily use: `build.bat`, `test.bat`, `dig.bat` (README.md).
+- [x] CTest wiring: `enable_testing()` and one CMake helper that runs the digger on a fixture and compares the
+      result with its golden file using `cmake -E compare_files` (`tests/RunGolden.cmake`). Fixture:
+      `key_paths.cpp`.
+- [x] Configure overlunky with `cmake -G Ninja -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
+      (configure only). Generated inputs: the Lua headers (pinned copy through `LUA_LOCAL_DIR`) and the PCH header
+      (written by the configure itself); no build step needed (section 2, compilation database).
+- [x] CLI: `-p <dir with compile_commands.json>`, `-o`, `--root`, `--select` (default `src/game_api/script/**`),
+      `--extra-arg`, `--timings`. Own options, not `CommonOptionsParser` (section 2).
+- [x] Parse every selected TU with zero error diagnostics. Flags needed and why: section 2, compilation database
+      (built into the digger, so no `--extra-arg` is needed).
+- [x] Skeleton matcher prints every `lua[...] = ...` key path with `file:line:column` (3183 assignments, 3153 distinct key paths).
+- [x] Measure parse time per TU and in total; recorded in section 7. Decision: sequential `ClangTool`.
+- [x] `README.md`: build, generate overlunky's `compile_commands.json`, run.
 
 Definition of done:
 
-- [ ] From a fresh clone, following only `README.md`, configure + build produces `docs-digger.exe`.
-- [ ] A run over overlunky reports 0 errors for every selected TU.
-- [ ] Every global function name that `parse_source.py` reports (`ps.funcs`) appears among the printed key paths
-      (checked with a throwaway diff; misses are explained).
-- [ ] Parse timings and the executor decision are written down.
+- [x] From a fresh clone, following only `README.md`, configure + build produces `docs-digger.exe` (checked on a
+      copy of the tracked files outside the repository, with `DD_OVERLUNKY_ROOT` set; `test.bat` passed in Debug
+      and Release; `thirdparty/` was reused to skip the 860 MB download).
+- [x] Common definition of done: no build warnings in Debug and Release, `ctest` and `quality.bat all` pass, two
+      runs over overlunky give byte-identical output (3183 lines).
+- [x] A run over overlunky reports 0 errors for every selected TU (50 of 50).
+- [x] Every global function name that `parse_source.py` reports (`ps.funcs`) appears among the printed key paths
+      (checked with a throwaway diff; misses are explained). 413 of 415 names in `ps.funcs` and
+      `ps.deprecated_funcs` match. The 2 misses, `dump` and `get_entity`, are defined in Lua (`lua.script(...)`)
+      and documented only by a commented-out binding such as `// lua["get_entity"] = [](uint32_t uid) -> Entity*{};`.
+      The old parser reads those comments; DIG-1 needs the same doc-only pattern (see DIG-1).
+- [x] Parse timings and the executor decision are written down.
 
 ### DIG-1. Functions (B1; P1–P4)
 
@@ -328,6 +358,9 @@ Definition of done:
 - [ ] Param facts: `nullable` (optional, raw pointer, `sol::object`), `omittable` (trailing nullable),
       `variadic`.
 - [ ] Deprecated functions: `/// Deprecated` directive and bindings in `deprecated_func.cpp`.
+- [ ] Doc-only functions written in Lua: a `///` comment followed by a commented-out binding
+      (`// lua["get_entity"] = [](uint32_t uid) -> Entity*{};`) declares the function with that signature
+      (`dump`, `get_entity`; found in DIG-0).
 - [ ] Results limited to `src/game_api/`; entities seen from several TUs (through headers) are merged once.
 - [ ] `tools/parity.py` v1: runs the old `parse_source.py` from `<overlunky>/docs/`, compares function name sets
       and param counts against `ps.funcs`, `ps.deprecated_funcs` and `rpc`.
@@ -445,8 +478,12 @@ scope here.
 - **Windows-only parsing.** Needs MSVC headers and the Windows SDK, so the docs pipeline gains a Windows
   step. The alternative of cross-parsing on Linux with `clang-cl` + `xwin`-fetched SDK headers is more
   moving parts. Not recommended unless the Windows runner is unacceptable.
-- **Parse cost.** sol2 is template-heavy, and about 50 TUs at -fsyntax-only may take minutes.
-  Mitigations: the all-TUs executor; caching on file hashes, as `parse_cache.py` does today.
+- **Parse cost.** sol2 is template-heavy. Measured in DIG-0 (Release, sequential, one TU at a time): 50 script
+  TUs in 154 s; median 2.2 s, min 1.4 s, max 10.3 s (`entities_monsters_lua.cpp`; then `entities_items_lua.cpp`
+  8.7 s, `vtables_lua.cpp` 8.5 s). Decision: stay sequential. Day-to-day work runs on fixtures (under 1 s each),
+  and 2.5 minutes is acceptable for parity runs and CI. Revisit with the all-TUs executor if parity runs become
+  the bottleneck; measure memory per TU first, since 32 parallel sol2 TUs may not fit. Caching on file hashes,
+  as `parse_cache.py` does today, stays an option.
 - **Callback dataflow heuristics (C3).** Unusual storage patterns will be missed. C7 fallback and the
   DIG-4 report make misses visible. Don't build general dataflow; add patterns only as the report demands.
 - **Pinned Clang API.** Bumping the major version may need small fixes. Keep matcher code in two files

@@ -3,6 +3,9 @@
 This project strives to provide better typespec files and HTML documentation output for Overlunky than 
 what currently exists in Playlunky under `submodules/overlunky/docs/` by utilizing Clang parsing facilities.
 
+`docs-digger` parses overlunky's sources with Clang LibTooling, using overlunky's own `compile_commands.json`,
+and extracts its Lua API. The work plan is in `.agents/01-plan.md`.
+
 ## Development Machine
 
 There are multiple tools like MS Visual C++, CMake, Git, Python and Clang available globally on the development machine.
@@ -17,21 +20,44 @@ winget install -e --id Kitware.CMake
 winget install -e --id Ninja-build.Ninja
 winget install -e --id Git.Git
 winget install -e --id Python.Python.3.12
-# MSVC compiler + Windows SDK (skip if Visual Studio already has "Desktop development with C++")
+# clang-cl, lld-link: the scripts compile with C:\Program Files\LLVM\bin (same major as the pinned LLVM, 23)
+winget install -e --id LLVM.LLVM
+# MSVC STL + Windows SDK (skip if Visual Studio already has "Desktop development with C++")
 winget install -e --id Microsoft.VisualStudio.2022.BuildTools --override "--quiet --wait --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-Clang/LLVM development libraries are not available from winget. The first CMake configure downloads
+Clang/LLVM development libraries are not available from winget. The first configure downloads
 the pinned `clang+llvm-<version>-x86_64-pc-windows-msvc.tar.xz` release (~860 MB, SHA256-checked)
 and unpacks it into `thirdparty/` (git-ignored). Later configures reuse it. To use another
 LLVM install, pass `-DClang_DIR=<llvm root>/lib/cmake/clang`.
 
-```powershell
-cmake -S . -B build -G "Visual Studio 18 2026" -A x64
-# or -G Ninja, from a "Developer PowerShell for VS" so cl.exe is found
-```
+Everything else that is downloaded (zlib and zstd for LLVM, Lua headers for sol2, the analyzer venv) also goes
+to `thirdparty/`, pinned by version and SHA256. `build/` only holds output that a configure and build recreate.
+
+An overlunky checkout with submodules is expected at `../Playlunky/submodules/overlunky`
+(`git submodule update --init --recursive` in Playlunky). Elsewhere, set the environment variable
+`DD_OVERLUNKY_ROOT` to the checkout before the first build. `dig.bat` and the tests both use it; the tests need
+overlunky's sol2 headers.
 
 ### Linux
 
 Not set up yet. Clang is expected to come from distro packages (`llvm-<ver>-dev`, `libclang-<ver>-dev`)
-or a Docker image; pass `-DClang_DIR=...` if CMake does not find it on its own.
+or a Docker image; pass `-DClang_DIR=...` if CMake does not find it on its own. overlunky itself only parses on
+Windows (MSVC headers, Windows SDK).
+
+## Build, Run, Test
+
+The scripts enter the Visual Studio environment themselves; run them from any shell.
+
+- `build.bat [Debug|Release|All]`: builds `docs-digger` with clang-cl and Ninja Multi-Config in `build\digger`.
+- `test.bat [Debug|Release|All]`: builds and runs the CTest suite (golden-file tests).
+- `dig.bat [options]`: builds Release, configures overlunky into `build\overlunky` for its `compile_commands.json`
+  (configure only) and runs the digger on `src/game_api/script/**`.
+- `quality.bat [changed|all]`: the clang-format, Lizard and clang-tidy gate.
+
+`dig.bat` passes its arguments to `docs-digger`, for example `dig.bat -o keys.txt --timings`. Run
+`build\digger\Release\docs-digger.exe --help` for all options. A full run over the 50 script translation units
+takes about 2.5 minutes.
+
+Golden tests compare the output for each `tests/fixtures/<name>.cpp` with `tests/expected/<name>.txt`. After an
+intended output change, run `set DD_UPDATE_GOLDEN=1` and then `test.bat`, and review the diff of `tests/expected/`.

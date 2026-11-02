@@ -1,0 +1,6 @@
+key_paths.cpp:17:5: lua.add
+key_paths.cpp:18:5: lua.twice
+key_paths.cpp:22:5: lua.Ns.nested
+key_paths.cpp:26:5: table.inner
+key_paths.cpp:29:5: lua.[key]
+key_paths.cpp:38:5: view.from_view
