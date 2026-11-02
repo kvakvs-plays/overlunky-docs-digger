@@ -21,6 +21,7 @@ extracted data just has to carry every detail the current generator has, plus th
   patterns.
 - When implementing steps, if the scope is too broad, add substeps to the plan.
 - Commit with message prefix "[plan]" and have full plan title in the message
+- Move finished plan steps into 00-finished.md and compact them add as a bullet point
 
 ---
 
@@ -130,7 +131,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   cmake/                  downloads, zlib/zstd build, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
   src/main.cpp            CLI, ClangTool per TU, register passes, merge, write output
-  src/model.hpp           plain structs for the data model + toJSON() overloads (llvm::json)
+  src/model.hpp/.cpp      plain structs for the data model + toJSON() overloads (llvm::json)
   src/source_root.cpp     --root: which files results may come from, root-relative paths
   src/types.cpp           QualType -> TypeInfo (section 4)
   src/comments.cpp        comment lookup for decls/statements, directive parsing
@@ -152,18 +153,22 @@ and callback discovery.
 Every entity carries `source {file, line}` and `doc {lines[], directives{NoDoc, Deprecated, Returns,
 Default, Group, ...}}`.
 
-- **TypeInfo**: `spelling` (as written), `canonical`, `kind`
-  (`void | bool | int | float | string | enum | record | pointer | optional | container | tuple | function | lua_object | variadic`),
-  `inner[]` (element, optional payload, tuple members, function signature), `nullable` (bool), and
-  `hidden` (a sol2 injected parameter such as `sol::this_state` or `sol::this_environment`, which is not
-  visible from Lua).
-- **Param**: `name`, `type: TypeInfo`, `nullable` (std/sol `optional<T>`, raw pointer that sol maps
-  `nil` to `nullptr`, `sol::object`), `omittable` (trailing nullable params), `variadic`
-  (`sol::variadic_args`), `callback: CallbackSig?`.
+- **TypeInfo**: `spelling` (as written, typedef names kept, also for inner types), `canonical`, `kind`
+  (`void | bool | int | float | string | enum | record | pointer | optional | container | tuple | function | lua_object | variadic | nil | unknown`),
+  `inner[]` (container elements, optional payload, tuple members, `std::function` parameters), `returns[]` (of a
+  `std::function`), `nullable` (std/sol `optional<T>`, raw pointer that sol maps `nil` to `nullptr`,
+  `sol::object`), and `hidden` (a sol2 injected parameter such as `sol::this_state` or `sol::this_environment`,
+  which is not visible from Lua). A member pointer (`&T::field`) is classified as the member's type.
+- **Param**: `name`, `type: TypeInfo`, `omittable` (trailing nullable params), `callback: CallbackSig?`
+  (DIG-4). Nullable and variadic are read from the type (`nullable`, kind `variadic`), not repeated on the param.
 - **FunctionSig**: `params[]`, `returns: TypeInfo[]` (a tuple/pair becomes multiple returns; `optional`
-  means it may return `nil`; `void` means it returns nothing).
-- **Function**: `lua_name`, `owner` (global, namespace table, or usertype), `group`, `overloads[]: FunctionSig`,
-  `cpp_target` (qualified name of the bound C++ function or lambda location), `deprecated`, `nodoc`.
+  means it may return `nil`; `void` means it returns nothing), `cpp` (qualified name of the bound C++ function
+  or `lambda at <file>:<line>`), `doc` (the C++ declaration's comment, for named functions).
+- **Function**: `name`, `owner` (keys of the namespace table or usertype; empty for globals), `root` (source
+  text of the root when it is neither the state nor an environment), `group` (DIG-5), `overloads[]: FunctionSig`,
+  `deprecated`, `nodoc`, `doc_only` (from a commented-out binding), `defined_in_lua` (`lua.safe_script(...)`),
+  `alias_of` (`lua["a"] = lua["b"]`; overloads copied from the target).
+- **Value**: a binding whose right side is not callable: `name`, `owner`, `root`, `type`, `doc`, `doc_only`.
 - **Usertype**: `lua_name`, `cpp_type`, `bases[]`, `constructors[]: FunctionSig`, `members[]`
   (`kind: field | method | property | readonly | overload_set`, `type`/`sig`, `getter`/`setter`
   presence, doc taken from the C++ member decl when bound through `&T::m`).
@@ -193,6 +198,18 @@ the key path, then resolve the RHS through one shared `resolveBound(Expr*)` help
 - `sol::property(get[, set])`, `sol::readonly(&T::f)`, `sol::var(...)`.
 - Anything else is a value, so it's recorded as a global variable or constant with its type. This
   replaces the `not_functions` list.
+
+Found in DIG-1 and handled there:
+
+- a local variable binds what it was initialized with (`auto spawn_tree = sol::overload(...); lua["spawn_tree"] = spawn_tree;`);
+- `lua["a"] = lua["b"]` is an alias; the overloads of `b` are copied after all TUs are parsed;
+- `lua["printf"] = lua.safe_script(...)` is a function written in Lua (`defined_in_lua`, no C++ signature);
+- a `sol::environment` root names globals like the state does (`LuaBackend::lua`: `on_frame`, `meta`, ...);
+- a `///` block followed by a commented-out binding (`// lua["get_entity"] = [](uint32_t uid) -> Entity*{};`)
+  documents a function written in Lua, or the signature of an overload set bound right below it. Lambda text
+  becomes a `doc_only` function with text-only types; other text (`lua.create_named_table("options")`) becomes a
+  `doc_only` value. 28 such entries in overlunky;
+- `sol::property`, `sol::readonly` and `sol::var` only appear on usertype objects, so they moved to B2 (DIG-2).
 
 Expression statements of the form `lua["NAME"];` (P8) are matched separately and only carry docs.
 
@@ -289,7 +306,8 @@ Members of usertypes and namespace tables are grouped by their owner.
 ## 6. Steps
 
 Work through the steps in order. Check items off (`[x]`) as they are finished. A step is finished
-when its own definition of done and the common one below are both met.
+when its own definition of done and the common one below are both met. A finished step moves to
+`00-finished.md` as one compact bullet; its discoveries stay in sections 2, 3 and 7. Finished so far: DIG-0, DIG-1.
 
 **Definition of done for every step**
 
@@ -302,82 +320,12 @@ when its own definition of done and the common one below are both met.
 - [ ] Running the digger twice on the same input gives byte-identical output.
 - [ ] Discoveries that change the plan (new patterns, rejected approaches, timings) are written into this file.
 
-### DIG-0. Toolchain and skeleton
-
-- [x] Pin LLVM 23.1.2 in `CMakeLists.txt`; download the release archive into `thirdparty/` with a SHA256 check.
-- [x] `find_package(Clang REQUIRED CONFIG)` finds `ClangConfig.cmake` in the release archive (configure prints
-      "Using LLVM 23.1.2").
-- [x] Quality gate: `.clang-format`, `.clang-tidy`, `quality.bat` (clang-format, Lizard, clang-tidy) with pinned
-      analyzers in `thirdparty/venv-quality`.
-- [x] `docs-digger` executable target: links `clangTooling clangASTMatchers clangFrontend clangAST clangBasic`;
-      RTTI and exception flags match `LLVMConfig` (`LLVM_ENABLE_RTTI`). Also needed: `/MT`, zlib and zstd, the
-      resource dir and a 10 MB stack (section 2, toolchain acquisition).
-- [x] Build scripts for daily use: `build.bat`, `test.bat`, `dig.bat` (README.md).
-- [x] CTest wiring: `enable_testing()` and one CMake helper that runs the digger on a fixture and compares the
-      result with its golden file using `cmake -E compare_files` (`tests/RunGolden.cmake`). Fixture:
-      `key_paths.cpp`.
-- [x] Configure overlunky with `cmake -G Ninja -DCMAKE_CXX_COMPILER=clang-cl -DCMAKE_EXPORT_COMPILE_COMMANDS=ON`
-      (configure only). Generated inputs: the Lua headers (pinned copy through `LUA_LOCAL_DIR`) and the PCH header
-      (written by the configure itself); no build step needed (section 2, compilation database).
-- [x] CLI: `-p <dir with compile_commands.json>`, `-o`, `--root`, `--select` (default `src/game_api/script/**`),
-      `--extra-arg`, `--timings`. Own options, not `CommonOptionsParser` (section 2).
-- [x] Parse every selected TU with zero error diagnostics. Flags needed and why: section 2, compilation database
-      (built into the digger, so no `--extra-arg` is needed).
-- [x] Skeleton matcher prints every `lua[...] = ...` key path with `file:line:column` (3183 assignments, 3153 distinct key paths).
-- [x] Measure parse time per TU and in total; recorded in section 7. Decision: sequential `ClangTool`.
-- [x] `README.md`: build, generate overlunky's `compile_commands.json`, run.
-
-Definition of done:
-
-- [x] From a fresh clone, following only `README.md`, configure + build produces `docs-digger.exe` (checked on a
-      copy of the tracked files outside the repository, with `DD_OVERLUNKY_ROOT` set; `test.bat` passed in Debug
-      and Release; `thirdparty/` was reused to skip the 860 MB download).
-- [x] Common definition of done: no build warnings in Debug and Release, `ctest` and `quality.bat all` pass, two
-      runs over overlunky give byte-identical output (3183 lines).
-- [x] A run over overlunky reports 0 errors for every selected TU (50 of 50).
-- [x] Every global function name that `parse_source.py` reports (`ps.funcs`) appears among the printed key paths
-      (checked with a throwaway diff; misses are explained). 413 of 415 names in `ps.funcs` and
-      `ps.deprecated_funcs` match. The 2 misses, `dump` and `get_entity`, are defined in Lua (`lua.script(...)`)
-      and documented only by a commented-out binding such as `// lua["get_entity"] = [](uint32_t uid) -> Entity*{};`.
-      The old parser reads those comments; DIG-1 needs the same doc-only pattern (see DIG-1).
-- [x] Parse timings and the executor decision are written down.
-
-### DIG-1. Functions (B1; P1–P4)
-
-- [ ] `src/model.hpp`: `SourceLoc`, `Doc`, `TypeInfo`, `Param`, `FunctionSig`, `Function`, plus `toJSON()`
-      overloads. Output order is deterministic (by owner, Lua name, then file and line).
-- [ ] `src/types.cpp`: `QualType` → `TypeInfo`: every `kind` from section 4, spelling and canonical type,
-      `optional` unwrapping, containers, tuple/pair → multiple returns, `std::function`, `sol::object`,
-      `sol::variadic_args`, hidden params (`sol::this_state`, `sol::this_environment`).
-- [ ] `src/comments.cpp`: comment block directly before a statement; comment of a declaration; directives
-      `NoDoc`, `Deprecated`, `Returns`, `Default`; `note:` and `Warning:` stay in the text.
-- [ ] B1 matcher: `operator=` on `operator[]` chains with string-literal keys over `sol::state`,
-      `sol::state_view`, `sol::table`, `sol::usertype`; collect the key path.
-- [ ] `resolveBound()`: lambda, function reference, `&f`, `static_cast<Sig>(&f)`, `sol::overload(...)`,
-      `sol::property`, `sol::readonly`, `sol::var`; anything else is recorded as a value with its type.
-- [ ] Param facts: `nullable` (optional, raw pointer, `sol::object`), `omittable` (trailing nullable),
-      `variadic`.
-- [ ] Deprecated functions: `/// Deprecated` directive and bindings in `deprecated_func.cpp`.
-- [ ] Doc-only functions written in Lua: a `///` comment followed by a commented-out binding
-      (`// lua["get_entity"] = [](uint32_t uid) -> Entity*{};`) declares the function with that signature
-      (`dump`, `get_entity`; found in DIG-0).
-- [ ] Results limited to `src/game_api/`; entities seen from several TUs (through headers) are merged once.
-- [ ] `tools/parity.py` v1: runs the old `parse_source.py` from `<overlunky>/docs/`, compares function name sets
-      and param counts against `ps.funcs`, `ps.deprecated_funcs` and `rpc`.
-- [ ] Fixtures: global lambda, function reference, `sol::overload`, `static_cast` overload pick, optional param,
-      pointer param, hidden `this_state`, tuple return, optional return, deprecated, `NoDoc`, directives.
-
-Definition of done:
-
-- [ ] Every name in `ps.funcs` and `ps.deprecated_funcs` is present, with matching param counts (differences
-      such as hidden params are listed in the report with the reason).
-- [ ] No param or return type ends up without a classified `kind`; any that remain are listed in the report.
-- [ ] Every function carries its `///` comment and directives as the old output does (spot-check 20 functions
-      across different source files).
-
 ### DIG-2. Usertypes (B2; P5, P6)
 
 - [ ] Matcher for `new_usertype<T>(name, k, v, ...)`; every value goes through `resolveBound()`.
+- [ ] `resolveBound()`: `sol::property(get[, set])`, `sol::readonly(&T::f)`, `sol::var(...)` (moved from DIG-1:
+      overlunky uses them only on usertypes, also in later `ut["k"] = sol::property(...)` assignments, which B1
+      reports as values until then).
 - [ ] Special keys: `sol::constructors<...>`, `sol::no_constructor`, `sol::call_constructor`,
       `sol::bases<...>` / `sol::base_classes`, `sol::meta_function::*`.
 - [ ] Member kinds `field | method | property | readonly | overload_set`, with getter/setter presence.

@@ -47,10 +47,15 @@ set(OVERLUNKY_ROOT "${DD_DEFAULT_OVERLUNKY_ROOT}" CACHE PATH "overlunky source r
 add_executable(docs-digger
   src/bindings.cpp
   src/bindings.hpp
+  src/comments.cpp
+  src/comments.hpp
   src/main.cpp
+  src/model.cpp
   src/model.hpp
   src/source_root.cpp
-  src/source_root.hpp)
+  src/source_root.hpp
+  src/types.cpp
+  src/types.hpp)
 target_include_directories(docs-digger SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND "${LLVM_DEFINITIONS}")
 target_compile_definitions(docs-digger PRIVATE ${LLVM_DEFINITIONS_LIST}

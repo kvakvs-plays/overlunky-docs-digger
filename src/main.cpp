@@ -1,4 +1,5 @@
 #include "bindings.hpp"
+#include "model.hpp"
 #include "source_root.hpp"
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
@@ -7,6 +8,7 @@
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/Format.h>
+#include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/Regex.h>
 #include <llvm/Support/raw_ostream.h>
 
@@ -157,18 +159,15 @@ namespace {
         return failed;
     }
 
-    // Writes the found key paths, one `file:line:column: path` per line.
-    void writeBindings(const dd::TableAssignmentCollector& collector, llvm::raw_ostream& out) {
-        for (const dd::KeyPathBinding& binding : collector.bindings()) {
-            out << binding.loc.file << ':' << binding.loc.line << ':' << binding.loc.column << ": " << binding.path
-                << '\n';
-        }
+    // Writes the extraction as indented JSON (keys sorted, so the output is stable).
+    void writeExtraction(const dd::Extraction& extraction, llvm::raw_ostream& out) {
+        out << llvm::formatv("{0:2}", dd::toJSON(extraction)) << '\n';
     }
 
     // Writes to stdout or to the -o file; returns false when the file cannot be created.
-    bool writeOutput(const Options& options, const dd::TableAssignmentCollector& collector) {
+    bool writeOutput(const Options& options, const dd::Extraction& extraction) {
         if (options.output == "-") {
-            writeBindings(collector, llvm::outs());
+            writeExtraction(extraction, llvm::outs());
             return true;
         }
         std::error_code error;
@@ -177,7 +176,7 @@ namespace {
             llvm::errs() << "docs-digger: cannot write " << options.output << ": " << error.message() << '\n';
             return false;
         }
-        writeBindings(collector, out);
+        writeExtraction(extraction, out);
         return true;
     }
 
@@ -189,17 +188,19 @@ namespace {
             return 1;
         }
         const dd::SourceRoot root(options.root);
-        dd::TableAssignmentCollector collector(root);
+        dd::Extraction extraction;
+        dd::TableAssignmentCollector collector(root, extraction);
         clang::ast_matchers::MatchFinder finder;
         collector.registerMatchers(finder);
         const std::unique_ptr<clang::tooling::FrontendActionFactory> factory =
             clang::tooling::newFrontendActionFactory(&finder);
 
         const unsigned failed = runAll(options, database, sources, *factory);
+        dd::resolveAliases(extraction);
         if (failed != 0) {
             llvm::errs() << "docs-digger: " << failed << " of " << sources.size() << " translation units had errors\n";
         }
-        return writeOutput(options, collector) && failed == 0 ? 0 : 1;
+        return writeOutput(options, extraction) && failed == 0 ? 0 : 1;
     }
 
 } // namespace

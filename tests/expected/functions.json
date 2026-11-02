@@ -1,0 +1,883 @@
+{
+  "functions": [
+    {
+      "name": "callbacks",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:64",
+          "params": [
+            {
+              "name": "cb",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            },
+            {
+              "name": "filter",
+              "type": {
+                "canonical": "std::function<bool (int, std::basic_string<char>)>",
+                "inner": [
+                  {
+                    "kind": "int",
+                    "spelling": "int"
+                  },
+                  {
+                    "canonical": "std::basic_string<char>",
+                    "kind": "string",
+                    "spelling": "std::string"
+                  }
+                ],
+                "kind": "function",
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "spelling": "std::function<bool (int, std::string)>"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "sol::basic_object<sol::basic_reference<false>>",
+              "kind": "lua_object",
+              "nullable": true,
+              "spelling": "sol::object"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 64
+      }
+    },
+    {
+      "name": "containers",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:62",
+          "params": [
+            {
+              "name": "table",
+              "type": {
+                "canonical": "std::map<std::basic_string<char>, std::vector<unsigned int>>",
+                "inner": [
+                  {
+                    "canonical": "std::basic_string<char>",
+                    "kind": "string",
+                    "spelling": "std::string"
+                  },
+                  {
+                    "canonical": "std::vector<unsigned int>",
+                    "inner": [
+                      {
+                        "canonical": "unsigned int",
+                        "kind": "int",
+                        "spelling": "ENT_TYPE"
+                      }
+                    ],
+                    "kind": "container",
+                    "spelling": "std::vector<ENT_TYPE>"
+                  }
+                ],
+                "kind": "container",
+                "spelling": "std::map<std::string, std::vector<ENT_TYPE>>"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "std::vector<std::basic_string<char>>",
+              "inner": [
+                {
+                  "canonical": "std::basic_string<char>",
+                  "kind": "string",
+                  "spelling": "std::string"
+                }
+              ],
+              "kind": "container",
+              "spelling": "std::vector<std::string>"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 62
+      }
+    },
+    {
+      "name": "count_one",
+      "overloads": [
+        {
+          "cpp": "count",
+          "params": [
+            {
+              "name": "a",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 38
+      }
+    },
+    {
+      "name": "get_entities_by",
+      "overloads": [
+        {
+          "cpp": "get_entities_by",
+          "params": [
+            {
+              "name": "type",
+              "type": {
+                "canonical": "unsigned int",
+                "kind": "int",
+                "spelling": "ENT_TYPE"
+              }
+            },
+            {
+              "name": "layer",
+              "type": {
+                "kind": "enum",
+                "spelling": "LAYER"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "std::vector<unsigned int>",
+              "inner": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "uint32_t"
+                }
+              ],
+              "kind": "container",
+              "spelling": "std::vector<uint32_t>"
+            }
+          ]
+        },
+        {
+          "cpp": "get_entities_by",
+          "params": [
+            {
+              "name": "types",
+              "type": {
+                "canonical": "std::vector<unsigned int>",
+                "inner": [
+                  {
+                    "canonical": "unsigned int",
+                    "kind": "int",
+                    "spelling": "ENT_TYPE"
+                  }
+                ],
+                "kind": "container",
+                "spelling": "std::vector<ENT_TYPE>"
+              }
+            },
+            {
+              "name": "layer",
+              "type": {
+                "kind": "enum",
+                "spelling": "LAYER"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "std::vector<unsigned int>",
+              "inner": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "uint32_t"
+                }
+              ],
+              "kind": "container",
+              "spelling": "std::vector<uint32_t>"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 39
+      }
+    },
+    {
+      "name": "hidden_state",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:52",
+          "params": [
+            {
+              "name": "state",
+              "type": {
+                "hidden": true,
+                "kind": "lua_object",
+                "spelling": "sol::this_state"
+              }
+            },
+            {
+              "name": "uid",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "name": "target",
+              "omittable": true,
+              "type": {
+                "inner": [
+                  {
+                    "kind": "record",
+                    "spelling": "Entity"
+                  }
+                ],
+                "kind": "pointer",
+                "nullable": true,
+                "spelling": "Entity *"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "bool",
+              "spelling": "bool"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 52
+      }
+    },
+    {
+      "name": "optional_args",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:48",
+          "params": [
+            {
+              "name": "uid",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "name": "depth",
+              "omittable": true,
+              "type": {
+                "inner": [
+                  {
+                    "kind": "int",
+                    "spelling": "int"
+                  }
+                ],
+                "kind": "optional",
+                "nullable": true,
+                "spelling": "std::optional<int>"
+              }
+            },
+            {
+              "name": "label",
+              "omittable": true,
+              "type": {
+                "canonical": "sol::optional<std::basic_string<char>>",
+                "inner": [
+                  {
+                    "canonical": "std::basic_string<char>",
+                    "kind": "string",
+                    "spelling": "std::string"
+                  }
+                ],
+                "kind": "optional",
+                "nullable": true,
+                "spelling": "sol::optional<std::string>"
+              }
+            }
+          ],
+          "returns": []
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 48
+      }
+    },
+    {
+      "name": "optional_return",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:60",
+          "params": [
+            {
+              "name": "uid",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "inner": [
+                {
+                  "inner": [
+                    {
+                      "kind": "record",
+                      "spelling": "Entity"
+                    }
+                  ],
+                  "kind": "pointer",
+                  "nullable": true,
+                  "spelling": "Entity *"
+                }
+              ],
+              "kind": "optional",
+              "nullable": true,
+              "spelling": "std::optional<Entity *>"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 60
+      }
+    },
+    {
+      "name": "pair_return",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:58",
+          "params": [],
+          "returns": [
+            {
+              "kind": "bool",
+              "spelling": "bool"
+            },
+            {
+              "kind": "enum",
+              "spelling": "LAYER"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 58
+      }
+    },
+    {
+      "name": "pointer_arg",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:50",
+          "params": [
+            {
+              "name": "entity",
+              "type": {
+                "inner": [
+                  {
+                    "kind": "record",
+                    "spelling": "Entity"
+                  }
+                ],
+                "kind": "pointer",
+                "nullable": true,
+                "spelling": "Entity *"
+              }
+            },
+            {
+              "name": "mask",
+              "type": {
+                "canonical": "unsigned int",
+                "kind": "int",
+                "spelling": "uint32_t"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "bool",
+              "spelling": "bool"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 50
+      }
+    },
+    {
+      "defined_in_lua": true,
+      "name": "printf",
+      "overloads": [],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 76
+      }
+    },
+    {
+      "name": "set_flag",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:43",
+          "params": [
+            {
+              "name": "uid",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "name": "value",
+              "type": {
+                "kind": "bool",
+                "spelling": "bool"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "bool",
+              "spelling": "bool"
+            }
+          ]
+        },
+        {
+          "cpp": "lambda at functions.cpp:45",
+          "params": [
+            {
+              "name": "name",
+              "type": {
+                "canonical": "std::basic_string<char>",
+                "kind": "string",
+                "spelling": "std::string"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "bool",
+              "spelling": "bool"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 42
+      }
+    },
+    {
+      "name": "spawn",
+      "overloads": [
+        {
+          "cpp": "spawn",
+          "params": [
+            {
+              "name": "type",
+              "type": {
+                "canonical": "unsigned int",
+                "kind": "int",
+                "spelling": "ENT_TYPE"
+              }
+            },
+            {
+              "name": "x",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "y",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "layer",
+              "type": {
+                "kind": "enum",
+                "spelling": "LAYER"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 36
+      }
+    },
+    {
+      "name": "spawn_address",
+      "overloads": [
+        {
+          "cpp": "spawn",
+          "params": [
+            {
+              "name": "type",
+              "type": {
+                "canonical": "unsigned int",
+                "kind": "int",
+                "spelling": "ENT_TYPE"
+              }
+            },
+            {
+              "name": "x",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "y",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "layer",
+              "type": {
+                "kind": "enum",
+                "spelling": "LAYER"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 37
+      }
+    },
+    {
+      "alias_of": [
+        "spawn"
+      ],
+      "name": "spawn_alias",
+      "overloads": [
+        {
+          "cpp": "spawn",
+          "params": [
+            {
+              "name": "type",
+              "type": {
+                "canonical": "unsigned int",
+                "kind": "int",
+                "spelling": "ENT_TYPE"
+              }
+            },
+            {
+              "name": "x",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "y",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "layer",
+              "type": {
+                "kind": "enum",
+                "spelling": "LAYER"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 75
+      }
+    },
+    {
+      "name": "spawn_tree",
+      "overloads": [
+        {
+          "cpp": "count",
+          "params": [
+            {
+              "name": "a",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        },
+        {
+          "cpp": "count",
+          "params": [
+            {
+              "name": "a",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 74
+      }
+    },
+    {
+      "name": "tuple_return",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:56",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            },
+            {
+              "kind": "float",
+              "spelling": "float"
+            },
+            {
+              "canonical": "std::basic_string<char>",
+              "kind": "string",
+              "spelling": "std::string"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 56
+      }
+    },
+    {
+      "name": "variadic",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:54",
+          "params": [
+            {
+              "name": "args",
+              "type": {
+                "kind": "variadic",
+                "spelling": "sol::variadic_args"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 54
+      }
+    },
+    {
+      "name": "nested",
+      "overloads": [
+        {
+          "cpp": "lambda at functions.cpp:68",
+          "params": [
+            {
+              "name": "value",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "float",
+              "spelling": "float"
+            }
+          ]
+        }
+      ],
+      "owner": [
+        "Ns"
+      ],
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 68
+      }
+    }
+  ],
+  "values": [
+    {
+      "name": "Ns",
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 67
+      },
+      "type": {
+        "canonical": "sol::basic_table_core<false, sol::basic_reference<false>>",
+        "kind": "lua_object",
+        "spelling": "table"
+      }
+    },
+    {
+      "name": "__script_id",
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 84
+      },
+      "type": {
+        "canonical": "char[18]",
+        "kind": "string",
+        "spelling": "const char[18]"
+      }
+    },
+    {
+      "name": "answer",
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 83
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int"
+      }
+    },
+    {
+      "name": "on_frame",
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 82
+      },
+      "type": {
+        "canonical": "sol::lua_nil_t",
+        "kind": "nil",
+        "nullable": true,
+        "spelling": "const lua_nil_t"
+      }
+    },
+    {
+      "name": "on_level",
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 90
+      },
+      "type": {
+        "canonical": "sol::lua_nil_t",
+        "kind": "nil",
+        "nullable": true,
+        "spelling": "const lua_nil_t"
+      }
+    },
+    {
+      "name": "uid",
+      "root": "entity_type",
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 86
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int Entity::*"
+      }
+    }
+  ]
+}

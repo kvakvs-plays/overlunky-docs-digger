@@ -1,0 +1,225 @@
+{
+  "functions": [
+    {
+      "doc": [
+        "Documented on the binding.",
+        "Default: `depth` is 1"
+      ],
+      "name": "documented",
+      "overloads": [
+        {
+          "cpp": "lambda at docs.cpp:18",
+          "params": [
+            {
+              "name": "depth",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "docs.cpp",
+        "line": 18
+      }
+    },
+    {
+      "doc": [
+        "Dump the object as a recursive table."
+      ],
+      "doc_only": true,
+      "name": "dump",
+      "overloads": [
+        {
+          "cpp": "doc comment",
+          "params": [
+            {
+              "name": "object",
+              "type": {
+                "kind": "unknown",
+                "spelling": "sol::object"
+              }
+            },
+            {
+              "name": "depth",
+              "type": {
+                "kind": "unknown",
+                "spelling": "optional<int>"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "unknown",
+              "spelling": "table"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 1,
+        "file": "docs.cpp",
+        "line": 42
+      }
+    },
+    {
+      "doc": [
+        "Get the Entity behind an uid, converted to the correct type."
+      ],
+      "doc_only": true,
+      "name": "get_entity",
+      "overloads": [
+        {
+          "cpp": "doc comment",
+          "params": [
+            {
+              "name": "uid",
+              "type": {
+                "kind": "unknown",
+                "spelling": "uint32_t"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "unknown",
+              "spelling": "Entity*"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 1,
+        "file": "docs.cpp",
+        "line": 39
+      }
+    },
+    {
+      "name": "get_player_count",
+      "overloads": [
+        {
+          "cpp": "get_player_count",
+          "doc": [
+            "Get the player count, from the declaration.",
+            "Returns: 0 outside of a level"
+          ],
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "docs.cpp",
+        "line": 36
+      }
+    },
+    {
+      "doc": [
+        "Internal helper."
+      ],
+      "name": "internal",
+      "nodoc": true,
+      "overloads": [
+        {
+          "cpp": "lambda at docs.cpp:28",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "docs.cpp",
+        "line": 28
+      }
+    },
+    {
+      "deprecated": true,
+      "doc": [
+        "Use `documented` instead."
+      ],
+      "name": "old_name",
+      "overloads": [
+        {
+          "cpp": "lambda at docs.cpp:33",
+          "params": [
+            {
+              "name": "depth",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "docs.cpp",
+        "line": 33
+      }
+    },
+    {
+      "name": "undocumented",
+      "overloads": [
+        {
+          "cpp": "lambda at docs.cpp:23",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "docs.cpp",
+        "line": 23
+      }
+    }
+  ],
+  "values": [
+    {
+      "doc": [
+        "Table of options set in the UI, added with the `register_option_...` functions."
+      ],
+      "doc_only": true,
+      "name": "options",
+      "source": {
+        "column": 1,
+        "file": "docs.cpp",
+        "line": 45
+      },
+      "type": {
+        "kind": "unknown",
+        "spelling": "lua.create_named_table(\"options\")"
+      }
+    }
+  ]
+}

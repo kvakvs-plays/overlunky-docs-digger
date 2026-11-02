@@ -1,0 +1,137 @@
+{
+  "functions": [
+    {
+      "name": "add",
+      "overloads": [
+        {
+          "cpp": "NS::add",
+          "params": [
+            {
+              "name": "a",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "key_paths.cpp",
+        "line": 17
+      }
+    },
+    {
+      "name": "twice",
+      "overloads": [
+        {
+          "cpp": "lambda at key_paths.cpp:18",
+          "params": [
+            {
+              "name": "x",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "key_paths.cpp",
+        "line": 18
+      }
+    },
+    {
+      "name": "nested",
+      "overloads": [
+        {
+          "cpp": "lambda at key_paths.cpp:22",
+          "params": [
+            {
+              "name": "x",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "owner": [
+        "Ns"
+      ],
+      "source": {
+        "column": 5,
+        "file": "key_paths.cpp",
+        "line": 22
+      }
+    }
+  ],
+  "values": [
+    {
+      "name": "[key]",
+      "source": {
+        "column": 5,
+        "file": "key_paths.cpp",
+        "line": 29
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int"
+      }
+    },
+    {
+      "name": "from_view",
+      "source": {
+        "column": 5,
+        "file": "key_paths.cpp",
+        "line": 38
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int"
+      }
+    },
+    {
+      "name": "inner",
+      "root": "table",
+      "source": {
+        "column": 5,
+        "file": "key_paths.cpp",
+        "line": 26
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int"
+      }
+    }
+  ]
+}

@@ -13,7 +13,8 @@ toolchain setup.
 
 - `.agents/01-plan.md` is the work plan: technology choice, data model, extraction passes and steps.
   Work through the steps (section 6) in order and check items off (`[x]`) as they are finished. A step
-  is finished only when its definition of done and the common one for all steps are both met.
+  is finished only when its definition of done and the common one for all steps are both met. Then move it out
+  of the plan into `.agents/00-finished.md` as one compact bullet, keeping its discoveries in the plan.
 - Guiding rule from the plan: write as little code as possible. Use Clang LibTooling, AST matchers and LLVM
   support libraries (`llvm::json`, `llvm::Regex`, `llvm::cl`) for everything they can do; write custom code only
   for the sol2-specific binding patterns. Do not add third-party dependencies that LLVM already covers.
