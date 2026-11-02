@@ -11,7 +11,7 @@ plan (sections 2, 3 and 7), where later steps read them.
   154 s, sequentially. The skeleton B1 matcher prints 3183 key paths, and two runs give byte-identical output.
   413 of 415 old function names are found; `dump` and `get_entity` are doc-only comments (moved to DIG-1).
   Golden-file tests run through CTest (`key_paths` fixture), and a fresh copy builds and passes them.
-- **DIG-1. Functions (B1; P1–P4)**: JSON output (`functions`, `values`) from `src/model.cpp`; `src/types.cpp`
+- **DIG-1. Functions (B1; P1–P4)** (`feb873e`): JSON output (`functions`, `values`) from `src/model.cpp`; `src/types.cpp`
   classifies every type (typedef names kept, member pointers as their field, arrays); `src/comments.cpp` attaches
   the `///` block directly above a binding, turns leading `NoDoc` / `Deprecated` into flags, and reads declaration
   comments of bound functions. `resolveBound()` covers lambdas, function names, `&f`, casts, `sol::overload`,
@@ -21,3 +21,16 @@ plan (sections 2, 3 and 7), where later steps read them.
   `create_fmod_guid_map`, where the old parser merges a neighbouring comment), 0 unclassified types. Two runs give
   byte-identical output (50 TUs, 158 s). Fixtures: `functions`, `docs`, `key_paths`. `sol::property` /
   `sol::readonly` / `sol::var` moved to DIG-2 (usertype-only in overlunky).
+- **DIG-2. Usertypes (B2; P5, P6)**: `usertypes` in the JSON output (`src/usertypes.cpp`, shared AST helpers
+  moved to `src/resolve.cpp`). `new_usertype<T>(...)` argument pairs and later `ut["k"] = v` (routed by the
+  `sol::usertype<T>` root type) become members of kind field, readonly, property (getter/setter), method (with
+  overloads and `self` kind) or value; `lua["Name"]["k"] = v` is moved into the usertype after all TUs.
+  Constructors (`sol::constructors`, `sol::initializers`, `no_constructor`), bases (`sol::bases` = `base_list`),
+  meta functions. `definitionOf()` follows `std::move`, locals and small factories, so
+  `MakeParticleMemberAccess` and `self_return` need no special case. Member docs come from the declaration
+  (unions and anonymous structs included), the field a getter reads, autodoc hint comments and same-name members.
+  `tools/parity.py` checks all 527 old usertypes and 3488 members (names, kinds, docs, constructors, bases):
+  0 unexplained, 79 accepted differences (mostly old "value" kinds the digger resolves to methods, old constructor
+  lists that include unexposed C++ constructors, block-commented code), 0 unclassified types. 529 usertypes with
+  3486 members, two runs byte-identical. `ut.set`, `sol::call_constructor` and `readonly_property` are unused in
+  overlunky and not handled. Fixture: `usertypes`.

@@ -52,10 +52,14 @@ add_executable(docs-digger
   src/main.cpp
   src/model.cpp
   src/model.hpp
+  src/resolve.cpp
+  src/resolve.hpp
   src/source_root.cpp
   src/source_root.hpp
   src/types.cpp
-  src/types.hpp)
+  src/types.hpp
+  src/usertypes.cpp
+  src/usertypes.hpp)
 target_include_directories(docs-digger SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND "${LLVM_DEFINITIONS}")
 target_compile_definitions(docs-digger PRIVATE ${LLVM_DEFINITIONS_LIST}

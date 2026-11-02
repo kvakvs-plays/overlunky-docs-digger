@@ -6,6 +6,7 @@
 #include <clang/Basic/SourceLocation.h>
 #include <llvm/ADT/StringRef.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -37,6 +38,11 @@ namespace dd {
 
     // All commented-out bindings directly below a `///` block in file.
     std::vector<CommentedBinding> commentedBindings(clang::FileID file, const clang::ASTContext& context);
+
+    // The member named by a commented-out member reference just above loc, written for the old regex parser:
+    // `// &Vec2::split); // for the autodoc` above a value, or `// ut["pause"] = &PauseAPI::pause;` above a
+    // `/// NoDoc` binding. Only the member name is returned: some hints name the wrong class after copy-paste.
+    std::optional<std::string> autodocHint(clang::SourceLocation loc, const clang::ASTContext& context);
 
     // Parameters and return of lambda text such as `[](uint32_t uid) -> Entity*{}`; types keep only their
     // spelling (kind Unknown), since the text is not compiled.

@@ -5,6 +5,7 @@
 #include <llvm/Support/Regex.h>
 
 #include <map>
+#include <optional>
 
 namespace dd {
 
@@ -135,6 +136,27 @@ namespace dd {
             }
         }
         return found;
+    }
+
+    std::optional<std::string> autodocHint(clang::SourceLocation loc, const clang::ASTContext& context) {
+        // Lines looked at above loc; hints sit directly above, with at most a few `///` lines in between.
+        constexpr unsigned MaxLines = 6;
+        static const llvm::Regex hint(R"re(&[A-Za-z_][A-Za-z0-9_]*::([A-Za-z_][A-Za-z0-9_]*))re");
+        const clang::SourceManager& sm = context.getSourceManager();
+        const clang::SourceLocation fileLoc = sm.getFileLoc(loc);
+        const clang::FileID file = sm.getFileID(fileLoc);
+        const unsigned line = lineOf(fileLoc, sm);
+        for (unsigned above = line - 1; above >= 1 && above + MaxLines >= line; --above) {
+            const llvm::StringRef text = lineText(file, above, sm).trim();
+            if (!text.starts_with("//")) {
+                return std::nullopt;
+            }
+            llvm::SmallVector<llvm::StringRef, 2> groups;
+            if (!text.starts_with("///") && hint.match(text, &groups)) {
+                return groups[1].str();
+            }
+        }
+        return std::nullopt;
     }
 
     FunctionSig signatureFromText(llvm::StringRef text) {

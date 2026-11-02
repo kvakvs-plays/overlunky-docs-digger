@@ -1,6 +1,7 @@
 #include "bindings.hpp"
 #include "model.hpp"
 #include "source_root.hpp"
+#include "usertypes.hpp"
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/Tooling/ArgumentsAdjusters.h>
@@ -197,6 +198,7 @@ namespace {
 
         const unsigned failed = runAll(options, database, sources, *factory);
         dd::resolveAliases(extraction);
+        dd::attachOwnedBindings(extraction);
         if (failed != 0) {
             llvm::errs() << "docs-digger: " << failed << " of " << sources.size() << " translation units had errors\n";
         }

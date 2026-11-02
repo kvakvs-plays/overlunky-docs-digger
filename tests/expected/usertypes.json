@@ -1,0 +1,835 @@
+{
+  "functions": [],
+  "usertypes": [
+    {
+      "constructors": [
+        {
+          "cpp": "Color::Color",
+          "doc": [
+            "Black, fully opaque."
+          ],
+          "params": [],
+          "returns": [
+            {
+              "kind": "record",
+              "spelling": "Color"
+            }
+          ]
+        },
+        {
+          "cpp": "Color::Color",
+          "doc": [
+            "From components in 0..1."
+          ],
+          "params": [
+            {
+              "name": "r",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "g",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "b",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            },
+            {
+              "name": "a",
+              "type": {
+                "kind": "float",
+                "spelling": "float"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "record",
+              "spelling": "Color"
+            }
+          ]
+        }
+      ],
+      "cpp": "Color",
+      "cpp_doc": [
+        "RGBA color."
+      ],
+      "doc": [
+        "A color in the 0..1 range."
+      ],
+      "members": [
+        {
+          "kind": "method",
+          "meta": true,
+          "name": "equal_to",
+          "overloads": [
+            {
+              "cpp": "Color::operator==",
+              "params": [
+                {
+                  "name": "other",
+                  "type": {
+                    "canonical": "Color",
+                    "kind": "record",
+                    "spelling": "const Color &"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "kind": "bool",
+                  "spelling": "bool"
+                }
+              ],
+              "self": "implicit"
+            }
+          ],
+          "source": {
+            "column": 47,
+            "file": "usertypes.cpp",
+            "line": 103
+          }
+        },
+        {
+          "doc": [
+            "Builds a color from a name."
+          ],
+          "kind": "method",
+          "name": "from_name",
+          "overloads": [
+            {
+              "cpp": "make_color",
+              "params": [
+                {
+                  "name": "name",
+                  "type": {
+                    "canonical": "std::basic_string<char>",
+                    "kind": "string",
+                    "spelling": "std::string"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "kind": "record",
+                  "spelling": "Color"
+                }
+              ]
+            }
+          ],
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 109
+          }
+        },
+        {
+          "kind": "readonly",
+          "name": "g",
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 106
+          },
+          "type": {
+            "kind": "float",
+            "spelling": "float"
+          }
+        },
+        {
+          "doc": [
+            "Brightest channel value."
+          ],
+          "kind": "value",
+          "name": "max_channel",
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 165
+          },
+          "type": {
+            "kind": "float",
+            "spelling": "float"
+          }
+        },
+        {
+          "kind": "field",
+          "name": "r",
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 105
+          },
+          "type": {
+            "kind": "float",
+            "spelling": "float"
+          }
+        },
+        {
+          "kind": "method",
+          "name": "white",
+          "overloads": [
+            {
+              "cpp": "Color::white",
+              "params": [],
+              "returns": [
+                {
+                  "kind": "record",
+                  "spelling": "Color"
+                }
+              ]
+            }
+          ],
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 107
+          }
+        }
+      ],
+      "name": "Color",
+      "source": {
+        "column": 23,
+        "file": "usertypes.cpp",
+        "line": 102
+      }
+    },
+    {
+      "cpp": "Entity",
+      "cpp_doc": [
+        "Base of everything in a level."
+      ],
+      "members": [
+        {
+          "doc": [
+            "Casts an entity to a movable."
+          ],
+          "kind": "method",
+          "name": "as_movable",
+          "overloads": [
+            {
+              "cpp": "lambda at usertypes.cpp:162",
+              "params": [
+                {
+                  "name": "e",
+                  "type": {
+                    "canonical": "Entity",
+                    "kind": "record",
+                    "spelling": "Entity &"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "inner": [
+                    {
+                      "kind": "record",
+                      "spelling": "Movable"
+                    }
+                  ],
+                  "kind": "pointer",
+                  "nullable": true,
+                  "spelling": "Movable *"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 162
+          }
+        },
+        {
+          "kind": "method",
+          "name": "distance",
+          "overloads": [
+            {
+              "cpp": "Entity::distance",
+              "params": [],
+              "returns": [
+                {
+                  "kind": "float",
+                  "spelling": "float"
+                }
+              ],
+              "self": "implicit"
+            },
+            {
+              "cpp": "lambda at usertypes.cpp:123",
+              "params": [
+                {
+                  "name": "e",
+                  "type": {
+                    "canonical": "Entity",
+                    "kind": "record",
+                    "spelling": "Entity &"
+                  }
+                },
+                {
+                  "name": "other",
+                  "type": {
+                    "canonical": "Entity",
+                    "kind": "record",
+                    "spelling": "Entity &"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "kind": "float",
+                  "spelling": "float"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 122
+          }
+        },
+        {
+          "cpp_doc": [
+            "Flags as one number."
+          ],
+          "kind": "field",
+          "name": "flags",
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 116
+          },
+          "type": {
+            "canonical": "unsigned int",
+            "kind": "int",
+            "spelling": "uint32_t"
+          }
+        },
+        {
+          "cpp_doc": [
+            "Low half of the flags."
+          ],
+          "kind": "field",
+          "name": "low",
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 118
+          },
+          "type": {
+            "canonical": "unsigned short",
+            "kind": "int",
+            "spelling": "uint16_t"
+          }
+        },
+        {
+          "kind": "method",
+          "name": "move",
+          "overloads": [
+            {
+              "cpp": "Entity::move",
+              "doc": [
+                "Moves the entity by an offset."
+              ],
+              "params": [
+                {
+                  "name": "dx",
+                  "type": {
+                    "kind": "float",
+                    "spelling": "float"
+                  }
+                },
+                {
+                  "name": "dy",
+                  "type": {
+                    "kind": "float",
+                    "spelling": "float"
+                  }
+                }
+              ],
+              "returns": [],
+              "self": "implicit"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 120
+          }
+        },
+        {
+          "cpp_doc": [
+            "Unique id of the entity."
+          ],
+          "kind": "field",
+          "name": "uid",
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 114
+          },
+          "type": {
+            "canonical": "int",
+            "kind": "int",
+            "spelling": "int32_t"
+          }
+        }
+      ],
+      "name": "Entity",
+      "no_constructor": true,
+      "source": {
+        "column": 5,
+        "file": "usertypes.cpp",
+        "line": 111
+      }
+    },
+    {
+      "cpp": "Items",
+      "members": [
+        {
+          "cpp_doc": [
+            "Number of items."
+          ],
+          "kind": "method",
+          "name": "count",
+          "overloads": [
+            {
+              "cpp": "lambda at usertypes.cpp:152",
+              "params": [
+                {
+                  "name": "s",
+                  "type": {
+                    "canonical": "Items",
+                    "kind": "record",
+                    "spelling": "Items &"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "kind": "int",
+                  "spelling": "int"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 150
+          }
+        },
+        {
+          "cpp_doc": [
+            "Index of leader player in coop."
+          ],
+          "getter": {
+            "cpp": "lambda at usertypes.cpp:146",
+            "params": [
+              {
+                "name": "s",
+                "type": {
+                  "canonical": "Items",
+                  "kind": "record",
+                  "spelling": "Items &"
+                }
+              }
+            ],
+            "returns": [
+              {
+                "kind": "int",
+                "spelling": "int"
+              }
+            ],
+            "self": "first_param"
+          },
+          "kind": "property",
+          "name": "leader",
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 144
+          },
+          "type": {
+            "kind": "int",
+            "spelling": "int"
+          }
+        },
+        {
+          "cpp_doc": [
+            "Set while paused."
+          ],
+          "getter": {
+            "cpp": "Items::is_paused",
+            "doc": [
+              "Reads the pause flag."
+            ],
+            "params": [],
+            "returns": [
+              {
+                "kind": "bool",
+                "spelling": "bool"
+              }
+            ],
+            "self": "implicit"
+          },
+          "kind": "property",
+          "name": "paused",
+          "nodoc": true,
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 159
+          },
+          "type": {
+            "kind": "bool",
+            "spelling": "bool"
+          }
+        },
+        {
+          "cpp_doc": [
+            "Splits the items in two."
+          ],
+          "kind": "method",
+          "name": "split",
+          "overloads": [
+            {
+              "cpp": "Forward<&Items::split>::call",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "canonical": "Items",
+                    "kind": "record",
+                    "spelling": "Items &"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "kind": "int",
+                  "spelling": "int"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 148
+          }
+        },
+        {
+          "cpp_doc": [
+            "Total weight of the items."
+          ],
+          "kind": "method",
+          "name": "weight",
+          "overloads": [
+            {
+              "cpp": "lambda at usertypes.cpp:155",
+              "params": [
+                {
+                  "name": "s",
+                  "type": {
+                    "canonical": "Items",
+                    "kind": "record",
+                    "spelling": "Items &"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "kind": "int",
+                  "spelling": "int"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "usertypes.cpp",
+            "line": 154
+          }
+        }
+      ],
+      "name": "Items",
+      "source": {
+        "column": 23,
+        "file": "usertypes.cpp",
+        "line": 142
+      }
+    },
+    {
+      "bases": [
+        "Entity"
+      ],
+      "cpp": "Movable",
+      "members": [
+        {
+          "getter": {
+            "cpp": "lambda at usertypes.cpp:133",
+            "params": [
+              {
+                "name": "m",
+                "type": {
+                  "canonical": "Movable",
+                  "kind": "record",
+                  "spelling": "Movable &"
+                }
+              }
+            ],
+            "returns": [
+              {
+                "kind": "float",
+                "spelling": "float"
+              }
+            ],
+            "self": "first_param"
+          },
+          "kind": "property",
+          "name": "abs_x",
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 133
+          },
+          "type": {
+            "kind": "float",
+            "spelling": "float"
+          }
+        },
+        {
+          "kind": "method",
+          "name": "internal",
+          "nodoc": true,
+          "overloads": [
+            {
+              "cpp": "lambda at usertypes.cpp:136",
+              "params": [
+                {
+                  "name": "m",
+                  "type": {
+                    "canonical": "Movable",
+                    "kind": "record",
+                    "spelling": "Movable &"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "int",
+                  "kind": "int",
+                  "spelling": "int32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 136
+          }
+        },
+        {
+          "getter": {
+            "cpp": "lambda at usertypes.cpp:126",
+            "params": [
+              {
+                "name": "e",
+                "type": {
+                  "canonical": "Entity",
+                  "kind": "record",
+                  "spelling": "Entity &"
+                }
+              }
+            ],
+            "returns": [
+              {
+                "inner": [
+                  {
+                    "kind": "record",
+                    "spelling": "Entity"
+                  }
+                ],
+                "kind": "pointer",
+                "nullable": true,
+                "spelling": "Entity *"
+              }
+            ],
+            "self": "first_param"
+          },
+          "kind": "property",
+          "name": "overlay",
+          "setter": {
+            "cpp": "lambda at usertypes.cpp:128",
+            "params": [
+              {
+                "name": "e",
+                "type": {
+                  "canonical": "Entity",
+                  "kind": "record",
+                  "spelling": "Entity &"
+                }
+              },
+              {
+                "name": "other",
+                "omittable": true,
+                "type": {
+                  "inner": [
+                    {
+                      "kind": "record",
+                      "spelling": "Entity"
+                    }
+                  ],
+                  "kind": "pointer",
+                  "nullable": true,
+                  "spelling": "Entity *"
+                }
+              }
+            ],
+            "returns": [],
+            "self": "first_param"
+          },
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 132
+          },
+          "type": {
+            "inner": [
+              {
+                "kind": "record",
+                "spelling": "Entity"
+              }
+            ],
+            "kind": "pointer",
+            "nullable": true,
+            "spelling": "Entity *"
+          }
+        },
+        {
+          "kind": "field",
+          "name": "velocity",
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 131
+          },
+          "type": {
+            "kind": "float",
+            "spelling": "float"
+          }
+        }
+      ],
+      "name": "Movable",
+      "source": {
+        "column": 25,
+        "file": "usertypes.cpp",
+        "line": 130
+      }
+    },
+    {
+      "constructors": [
+        {
+          "cpp": "lambda at usertypes.cpp:139",
+          "params": [
+            {
+              "name": "p",
+              "type": {
+                "canonical": "Particle",
+                "kind": "record",
+                "spelling": "Particle &"
+              }
+            }
+          ],
+          "returns": []
+        }
+      ],
+      "cpp": "Particle",
+      "members": [
+        {
+          "cpp_doc": [
+            "Horizontal position, in tiles."
+          ],
+          "getter": {
+            "cpp": "lambda at usertypes.cpp:58",
+            "params": [
+              {
+                "name": "p",
+                "type": {
+                  "canonical": "Particle",
+                  "kind": "record",
+                  "spelling": "const Particle &"
+                }
+              }
+            ],
+            "returns": [
+              {
+                "kind": "float",
+                "spelling": "float"
+              }
+            ],
+            "self": "first_param"
+          },
+          "kind": "property",
+          "name": "x",
+          "setter": {
+            "cpp": "lambda at usertypes.cpp:60",
+            "params": [
+              {
+                "name": "p",
+                "type": {
+                  "canonical": "Particle",
+                  "kind": "record",
+                  "spelling": "Particle &"
+                }
+              },
+              {
+                "name": "v",
+                "type": {
+                  "kind": "float",
+                  "spelling": "float"
+                }
+              }
+            ],
+            "returns": [],
+            "self": "first_param"
+          },
+          "source": {
+            "column": 106,
+            "file": "usertypes.cpp",
+            "line": 139
+          },
+          "type": {
+            "kind": "float",
+            "spelling": "float"
+          }
+        }
+      ],
+      "name": "Particle",
+      "source": {
+        "column": 5,
+        "file": "usertypes.cpp",
+        "line": 139
+      }
+    }
+  ],
+  "values": []
+}

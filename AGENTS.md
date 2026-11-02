@@ -93,8 +93,8 @@ These rules hold at all times, not only before a release.
 - Every new function, class, struct, field, enum (and enum value whose meaning is not obvious) gets a one-line
   comment stating its intent: why it exists, not what the code literally does. Put it on the declaration (the
   header for public items).
-- Keep Clang AST matcher code in as few files as the plan lists (`bindings.cpp`, `callbacks.cpp`), so that LLVM
-  major bumps stay contained.
+- Keep Clang AST code in as few files as the plan lists (matchers in `bindings.cpp` and `callbacks.cpp`, AST
+  reading in `resolve.cpp`, `usertypes.cpp`, `types.cpp`, `comments.cpp`), so that LLVM major bumps stay contained.
 - When adding new source files, list them explicitly in `CMakeLists.txt` (no globbing).
 - Use RAII and values; avoid raw owning pointers.
 - The code is built without RTTI, like the LLVM libraries it links: no `dynamic_cast` or `typeid`; use

@@ -1,7 +1,9 @@
 #include "model.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
+#include <tuple>
 
 namespace dd {
 
@@ -15,6 +17,14 @@ namespace dd {
 
         // Name of kind in the JSON output.
         const char* kindName(TypeKind kind) { return KindNames.at(static_cast<std::size_t>(kind)); }
+
+        // Member kind names, in MemberKind order.
+        constexpr std::array<const char*, 5> MemberKindNames = {"field", "readonly", "property", "method", "value"};
+        static_assert(MemberKindNames.size() == static_cast<std::size_t>(MemberKind::Value) + 1);
+
+        // How a method gets its object, in SelfKind order (None is not written).
+        constexpr std::array<const char*, 3> SelfKindNames = {"none", "implicit", "first_param"};
+        static_assert(SelfKindNames.size() == static_cast<std::size_t>(SelfKind::FirstParam) + 1);
 
         // A JSON array of the toJSON() of every element.
         template <typename T>
@@ -92,6 +102,9 @@ namespace dd {
         llvm::json::Object object{
             {"params", arrayOf(sig.params)}, {"returns", arrayOf(sig.returns)}, {"cpp", sig.cppTarget}};
         addDoc(object, sig.doc);
+        if (sig.self != SelfKind::None) {
+            object["self"] = SelfKindNames.at(static_cast<std::size_t>(sig.self));
+        }
         return object;
     }
 
@@ -123,6 +136,56 @@ namespace dd {
         return object;
     }
 
+    llvm::json::Value toJSON(const Member& member) {
+        llvm::json::Object object{{"name", member.luaName},
+                                  {"kind", MemberKindNames.at(static_cast<std::size_t>(member.kind))},
+                                  {"source", toJSON(member.loc)}};
+        if (member.meta) {
+            object["meta"] = true;
+        }
+        addDoc(object, member.doc);
+        if (!member.declDoc.lines.empty()) {
+            object["cpp_doc"] = toJSON(member.declDoc);
+        }
+        if (member.kind != MemberKind::Method) {
+            object["type"] = toJSON(member.type);
+        }
+        if (!member.overloads.empty()) {
+            object["overloads"] = arrayOf(member.overloads);
+        }
+        if (!member.getter.empty()) {
+            object["getter"] = toJSON(member.getter.front());
+        }
+        if (!member.setter.empty()) {
+            object["setter"] = toJSON(member.setter.front());
+        }
+        return object;
+    }
+
+    llvm::json::Value toJSON(const Usertype& usertype) {
+        llvm::json::Object object{
+            {"name", usertype.luaName}, {"cpp", usertype.cppType}, {"source", toJSON(usertype.loc)}};
+        addDoc(object, usertype.doc);
+        if (!usertype.declDoc.lines.empty()) {
+            object["cpp_doc"] = toJSON(usertype.declDoc);
+        }
+        if (!usertype.bases.empty()) {
+            object["bases"] = llvm::json::Array(usertype.bases);
+        }
+        if (!usertype.constructors.empty()) {
+            object["constructors"] = arrayOf(usertype.constructors);
+        }
+        if (usertype.noConstructor) {
+            object["no_constructor"] = true;
+        }
+        llvm::json::Array members;
+        for (const auto& [key, member] : usertype.members) {
+            members.push_back(toJSON(member));
+        }
+        object["members"] = std::move(members);
+        return object;
+    }
+
     llvm::json::Value toJSON(const Extraction& extraction) {
         llvm::json::Array functions;
         for (const auto& [key, function] : extraction.functions) {
@@ -132,7 +195,22 @@ namespace dd {
         for (const auto& [key, value] : extraction.values) {
             values.push_back(toJSON(value));
         }
-        return llvm::json::Object{{"functions", std::move(functions)}, {"values", std::move(values)}};
+        // Ordered by Lua name for readers; the map is keyed by C++ type for member lookup.
+        std::vector<const Usertype*> usertypes;
+        usertypes.reserve(extraction.usertypes.size());
+        for (const auto& [cppType, usertype] : extraction.usertypes) {
+            usertypes.push_back(&usertype);
+        }
+        std::ranges::sort(usertypes, [](const Usertype* a, const Usertype* b) {
+            return std::tie(a->luaName, a->cppType) < std::tie(b->luaName, b->cppType);
+        });
+        llvm::json::Array usertypeArray;
+        for (const Usertype* usertype : usertypes) {
+            usertypeArray.push_back(toJSON(*usertype));
+        }
+        return llvm::json::Object{{"functions", std::move(functions)},
+                                  {"values", std::move(values)},
+                                  {"usertypes", std::move(usertypeArray)}};
     }
 
 } // namespace dd

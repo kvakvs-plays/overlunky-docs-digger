@@ -85,6 +85,16 @@ namespace dd {
         bool omittable = false;
     };
 
+    // How a usertype method receives its object (Lua calls it as `object:method(...)`).
+    enum class SelfKind : std::uint8_t {
+        // A plain function: not a method, or one that ignores the object.
+        None,
+        // A C++ member function: the object is `this`, params lists only the Lua arguments.
+        Implicit,
+        // A lambda or function whose first parameter is the object (`[](Entity& e, ...)`).
+        FirstParam,
+    };
+
     // One callable form of a Lua function: a lambda, a C++ function, or one member of a sol::overload.
     struct FunctionSig {
         // Parameters in declaration order, hidden ones included.
@@ -95,6 +105,8 @@ namespace dd {
         std::string cppTarget;
         // Comment of the C++ declaration when the target is a named function (headers document those).
         Doc doc;
+        // For usertype members: how the object is passed.
+        SelfKind self = SelfKind::None;
     };
 
     // A Lua function created by `root["a"]["name"] = <callable>`, or documented by a commented-out binding.
@@ -140,6 +152,76 @@ namespace dd {
         bool docOnly = false;
     };
 
+    // What a usertype member is in Lua.
+    enum class MemberKind : std::uint8_t {
+        // `&T::field`: read and written directly.
+        Field,
+        // `sol::readonly(&T::field)`: read only.
+        Readonly,
+        // `sol::property(get[, set])`: accessors; getter and setter tell which exist.
+        Property,
+        // A callable: lambda, member function, function, sol::overload.
+        Method,
+        // Anything else: a constant or a Lua value.
+        Value,
+    };
+
+    // One member of a usertype (plan B2).
+    struct Member {
+        // Key in Lua; for meta functions the sol::meta_function name (`equal_to`).
+        std::string luaName;
+        // What the member is.
+        MemberKind kind = MemberKind::Value;
+        // Keyed by a sol::meta_function instead of a name (operators, __index, __pairs).
+        bool meta = false;
+        // Where the member is bound (the key argument or the `ut["k"] = ...` statement).
+        SourceLoc loc;
+        // Comment above the binding statement.
+        Doc doc;
+        // Comment of the bound C++ field (methods keep theirs in FunctionSig::doc).
+        Doc declDoc;
+        // Value type: field type, property type (getter result), or the value's type.
+        TypeInfo type;
+        // Callable forms of a Method.
+        std::vector<FunctionSig> overloads;
+        // Accessors of a Property; empty when missing.
+        std::vector<FunctionSig> getter;
+        // Setter of a Property; empty when read only.
+        std::vector<FunctionSig> setter;
+    };
+
+    // Identity of a member: the same key may be bound twice (sol2 keeps the last one), so the location is part of it.
+    struct MemberKey {
+        // Lua key.
+        std::string luaName;
+        // Where it is bound.
+        SourceLoc loc;
+
+        auto operator<=>(const MemberKey&) const = default;
+    };
+
+    // A C++ type exposed to Lua with `new_usertype<T>("Name", ...)`.
+    struct Usertype {
+        // Name in Lua.
+        std::string luaName;
+        // C++ type as written in new_usertype<T>.
+        std::string cppType;
+        // The new_usertype call.
+        SourceLoc loc;
+        // Comment above the new_usertype statement.
+        Doc doc;
+        // Comment of the C++ class.
+        Doc declDoc;
+        // C++ base classes from sol::bases<...>, as written.
+        std::vector<std::string> bases;
+        // Constructors from sol::constructors<...> or `"new", sol::initializers(...)`.
+        std::vector<FunctionSig> constructors;
+        // sol::no_constructor: Lua cannot create it.
+        bool noConstructor = false;
+        // All members, from the new_usertype arguments, `ut["k"] = v` and `lua["Name"]["k"] = v`.
+        std::map<MemberKey, Member> members;
+    };
+
     // Identity of a binding: bindings repeat across translation units (headers, templates) and must stay once.
     struct BindingKey {
         // Table keys before the name.
@@ -158,6 +240,8 @@ namespace dd {
         std::map<BindingKey, Function> functions;
         // Lua values that are not functions.
         std::map<BindingKey, Value> values;
+        // Usertypes by canonical C++ type: members bound through `ut["k"]` only know the C++ type.
+        std::map<std::string, Usertype> usertypes;
     };
 
     // JSON writers; empty and default fields are left out to keep the output small and diffable.
@@ -168,6 +252,8 @@ namespace dd {
     llvm::json::Value toJSON(const FunctionSig& sig);
     llvm::json::Value toJSON(const Function& function);
     llvm::json::Value toJSON(const Value& value);
+    llvm::json::Value toJSON(const Member& member);
+    llvm::json::Value toJSON(const Usertype& usertype);
     llvm::json::Value toJSON(const Extraction& extraction);
 
 } // namespace dd

@@ -135,7 +135,9 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   src/source_root.cpp     --root: which files results may come from, root-relative paths
   src/types.cpp           QualType -> TypeInfo (section 4)
   src/comments.cpp        comment lookup for decls/statements, directive parsing
-  src/bindings.cpp        passes B1-B4 (lua[...] = ..., usertypes, enums, misc)
+  src/bindings.cpp        AST matchers and B1 (lua[...] = ...); B3-B4 to come
+  src/resolve.cpp         sol2 expression helpers shared by the passes: key paths, definitionOf, resolveBound
+  src/usertypes.cpp       B2: new_usertype arguments, members, constructors, bases, member docs
   src/callbacks.cpp       passes C1-C6 (callback signatures, nil semantics)
   tests/fixtures/*.cpp    small sources using the real sol2 headers from <overlunky>/src/sol2
   tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
@@ -163,15 +165,20 @@ Default, Group, ...}}`.
   (DIG-4). Nullable and variadic are read from the type (`nullable`, kind `variadic`), not repeated on the param.
 - **FunctionSig**: `params[]`, `returns: TypeInfo[]` (a tuple/pair becomes multiple returns; `optional`
   means it may return `nil`; `void` means it returns nothing), `cpp` (qualified name of the bound C++ function
-  or `lambda at <file>:<line>`), `doc` (the C++ declaration's comment, for named functions).
+  or `lambda at <file>:<line>`), `doc` (the C++ declaration's comment, for named functions), `self` (usertype
+  members: `implicit` for C++ member functions, `first_param` when the first parameter is the object).
 - **Function**: `name`, `owner` (keys of the namespace table or usertype; empty for globals), `root` (source
   text of the root when it is neither the state nor an environment), `group` (DIG-5), `overloads[]: FunctionSig`,
   `deprecated`, `nodoc`, `doc_only` (from a commented-out binding), `defined_in_lua` (`lua.safe_script(...)`),
   `alias_of` (`lua["a"] = lua["b"]`; overloads copied from the target).
 - **Value**: a binding whose right side is not callable: `name`, `owner`, `root`, `type`, `doc`, `doc_only`.
-- **Usertype**: `lua_name`, `cpp_type`, `bases[]`, `constructors[]: FunctionSig`, `members[]`
-  (`kind: field | method | property | readonly | overload_set`, `type`/`sig`, `getter`/`setter`
-  presence, doc taken from the C++ member decl when bound through `&T::m`).
+- **Usertype**: `name`, `cpp`, `doc` (above the `new_usertype` statement), `cpp_doc` (of the C++ class),
+  `bases[]` (C++ names from `sol::bases<...>`), `constructors[]: FunctionSig`, `no_constructor`, `members[]`.
+- **Member**: `name`, `kind` (`field | readonly | property | method | value`; an overload set is a method with
+  several overloads), `meta` (keyed by a `sol::meta_function`), `type` (field type, property type from the getter,
+  or value type), `overloads[]` (methods), `getter` / `setter` (properties, present when bound), `doc` (above the
+  binding), `cpp_doc` (of the bound C++ field, the field a getter reads, an autodoc hint, or the C++ member of the
+  same name).
 - **CallbackSig**: `params[]` (with front/back binder params marked), `returns`, `nil_allowed`,
   `nil_meaning` (for example "treated as false", "original call proceeds"), `origin`
   (`std_function | make_safe_cb | stored_handle_function | event_dispatch | vtable_hook | doc_comment`),
@@ -223,6 +230,26 @@ Expression statements of the form `lua["NAME"];` (P8) are matched separately and
 - Docs for `&T::member` come from the `FieldDecl`/`CXXMethodDecl` comment, which replaces the
   line-based class scanner. Unions and anonymous structs need nothing special in Clang.
 - `MakeParticleMemberAccess<...>()` is handled as one small special case.
+
+Found in DIG-2 and handled there (`src/usertypes.cpp`, shared helpers in `src/resolve.cpp`):
+
+- most members come from `xxx_type["k"] = v` on the returned `sol::usertype<T>`, routed to T by the root's type;
+  `lua["Name"]["k"] = v` bindings are moved into the usertype named Name after all TUs (that covers the
+  `lua["Entity"]["as_*"]` casts, P10);
+- `definitionOf()` follows `std::move(x)`, local variables and small factories (a body of type declarations and
+  static_asserts plus one `return`), which covers `MakeParticleMemberAccess<&P::x>()` and `self_return<&T::f>()`
+  without special cases; the factory's member template argument documents the result;
+- constructors come either first (`sol::constructors<...>{}`, `sol::no_constructor`) or as `"new",
+  sol::initializers(...)`; listed signatures are matched with declared constructors for names and comments;
+- `sol::bases` is an alias of `sol::base_list`, and `sol::base_classes` is a `base_list<>` value;
+- docs the old parser finds by text, rebuilt from the AST: the field a property getter reads (`s.leader`), autodoc
+  hints (`// &Vec2::split); // for the autodoc` above a value, `// ut["pause"] = &PauseAPI::pause;` above a
+  `/// NoDoc` binding; a hint wins over other comments), and the C++ member of the same name as a last resort;
+- not reproduced, on purpose: members bound inside `/* ... */` block comments (CustomTheme in `level_lua.cpp`),
+  and docs written on fake declarations inside `/* // just for the autodoc */` blocks (`Triangle`/`Quad` `split`
+  and `is_point_inside` in `math.hpp`). Doc fixes for overlunky: move those comments onto the real declarations;
+- overlunky never uses `ut.set(k, v)`, `sol::call_constructor` or `sol::readonly_property`, so they are not
+  handled; `sol::var(v)` isn't used either but is covered (a `value` member) because it costs one comparison.
 
 **B3. Enums (P9, P12).**
 
@@ -307,7 +334,7 @@ Members of usertypes and namespace tables are grouped by their owner.
 
 Work through the steps in order. Check items off (`[x]`) as they are finished. A step is finished
 when its own definition of done and the common one below are both met. A finished step moves to
-`00-finished.md` as one compact bullet; its discoveries stay in sections 2, 3 and 7. Finished so far: DIG-0, DIG-1.
+`00-finished.md` as one compact bullet; its discoveries stay in sections 2, 3 and 7. Finished so far: DIG-0, DIG-1, DIG-2.
 
 **Definition of done for every step**
 
@@ -319,31 +346,6 @@ when its own definition of done and the common one below are both met. A finishe
       listed in the report as an accepted difference with a reason.
 - [ ] Running the digger twice on the same input gives byte-identical output.
 - [ ] Discoveries that change the plan (new patterns, rejected approaches, timings) are written into this file.
-
-### DIG-2. Usertypes (B2; P5, P6)
-
-- [ ] Matcher for `new_usertype<T>(name, k, v, ...)`; every value goes through `resolveBound()`.
-- [ ] `resolveBound()`: `sol::property(get[, set])`, `sol::readonly(&T::f)`, `sol::var(...)` (moved from DIG-1:
-      overlunky uses them only on usertypes, also in later `ut["k"] = sol::property(...)` assignments, which B1
-      reports as values until then).
-- [ ] Special keys: `sol::constructors<...>`, `sol::no_constructor`, `sol::call_constructor`,
-      `sol::bases<...>` / `sol::base_classes`, `sol::meta_function::*`.
-- [ ] Member kinds `field | method | property | readonly | overload_set`, with getter/setter presence.
-- [ ] Later `ut["k"] = v` and `ut.set(k, v)` on the returned usertype merge into the same `Usertype`.
-- [ ] Member docs from the `FieldDecl` / `CXXMethodDecl` comment, including members of unions and anonymous
-      structs (replaces the class scanner, P6).
-- [ ] `MakeParticleMemberAccess<...>()` special case.
-- [ ] `tools/parity.py`: usertype names, member names and member kinds against `ps.types`; member docs against
-      `ps.classes`.
-- [ ] Fixtures: plain usertype, property with and without setter, readonly, overload set, constructors, bases,
-      meta function, member in a union, late `ut["k"] = v`.
-
-Definition of done:
-
-- [ ] Every usertype and member in `ps.types` is present with the same kind.
-- [ ] Every member doc found by the old class scanner is found again (text equal after whitespace
-      normalization); differences are listed.
-- [ ] Constructors and bases match the old output for every usertype.
 
 ### DIG-3. Enums, aliases, libraries, global variables, casts, events (B3, B4; P8–P13)
 

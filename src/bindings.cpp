@@ -1,13 +1,13 @@
 #include "bindings.hpp"
 
 #include "comments.hpp"
+#include "resolve.hpp"
 #include "types.hpp"
+#include "usertypes.hpp"
 
 #include <clang/AST/ExprCXX.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
-#include <clang/Lex/Lexer.h>
 
-#include <algorithm>
 #include <map>
 #include <vector>
 
@@ -19,140 +19,8 @@ namespace dd {
 
         // Binding names of the matched nodes.
         constexpr const char* AssignmentNode = "assignment";
+        constexpr const char* UsertypeNode = "usertype";
         constexpr const char* TranslationUnitNode = "translation-unit";
-
-        // The keys of `root["a"]["b"]` and the root expression.
-        struct KeyPath {
-            // Keys from the root outwards; a key that is not a string literal is kept as `[source text]`.
-            std::vector<std::string> keys;
-            // The object the first operator[] is applied to.
-            const clang::Expr* root = nullptr;
-        };
-
-        // The `object[key]` call that e is, if it is one (sol2 tables and proxies overload operator[]).
-        const clang::CXXOperatorCallExpr* asSubscript(const clang::Expr* e) {
-            const auto* call = llvm::dyn_cast<clang::CXXOperatorCallExpr>(e->IgnoreImplicit());
-            if (call == nullptr || call->getOperator() != clang::OO_Subscript || call->getNumArgs() != 2) {
-                return nullptr;
-            }
-            return call;
-        }
-
-        // Qualified name of the class of type, or empty for non-class types.
-        std::string recordName(clang::QualType type) {
-            const clang::CXXRecordDecl* record = type.getNonReferenceType()->getAsCXXRecordDecl();
-            return record == nullptr ? std::string() : record->getQualifiedNameAsString();
-        }
-
-        // True for sol2 objects (state, state_view, table, proxy, usertype): plain maps are not Lua tables.
-        bool isSolObject(clang::QualType type) { return llvm::StringRef(recordName(type)).starts_with("sol::"); }
-
-        // True when the root is the Lua state or a script's environment (whose keys are that script's globals), so
-        // the keys name globals.
-        bool isLuaState(clang::QualType type) {
-            const std::string name = recordName(type);
-            return name == "sol::state" || name == "sol::state_view" || name == "sol::basic_environment";
-        }
-
-        // The code as written, for keys and roots that are not string literals.
-        std::string sourceText(const clang::Expr* e, const clang::ASTContext& context) {
-            const clang::CharSourceRange range = clang::CharSourceRange::getTokenRange(e->getSourceRange());
-            return clang::Lexer::getSourceText(range, context.getSourceManager(), context.getLangOpts()).str();
-        }
-
-        // A key path segment: the literal's text, or `[source text]` for computed keys.
-        std::string keyText(const clang::Expr* key, const clang::ASTContext& context) {
-            if (const auto* literal = llvm::dyn_cast<clang::StringLiteral>(key->IgnoreImplicit())) {
-                return literal->getString().str();
-            }
-            return "[" + sourceText(key, context) + "]";
-        }
-
-        // Splits the left side of an assignment into its keys and root.
-        KeyPath keyPathOf(const clang::Expr* target, const clang::ASTContext& context) {
-            KeyPath path;
-            const clang::Expr* object = target;
-            while (const clang::CXXOperatorCallExpr* subscript = asSubscript(object)) {
-                path.keys.push_back(keyText(subscript->getArg(1), context));
-                object = subscript->getArg(0)->IgnoreImplicit();
-            }
-            std::ranges::reverse(path.keys);
-            path.root = object;
-            return path;
-        }
-
-        // Qualified name of the function a call goes to, or empty.
-        std::string calleeName(const clang::CallExpr& call) {
-            const clang::FunctionDecl* callee = call.getDirectCallee();
-            return callee == nullptr ? std::string() : callee->getQualifiedNameAsString();
-        }
-
-        void addBound(const clang::Expr* e, std::vector<const clang::FunctionDecl*>& out);
-
-        // A function name binds that function; a local variable binds what it was initialized with
-        // (`auto spawn_tree = sol::overload(...); lua["spawn_tree"] = spawn_tree;`).
-        void addBoundReference(const clang::DeclRefExpr& reference, std::vector<const clang::FunctionDecl*>& out) {
-            if (const auto* function = llvm::dyn_cast<clang::FunctionDecl>(reference.getDecl())) {
-                out.push_back(function);
-            }
-            else if (const auto* variable = llvm::dyn_cast<clang::VarDecl>(reference.getDecl())) {
-                if (variable->isLocalVarDecl() && variable->getInit() != nullptr) {
-                    addBound(variable->getInit(), out);
-                }
-            }
-        }
-
-        // `lua.safe_script(...)` / `lua.script(...)`: a value computed by Lua code, here a function written in Lua.
-        bool isScriptResult(const clang::Expr* e) {
-            const auto* call = llvm::dyn_cast<clang::CXXMemberCallExpr>(e->IgnoreImplicit());
-            const clang::CXXMethodDecl* method = call == nullptr ? nullptr : call->getMethodDecl();
-            return method != nullptr && (method->getName() == "safe_script" || method->getName() == "script");
-        }
-
-        // sol::overload(a, b, ...) binds each argument; sol::resolve<Sig>(f) binds the overload Clang picked.
-        void addBoundCall(const clang::CallExpr& call, std::vector<const clang::FunctionDecl*>& out) {
-            const std::string name = calleeName(call);
-            if (name == "sol::overload") {
-                for (const clang::Expr* argument : call.arguments()) {
-                    addBound(argument, out);
-                }
-            }
-            else if (name == "sol::resolve" && call.getNumArgs() == 1) {
-                addBound(call.getArg(0), out);
-            }
-        }
-
-        // resolveBound (plan B1): the C++ functions value binds; none when value is not callable.
-        void addBound(const clang::Expr* e, std::vector<const clang::FunctionDecl*>& out) {
-            const clang::Expr* value = e->IgnoreImplicit()->IgnoreParenCasts();
-            if (const auto* lambda = llvm::dyn_cast<clang::LambdaExpr>(value)) {
-                out.push_back(lambda->getCallOperator());
-            }
-            else if (const auto* reference = llvm::dyn_cast<clang::DeclRefExpr>(value)) {
-                addBoundReference(*reference, out);
-            }
-            else if (const auto* address = llvm::dyn_cast<clang::UnaryOperator>(value)) {
-                if (address->getOpcode() == clang::UO_AddrOf) {
-                    addBound(address->getSubExpr(), out);
-                }
-            }
-            else if (const auto* call = llvm::dyn_cast<clang::CallExpr>(value)) {
-                addBoundCall(*call, out);
-            }
-        }
-
-        // Marks the trailing run of nullable Lua-visible parameters: sol2 passes nil for arguments left out.
-        void markOmittable(std::vector<Param>& params) {
-            for (auto it = params.rbegin(); it != params.rend(); ++it) {
-                if (it->type.hidden) {
-                    continue;
-                }
-                if (!it->type.nullable) {
-                    return;
-                }
-                it->omittable = true;
-            }
-        }
 
         // The doc-only Function for a commented-out binding.
         Function functionFromComment(const CommentedBinding& binding, const SourceLoc& loc) {
@@ -176,12 +44,16 @@ namespace dd {
                                 hasArgument(0, ignoringImplicit(cxxOperatorCallExpr(hasOverloadedOperatorName("[]")))))
                 .bind(AssignmentNode),
             this);
+        finder.addMatcher(cxxMemberCallExpr(callee(cxxMethodDecl(hasName("new_usertype")))).bind(UsertypeNode), this);
         finder.addMatcher(translationUnitDecl().bind(TranslationUnitNode), this);
     }
 
     void TableAssignmentCollector::run(const MatchFinder::MatchResult& result) {
         if (const auto* assignment = result.Nodes.getNodeAs<clang::CXXOperatorCallExpr>(AssignmentNode)) {
             addAssignment(*assignment, result);
+        }
+        else if (const auto* usertype = result.Nodes.getNodeAs<clang::CXXMemberCallExpr>(UsertypeNode)) {
+            addUsertype(*usertype, root_, *result.Context, out_);
         }
         else if (result.Nodes.getNodeAs<clang::TranslationUnitDecl>(TranslationUnitNode) != nullptr) {
             addCommentedBindings(*result.Context);
@@ -199,6 +71,9 @@ namespace dd {
         if (!loc) {
             return;
         }
+        if (path.keys.size() == 1 && addUsertypeMember(path, assignment, *loc, context)) {
+            return;
+        }
         std::string name = std::move(path.keys.back());
         path.keys.pop_back();
         BindingKey key{std::move(path.keys), std::move(name), *loc};
@@ -211,19 +86,34 @@ namespace dd {
         Function function{key.owner, key.luaName, root, key.loc, doc, {}, false, false, {}};
         const clang::Expr* value = assignment.getArg(1);
         if (!describeFunction(function, value, context)) {
-            const clang::QualType type = value->IgnoreImplicit()->getType();
+            const clang::QualType type = definitionOf(value).expr->getType();
             out_.values.emplace(key, Value{key.owner, key.luaName, root, key.loc, doc, classifyType(type, context)});
             return;
         }
         out_.functions.emplace(std::move(key), std::move(function));
     }
 
+    bool TableAssignmentCollector::addUsertypeMember(const KeyPath& path, const clang::CXXOperatorCallExpr& assignment,
+                                                     const SourceLoc& loc, const clang::ASTContext& context) {
+        const std::optional<clang::QualType> type = usertypeOf(path.root->getType());
+        if (!type) {
+            return false;
+        }
+        const clang::CXXRecordDecl* record = (*type)->getAsCXXRecordDecl();
+        Member member = describeMember(assignment.getArg(1), record, root_, context);
+        member.luaName = path.keys.front();
+        applyDocFallbacks(member, assignment.getBeginLoc(), record, context);
+        member.loc = loc;
+        member.doc = docBefore(assignment.getBeginLoc(), context);
+        out_.usertypes[usertypeKey(*type)].members.emplace(MemberKey{member.luaName, loc}, std::move(member));
+        return true;
+    }
+
     bool TableAssignmentCollector::describeFunction(Function& function, const clang::Expr* value,
                                                     const clang::ASTContext& context) const {
-        std::vector<const clang::FunctionDecl*> targets;
-        addBound(value, targets);
-        for (const clang::FunctionDecl* target : targets) {
-            function.overloads.push_back(signatureOf(*target, context));
+        const std::vector<BoundFunction> targets = boundFunctions(value);
+        for (const BoundFunction& target : targets) {
+            function.overloads.push_back(signatureOf(target, root_, context));
         }
         if (!targets.empty()) {
             return true;
@@ -256,25 +146,6 @@ namespace dd {
                 function.overloads = target->second->overloads;
             }
         }
-    }
-
-    FunctionSig TableAssignmentCollector::signatureOf(const clang::FunctionDecl& function,
-                                                      const clang::ASTContext& context) const {
-        FunctionSig sig;
-        for (const clang::ParmVarDecl* param : function.parameters()) {
-            sig.params.push_back({param->getNameAsString(), classifyType(param->getType(), context), false});
-        }
-        markOmittable(sig.params);
-        sig.returns = classifyReturns(function.getReturnType(), context);
-        const auto* method = llvm::dyn_cast<clang::CXXMethodDecl>(&function);
-        if (method != nullptr && method->getParent()->isLambda()) {
-            const std::optional<SourceLoc> loc = root_.locate(context.getSourceManager(), function.getLocation());
-            sig.cppTarget = loc ? "lambda at " + loc->file + ":" + std::to_string(loc->line) : "lambda";
-            return sig;
-        }
-        sig.cppTarget = function.getQualifiedNameAsString();
-        sig.doc = docOfDecl(function, context);
-        return sig;
     }
 
     void TableAssignmentCollector::addCommentedBinding(const CommentedBinding& binding, const SourceLoc& loc) {
