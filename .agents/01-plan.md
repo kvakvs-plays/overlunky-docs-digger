@@ -693,6 +693,11 @@ Generators checked (2026-11):
 - **LDoc / LuaLS doc export** from the DIG-6 files: generic output that loses the callback, event and
   group structure.
 
+Substeps (one commit each): **DIG-7a** type groups in the JSON (the page grouping a second generator would
+need too; schema version 3); **DIG-7b** the Starlight project, `site.bat` and the pages with links and
+examples; **DIG-7c** search weights, the old-anchor redirect, the checks (links, search samples, anchors,
+determinism) and the CI site job.
+
 Steps:
 
 - [ ] Confirm the choice with the overlunky maintainers, since the site replaces the published docs.
@@ -726,6 +731,11 @@ Steps:
       listed as an accepted difference.
 - [ ] keep the grouping of functions used in the old doc generator, and everything reasonably should be placed in
       those categories, or add missing catch-all category if necessary
+      DIG-7a: usertypes get `group` and `section` like functions (directive, then the `types` rules of
+      `config/groups.json` ported from `generate.py` `type_cats`, then the fallback `Generic types` /
+      `Non-Entity types`). A type rule can require a base (`requires_base`) before its other tests, which is how
+      `type_cats` writes `"Entity" in base and "Logical" in name`. `parity.py` runs the `type_cats` loop of
+      `generate.py`: all 527 old usertypes keep their section and group (25 groups).
 
 Definition of done:
 

@@ -46,5 +46,52 @@
     {"group": "Network functions", "name_contains": ["udp_", "http_"]},
     {"group": "Lighting functions", "name_contains": ["illuminati"]},
     {"group": "Sound functions", "name_contains": ["sound"]}
-  ]
+  ],
+  "types": {
+    "fallback": {"group": "Generic types", "section": "Non-Entity types"},
+    "rules": [
+      {"group": "Floor entities", "section": "Entity types", "bases_contain": ["Floor"], "names": ["Floor"]},
+      {
+        "group": "Monsters, Inc.", "section": "Entity types",
+        "bases_contain": ["PowerupCapable"], "names": ["PowerupCapable"]
+      },
+      {"group": "Movable entities", "section": "Entity types", "bases_contain": ["Movable"], "names": ["Movable"]},
+      {"group": "Logical entities", "section": "Entity types", "requires_base": ["Entity"], "name_contains": ["Logical"]},
+      {"group": "Background entities", "section": "Entity types", "requires_base": ["Entity"], "name_contains": ["BG"]},
+      {"group": "Effect entities", "section": "Entity types", "requires_base": ["Entity"], "name_contains": ["Effect"]},
+      {"group": "Generic entities", "section": "Entity types", "bases_contain": ["Entity"], "names": ["Entity"]},
+      {
+        "group": "Screen types", "section": "Non-Entity types", "bases_contain": ["Screen"],
+        "name_contains": ["Screen", "UI", "FlyingThing", "SaveRelated"]
+      },
+      {
+        "group": "Journal types", "section": "Non-Entity types",
+        "bases_contain": ["JournalPage"], "names": ["JournalPage"]
+      },
+      {"group": "Theme types", "section": "Non-Entity types", "name_contains": ["Theme"]},
+      {"group": "Callback context types", "section": "Non-Entity types", "name_contains": ["Context"]},
+      {"group": "Savegame types", "section": "Non-Entity types", "name_contains": ["SaveData", "Constellation"]},
+      {"group": "Arena types", "section": "Non-Entity types", "name_contains": ["Arena"]},
+      {"group": "Online types", "section": "Non-Entity types", "name_contains": ["Online"]},
+      {"group": "Liquid types", "section": "Non-Entity types", "name_contains": ["Liquid"]},
+      {"group": "Logic types", "section": "Non-Entity types", "name_contains": ["Logic"]},
+      {"group": "Lighting types", "section": "Non-Entity types", "name_contains": ["Light", "Illumination"]},
+      {
+        "group": "Entity related types", "section": "Non-Entity types",
+        "name_contains": ["Animation", "EntityDB", "Inventory", "Ai"]
+      },
+      {
+        "group": "State types", "section": "Non-Entity types",
+        "name_contains": [
+          "StateMemory", "Items", "GameManager", "GameProps", "Camera", "QuestsInfo", "PlayerSlot",
+          "JournalProgressStickerSlot", "JournalProgressStainSlot"
+        ]
+      },
+      {"group": "Input types", "section": "Non-Entity types", "name_contains": ["Gamepad", "ImGuiIO", "Input"]},
+      {"group": "Texture types", "section": "Non-Entity types", "name_contains": ["Texture", "Rendering"]},
+      {"group": "Particle types", "section": "Non-Entity types", "name_contains": ["Particle"]},
+      {"group": "Levelgen types", "section": "Non-Entity types", "name_contains": ["DoorCoords", "LevelGen"]},
+      {"group": "Sound types", "section": "Non-Entity types", "name_contains": ["Sound"]}
+    ]
+  }
 }

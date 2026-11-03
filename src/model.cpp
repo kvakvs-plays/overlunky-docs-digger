@@ -251,6 +251,10 @@ namespace dd {
         if (usertype.noConstructor) {
             object["no_constructor"] = true;
         }
+        object["group"] = usertype.group;
+        if (!usertype.section.empty()) {
+            object["section"] = usertype.section;
+        }
         object["members"] = arrayOfValues(usertype.members);
         return object;
     }

@@ -228,8 +228,237 @@
   ],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 2,
+  "schema_version": 3,
   "script_callbacks": [],
-  "usertypes": [],
+  "usertypes": [
+    {
+      "cpp": "Entity",
+      "doc": [
+        "The root of the hierarchy: matched by its whole name."
+      ],
+      "group": "Generic entities",
+      "members": [
+        {
+          "doc": [
+            "The root of the hierarchy: matched by its whole name."
+          ],
+          "kind": "field",
+          "name": "uid",
+          "source": {
+            "column": 40,
+            "file": "groups.cpp",
+            "line": 77
+          },
+          "type": {
+            "kind": "int",
+            "lua": "integer",
+            "spelling": "int"
+          }
+        }
+      ],
+      "name": "Entity",
+      "section": "Entity types",
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 77
+      }
+    },
+    {
+      "bases": [
+        "Entity"
+      ],
+      "cpp": "Floor",
+      "doc": [
+        "Floor comes first in the rules, so it wins over the Entity base."
+      ],
+      "group": "Floor entities",
+      "members": [
+        {
+          "doc": [
+            "Floor comes first in the rules, so it wins over the Entity base."
+          ],
+          "kind": "field",
+          "name": "deco",
+          "source": {
+            "column": 38,
+            "file": "groups.cpp",
+            "line": 81
+          },
+          "type": {
+            "kind": "int",
+            "lua": "integer",
+            "spelling": "int"
+          }
+        }
+      ],
+      "name": "Floor",
+      "section": "Entity types",
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 81
+      }
+    },
+    {
+      "bases": [
+        "Entity"
+      ],
+      "cpp": "LogicalDoor",
+      "doc": [
+        "Has the base the Logical rule requires."
+      ],
+      "group": "Logical entities",
+      "members": [
+        {
+          "doc": [
+            "Has the base the Logical rule requires."
+          ],
+          "kind": "field",
+          "name": "target",
+          "source": {
+            "column": 50,
+            "file": "groups.cpp",
+            "line": 83
+          },
+          "type": {
+            "kind": "int",
+            "lua": "integer",
+            "spelling": "int"
+          }
+        }
+      ],
+      "name": "LogicalDoor",
+      "section": "Entity types",
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 83
+      }
+    },
+    {
+      "cpp": "LogicalSettings",
+      "doc": [
+        "Logical in the name but no Entity base: the rule does not apply."
+      ],
+      "group": "Generic types",
+      "members": [
+        {
+          "doc": [
+            "Logical in the name but no Entity base: the rule does not apply."
+          ],
+          "kind": "field",
+          "name": "flags",
+          "source": {
+            "column": 58,
+            "file": "groups.cpp",
+            "line": 85
+          },
+          "type": {
+            "kind": "int",
+            "lua": "integer",
+            "spelling": "int"
+          }
+        }
+      ],
+      "name": "LogicalSettings",
+      "section": "Non-Entity types",
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 85
+      }
+    },
+    {
+      "bases": [
+        "Entity"
+      ],
+      "cpp": "Movable",
+      "doc": [
+        "Matched by a base."
+      ],
+      "group": "Generic entities",
+      "members": [
+        {
+          "doc": [
+            "Matched by a base."
+          ],
+          "kind": "field",
+          "name": "x",
+          "source": {
+            "column": 42,
+            "file": "groups.cpp",
+            "line": 79
+          },
+          "type": {
+            "kind": "float",
+            "lua": "number",
+            "spelling": "float"
+          }
+        }
+      ],
+      "name": "Movable",
+      "section": "Entity types",
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 79
+      }
+    },
+    {
+      "cpp": "Odd",
+      "group": "Odd types",
+      "members": [
+        {
+          "kind": "field",
+          "name": "value",
+          "source": {
+            "column": 34,
+            "file": "groups.cpp",
+            "line": 87
+          },
+          "type": {
+            "kind": "int",
+            "lua": "integer",
+            "spelling": "int"
+          }
+        }
+      ],
+      "name": "Odd",
+      "section": "Odd section",
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 87
+      }
+    },
+    {
+      "cpp": "Plain",
+      "group": "Generic types",
+      "members": [
+        {
+          "kind": "field",
+          "name": "value",
+          "source": {
+            "column": 38,
+            "file": "groups.cpp",
+            "line": 88
+          },
+          "type": {
+            "kind": "int",
+            "lua": "integer",
+            "spelling": "int"
+          }
+        }
+      ],
+      "name": "Plain",
+      "section": "Non-Entity types",
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 88
+      }
+    }
+  ],
   "values": []
 }

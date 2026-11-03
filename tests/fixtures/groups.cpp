@@ -40,3 +40,50 @@ void register_groups(sol::state& lua)
 
     register_patches(lua);
 }
+
+// DIG-7 type groups: rules on C++ bases and Lua names, a rule that needs a base, the directive and the fallback.
+struct Entity
+{
+    int uid;
+};
+struct Movable : Entity
+{
+    float x;
+};
+struct Floor : Entity
+{
+    int deco;
+};
+struct LogicalDoor : Entity
+{
+    int target;
+};
+struct LogicalSettings
+{
+    int flags;
+};
+struct Odd
+{
+    int value;
+};
+struct Plain
+{
+    int value;
+};
+
+void register_group_types(sol::state& lua)
+{
+    /// The root of the hierarchy: matched by its whole name.
+    lua.new_usertype<Entity>("Entity", "uid", &Entity::uid);
+    /// Matched by a base.
+    lua.new_usertype<Movable>("Movable", "x", &Movable::x, sol::base_classes, sol::bases<Entity>());
+    /// Floor comes first in the rules, so it wins over the Entity base.
+    lua.new_usertype<Floor>("Floor", "deco", &Floor::deco, sol::base_classes, sol::bases<Entity>());
+    /// Has the base the Logical rule requires.
+    lua.new_usertype<LogicalDoor>("LogicalDoor", "target", &LogicalDoor::target, sol::base_classes, sol::bases<Entity>());
+    /// Logical in the name but no Entity base: the rule does not apply.
+    lua.new_usertype<LogicalSettings>("LogicalSettings", "flags", &LogicalSettings::flags);
+    /// Group: Odd types
+    lua.new_usertype<Odd>("Odd", "value", &Odd::value);
+    lua.new_usertype<Plain>("Plain", "value", &Plain::value);
+}

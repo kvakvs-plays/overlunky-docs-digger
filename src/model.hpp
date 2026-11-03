@@ -17,7 +17,7 @@ namespace dd {
 
     // Version of the JSON output (schema/docs-digger.schema.json): raised with every change to its fields, so readers
     // can refuse output they do not know.
-    constexpr int SchemaVersion = 2;
+    constexpr int SchemaVersion = 3;
 
     // Where an extracted entity is written, so readers can jump to the binding and outputs stay comparable.
     struct SourceLoc {
@@ -306,6 +306,11 @@ namespace dd {
         bool noConstructor = false;
         // All members, from the new_usertype arguments, `ut["k"] = v` and `lua["Name"]["k"] = v`.
         std::map<MemberKey, Member> members;
+        // Documentation group the type is listed under (`Floor entities`), chosen once every translation unit is
+        // parsed (groups.hpp).
+        std::string group;
+        // The part of the documentation that holds the group (`Entity types`); empty without a groups file.
+        std::string section;
     };
 
     // Where an enum value is known from.

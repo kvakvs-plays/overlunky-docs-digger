@@ -4,5 +4,14 @@
     {"group": "Spawn functions", "name_contains": ["spawn"]},
     {"group": "Entity functions", "name_contains": ["entity"], "names": ["door"]},
     {"group": "Game patching functions", "file_contains": ["groups_patches.hpp"]}
-  ]
+  ],
+  "types": {
+    "fallback": {"group": "Generic types", "section": "Non-Entity types"},
+    "rules": [
+      {"group": "Floor entities", "section": "Entity types", "bases_contain": ["Floor"], "names": ["Floor"]},
+      {"group": "Logical entities", "section": "Entity types", "requires_base": ["Entity"], "name_contains": ["Logical"]},
+      {"group": "Generic entities", "section": "Entity types", "bases_contain": ["Entity"], "names": ["Entity"]},
+      {"group": "Odd types", "section": "Odd section", "names": []}
+    ]
+  }
 }

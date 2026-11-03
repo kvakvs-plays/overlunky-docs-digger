@@ -5,11 +5,12 @@
   "functions": [],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 2,
+  "schema_version": 3,
   "script_callbacks": [],
   "usertypes": [
     {
       "cpp": "Entity",
+      "group": "vtables",
       "members": [
         {
           "kind": "method",
@@ -841,6 +842,7 @@
         "Entity"
       ],
       "cpp": "Movable",
+      "group": "vtables",
       "members": [
         {
           "kind": "method",

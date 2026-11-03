@@ -73,10 +73,10 @@ field and enum value has a description there, and no other fields exist. In shor
 
 | Field | Contents |
 |---|---|
-| `schema_version` | Version of the format; raised with every change to fields or their meaning. Currently 2. |
+| `schema_version` | Version of the format; raised with every change to fields or their meaning. Currently 3. |
 | `functions` | Lua functions: name, owner table, `group`, doc and directives, overloads with typed params and returns. |
 | `values` | Lua values that are not functions (`players`, `state`), with their C++ type. |
-| `usertypes` | `new_usertype<T>` types: bases, constructors, members (fields, properties, methods, vtable hooks). |
+| `usertypes` | `new_usertype<T>` types: `group` and `section`, bases, constructors, members (fields, properties, methods, vtable hooks). |
 | `enums` | Constant tables, values from the code, commented-out examples and the runtime enum dump. |
 | `aliases` | Typedef names Lua-visible types are written with. |
 | `libraries` | `open_libraries(...)` calls. |
@@ -120,7 +120,7 @@ by an enum value (`set_callback(cb, ON.X)`, `CustomTheme:override`) get one `---
 as a literal type, so the callback's parameters are typed for the event passed. These overloads leave the callback's
 return type out: lua-language-server only selects an overload by a function argument when its `fun` type has none.
 
-### Function groups
+### Function and type groups
 
 Every function has a `group`, the documentation section it is listed in. The first of these decides:
 
@@ -145,6 +145,23 @@ of its tests does:
 
 `name_contains` and `file_contains` are substrings of the Lua name and of the source path relative to `--root`;
 `names` are whole Lua names.
+
+Every usertype gets a `group` and a `section` the same way (directive, rules, fallback, file name) from the `types`
+object of the file, ported from `type_cats` in `generate.py`. A type rule applies only when one of the C++ bases
+contains a `requires_base` substring (if any are given), and then matches when any of its tests does:
+
+```json
+"types": {
+  "fallback": {"group": "Generic types", "section": "Non-Entity types"},
+  "rules": [
+    {"group": "Floor entities", "section": "Entity types", "bases_contain": ["Floor"], "names": ["Floor"]},
+    {"group": "Logical entities", "section": "Entity types", "requires_base": ["Entity"], "name_contains": ["Logical"]}
+  ]
+}
+```
+
+`bases_contain` are substrings of a C++ base from `sol::bases<...>`. Generators use the groups for page grouping, so
+another generator gets the same structure without its own rules.
 
 ## Tests
 

@@ -10,7 +10,7 @@
   "properties": {
     "schema_version": {
       "description": "Version of this schema. Raised with every change to the fields or their meaning.",
-      "const": 2
+      "const": 3
     },
     "functions": {
       "description": "Lua functions bound with `root[\"a\"][\"name\"] = <callable>` or documented by a commented-out binding, ordered by owner, name and source.",
@@ -207,7 +207,7 @@
     },
     "Usertype": {
       "description": "A C++ type exposed to Lua.",
-      "type": "object", "additionalProperties": false, "required": ["name", "cpp", "source", "members"],
+      "type": "object", "additionalProperties": false, "required": ["name", "cpp", "source", "group", "members"],
       "properties": {
         "name": {"description": "Name in Lua.", "type": "string"},
         "cpp": {"description": "C++ type as written in `new_usertype<T>`.", "type": "string"},
@@ -219,6 +219,14 @@
         "bases": {"description": "C++ base classes from `sol::bases<...>`, as written.", "type": "array", "items": {"type": "string"}},
         "constructors": {"description": "From `sol::constructors<...>` or `\"new\", sol::initializers(...)`.", "type": "array", "items": {"$ref": "#/$defs/Signature"}},
         "no_constructor": {"description": "`sol::no_constructor`: Lua cannot create it.", "type": "boolean"},
+        "group": {
+          "description": "Documentation group the type is listed under: the `/// Group: <name>` directive, else the first matching type rule of --groups (config/groups.json `types`), else that file's type fallback, else the source file name without `_lua`.",
+          "type": "string"
+        },
+        "section": {
+          "description": "Part of the documentation that holds the group (`Entity types`), from the same rule or fallback; left out when it gives none.",
+          "type": "string"
+        },
         "members": {"description": "Members from the `new_usertype` arguments, `ut[\"k\"] = v`, `lua[\"Name\"][\"k\"] = v` and vtable hooks, ordered by name and source.", "type": "array", "items": {"$ref": "#/$defs/Member"}}
       }
     },

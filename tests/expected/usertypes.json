@@ -39,11 +39,12 @@
   ],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 2,
+  "schema_version": 3,
   "script_callbacks": [],
   "usertypes": [
     {
       "cpp": "Box",
+      "group": "usertypes",
       "members": [
         {
           "cpp_doc": [
@@ -177,6 +178,7 @@
       "doc": [
         "A color in the 0..1 range."
       ],
+      "group": "usertypes",
       "members": [
         {
           "kind": "method",
@@ -330,6 +332,7 @@
     },
     {
       "cpp": "Crowd",
+      "group": "usertypes",
       "members": [
         {
           "kind": "method",
@@ -404,6 +407,7 @@
       "cpp_doc": [
         "Base of everything in a level."
       ],
+      "group": "usertypes",
       "members": [
         {
           "doc": [
@@ -605,6 +609,7 @@
     },
     {
       "cpp": "Items",
+      "group": "usertypes",
       "members": [
         {
           "cpp_doc": [
@@ -798,6 +803,7 @@
         "Entity"
       ],
       "cpp": "Movable",
+      "group": "usertypes",
       "members": [
         {
           "getter": {
@@ -997,6 +1003,7 @@
         }
       ],
       "cpp": "Particle",
+      "group": "usertypes",
       "members": [
         {
           "cpp_doc": [
@@ -1112,6 +1119,7 @@
         }
       ],
       "cpp": "Torch",
+      "group": "usertypes",
       "members": [
         {
           "kind": "field",

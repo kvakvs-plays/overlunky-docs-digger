@@ -120,7 +120,8 @@ namespace dd {
                 field("luaName", &Usertype::luaName), field("cppType", &Usertype::cppType),
                 field("loc", &Usertype::loc), field("doc", &Usertype::doc), field("declDoc", &Usertype::declDoc),
                 field("bases", &Usertype::bases), field("constructors", &Usertype::constructors),
-                field("noConstructor", &Usertype::noConstructor), field("members", &Usertype::members));
+                field("noConstructor", &Usertype::noConstructor), field("members", &Usertype::members),
+                field("group", &Usertype::group), field("section", &Usertype::section));
         };
         template <>
         struct Fields<EnumValue> {

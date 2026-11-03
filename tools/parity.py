@@ -82,7 +82,7 @@ COVERAGE = [
     ('P11', 'libraries'),
     ('P12', 'aliases and their types'),
     ('P13', 'global variables against not_functions'),
-    ('P14', 'function groups against generate.py func_cats'),
+    ('P14', 'function groups against generate.py func_cats, usertype groups and sections against its type_cats'),
     ('P15', 'callback report: origins, unresolved callbacks, conflicts with the prose'),
     ('P16', 'not compared: the C++ to Lua type names are applied by the output stage'),
 ]
@@ -114,6 +114,16 @@ def old_groups(overlunky_root, ps):
     scope = {'ps': ps}
     exec(text[text.index('func_cats = dict()'):text.index('for cat in sorted(func_cats):')], scope)
     return {func['name']: group for group, funcs in scope['func_cats'].items() for func in funcs}
+
+
+def old_type_groups(overlunky_root, ps):
+    """The (section, group) generate.py gives each old usertype, by name: its type_cats loop runs alone on ps.types."""
+    with open(os.path.join(overlunky_root, 'docs', 'generate.py'), encoding='utf-8') as f:
+        text = f.read()
+    scope = {'ps': ps}
+    exec(text[text.index('type_cats = dict()'):text.index('for type_cat in type_cats:')], scope)
+    return {t['name']: (section, group) for section, groups in scope['type_cats'].items()
+            for group, types in groups.items() for t in types}
 
 
 def count_params(ps, param_text):
@@ -420,6 +430,14 @@ def check_groups(report, groups, globals_by_name):
             report.add(name, f'group: old {old}, digger {new}')
 
 
+def check_type_groups(report, type_groups, digger):
+    """P14 for types: every old usertype the digger has keeps its generate.py section and group."""
+    by_name = {u['name']: (u.get('section', ''), u['group']) for u in digger['usertypes']}
+    for name, old in sorted(type_groups.items()):
+        if name in by_name and by_name[name] != old:
+            report.add(name, f'type group: old {old}, digger {by_name[name]}')
+
+
 def check_vtable_hooks(report, ps, digger):
     """P7: every old set_pre_ / set_post_ member exists without NoDoc, and every documented digger hook is old."""
     by_name = {u['name']: u for u in digger['usertypes']}
@@ -593,6 +611,8 @@ def main():
     check_vtable_hooks(report, ps, digger)
     groups = old_groups(overlunky_root, ps)
     check_groups(report, groups, globals_by_name)
+    type_groups = old_type_groups(overlunky_root, ps)
+    check_type_groups(report, type_groups, digger)
     callbacks = callback_report(report, digger)
     lua_lines = check_lua_files(report, overlunky_root, lua_dir) if lua_dir else []
 
@@ -610,6 +630,7 @@ def main():
           f'{len(digger["aliases"])} aliases, {len(digger["script_callbacks"])} script callbacks')
     print(f'global variables: {digger["global_variables"]}')
     print(f'groups: {len(groups)} old functions in {len(set(groups.values()))} groups compared')
+    print(f'type groups: {len(type_groups)} old usertypes in {len(set(type_groups.values()))} groups compared')
     for line in lua_lines:
         print(line)
     print(f'doc-only functions (text signatures, kinds not classified): {doc_only}')
