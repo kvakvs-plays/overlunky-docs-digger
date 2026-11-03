@@ -14,8 +14,9 @@ regexes can't see, mainly:
 - Old docs parser location for reference: `..\Playlunky\submodules\overlunky\docs\`
 - Source files root is `..\Playlunky\`
 
-This plan covers **data extraction only**. The output format and rendering will be decided later.
-The extracted data just has to carry every detail the current generator has, plus the new ones.
+DIG-0 to DIG-5 cover **data extraction**: the extracted data has to carry every detail the current
+generator has, plus the new ones. DIG-6 and DIG-7 turn it into the two outputs that replace
+`generate_emmylua.py` and `generate.py` + Slate: LuaLS definition files and an HTML reference with search.
 
 - Guiding rule: **write as little code as possible.** Use Clang LibTooling, AST matchers and LLVM's
   support libraries for everything they can do. Write custom code only for the sol2-specific binding
@@ -168,6 +169,10 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   src/usertypes.cpp       B2: new_usertype arguments, members, constructors, bases, member docs
   src/callbacks.cpp       passes C2-C6 and the AST part of C5 (parameter flows, dispatch sites, keys, vtable hooks)
   src/callback_join.cpp   callback steps after all TUs, no AST: C1, joins, events, vtable members, C7 prose
+  src/lua_names.cpp       DIG-6: Lua spelling of every TypeInfo (P16, rules in config/lua_types.json)
+  src/emit_lua.cpp        DIG-6: LuaLS definition files (---@meta), split under the size limit
+  src/html/starlight/     DIG-7: Astro Starlight project that renders the JSON; site.bat builds it.
+                          Self-contained, so another generator can sit next to it (src/html/<name>/)
   tests/fixtures/*.cpp    small sources using the real sol2 headers from <overlunky>/src/sol2
   tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
   tests/RunGolden.cmake   runs one fixture and compares; DD_UPDATE_GOLDEN=1 rewrites the golden file
@@ -514,8 +519,114 @@ Definition of done:
 - [ ] The CI job passes on a real overlunky checkout and its artifact can be downloaded.
 - [ ] The schema document is committed and matches the output.
 
-**After DIG-5:** discuss the output and rendering (richer docs, Lua type stubs, and so on). This is
-out of scope here.
+### DIG-6. Lua names and LuaLS definition files (P16)
+
+Replaces `generate_emmylua.py` (`docs/game_data/spel2.lua`). That file is 574 KB: classes and
+functions take about 445 KB, enums about 130 KB (ENT_TYPE alone 32 KB). It is over the 500 KB default
+of LuaLS `Lua.workspace.preloadFileSize`, so the VS Code Lua extension skips it unless the user raises
+the setting.
+
+- [ ] Lua naming (P16) as a step after all TUs: port the `replace_table` rules to
+  `config/lua_types.json` and add a `lua` spelling to every TypeInfo in the JSON, so DIG-7 uses the same
+  names. Built from the type facts, not by string replacement: integers to `integer`, floats to
+  `number`, nullable to `T?`, containers to `T[]` / `table<K, V>`, tuples to several returns,
+  `std::function` and CallbackSig to `fun(a: A, ...): R`, `sol::object` to `any`, variadic to `...`;
+  hidden params are dropped. Pure mapping logic gets GoogleTest unit tests.
+- [ ] `src/emit_lua.cpp` (`--lua-out <dir>`) writes `---@meta` files with LuaLS annotations:
+  - globals and global variables as `---@type`;
+  - functions with `---@param name type? doc`, `---@return type doc` (nil meaning in the text),
+    `---@overload fun(...)` for further overloads, `---@deprecated`, doc text, a callback param typed
+    as `fun(...)`;
+  - usertypes as `---@class Name : Base` with `---@field`; methods as `function Name:m()` when `self`
+    is implicit or the first param; constructors as `Name.new`; vtable hooks `set_pre_*` /
+    `set_post_*` with their typed callbacks;
+  - enums as `---@enum NAME` tables with their values; aliases as `---@alias`; libraries;
+  - `/// NoDoc` items left out.
+- [ ] Event callbacks (`set_callback(cb, ON.X)`, `CustomTheme:override`): decide in the step how to
+  type them so LuaLS shows the per-event signature. Try `---@overload` per event with a literal value
+  type in VS Code; if LuaLS cannot tell enum values apart, keep the generic signature and list the
+  per-event signatures in the doc text.
+- [ ] Split: whole declarations go into files by kind (`spel2.lua` for globals, functions, aliases and
+  libraries; `spel2_types.lua`; `spel2_enums.lua`). A file that would go over the limit
+  (`--lua-max-file-size`, default 480,000 bytes, a margin under 500 KB) continues in `_2`, `_3`, cut at
+  group (types: name) boundaries in a stable order. Each file stands on its own (`---@meta`, no
+  `require`). Expected: 3 to 4 files.
+- [ ] Tests: a golden `.lua` output for the existing fixtures plus one that crosses a small size
+  limit; a CTest that runs `luacheck` (config `tests/.luacheckrc` for definition files) over the golden
+  outputs, skipped with a message when luacheck is not found. If `lua-language-server` is installed,
+  `--check` on the real output in `dig.bat` reports annotation errors (optional, not a CTest).
+- [ ] `tools/parity.py`: every class, field, function and enum value declared in the old `spel2.lua`
+  is in the new files, or listed as an accepted difference.
+
+Definition of done:
+
+- [ ] Every output file is under the limit, and luacheck reports nothing on the real overlunky output.
+- [ ] In VS Code with the Lua extension at default settings, all files load; hover shows docs and the
+  params of a callback (`set_callback`, `set_pre_damage`) are typed.
+- [ ] The parity report for the Lua files has no unexplained gaps.
+
+### DIG-7. HTML reference with search
+
+Replaces `generate.py` + Slate. Today Slate (Ruby) builds one 1.7 MB page from generated Markdown;
+search is the browser's in-page find, and examples come from `docs/examples/<name>.md`.
+
+Generators checked (2026-11):
+
+- **Astro Starlight (chosen).** Full-text search with Pagefind built in: a static, chunked index that
+  loads only the parts a query needs, so it works on large sites with no server. Also has light/dark
+  themes, sidebar navigation and code highlighting (Expressive Code). Pages can be generated straight
+  from the digger JSON (Astro content collections with the `file()` loader, rendered by components),
+  with no Markdown in between. Costs a Node toolchain (pinned with a lockfile).
+- **Zensical** (successor of Material for MkDocs, same team; Python, reads `mkdocs.yml`): the fallback
+  if Node is unwanted. It is young and lacks full feature parity. Material for MkDocs itself is in
+  maintenance mode since November 2025: not for new work.
+- **VitePress**: built-in local search (MiniSearch) loads the whole index in the browser; fewer
+  reference-doc features than Starlight.
+- **Docusaurus**: heavier; search needs Algolia DocSearch (hosted) or a community plugin.
+- **Own templates + standalone Pagefind**: the fewest dependencies, but we would write and maintain the
+  theme and navigation ourselves.
+- **LDoc / LuaLS doc export** from the DIG-6 files: generic output that loses the callback, event and
+  group structure.
+
+Steps:
+
+- [ ] Confirm the choice with the overlunky maintainers, since the site replaces the published docs.
+- [ ] Isolation: the whole Starlight project (`package.json`, lockfile, config, components, styles,
+  the redirect script) lives in `src/html/starlight/`, so the generator can later be swapped or made
+  switchable (`src/html/<name>/`). Its only inputs are the digger JSON and `docs/examples/`; nothing
+  outside the directory includes or depends on it, and the C++ build doesn't touch it. Anything a
+  second generator would need too (page grouping, the old-anchor map, the sample symbol list for
+  the checks) is written by the digger or kept as plain data outside the directory, not in Astro code.
+- [ ] `src/html/starlight/` with pinned versions and a lockfile; `site.bat [generator] <json>` (default
+  `starlight`) runs that generator's build (`npm ci` and `astro build`), output under
+  `build/site/<generator>`. Node is a host requirement in `README.md`. Downloads stay under
+  `thirdparty/` as for every other tool: `site.bat` installs the packages into
+  `thirdparty/node-<generator>/` and links `node_modules` there (directory junction, git-ignored). The clang-format, Lizard and
+  clang-tidy gate covers C++ only; `quality.bat` must skip this directory.
+- [ ] Pages: home (ported text of `_home.md`), global variables, one page per function group, one per
+  usertype (grouped in the sidebar the way `generate.py` groups types), enums, events (`ON`,
+  `THEME_OVERRIDE`, each with its callback signature), casting, aliases. A function shows its Lua
+  signature (DIG-6 names), params with type, optional and callback signature, returns with the nil
+  meaning, deprecated and doc-only marks, a link to the source line on GitHub, and its example from
+  `docs/examples/`.
+- [ ] Search: symbol names weigh more than prose (`data-pagefind-weight` / meta), so typing a function,
+  type or enum value name finds it first; enum values (thousands in ENT_TYPE) are searchable.
+- [ ] Links: every type name in a signature links to its page; usertypes show base classes and derived
+  types.
+- [ ] Old links: the old single-page anchors (`index.html#spawn_entity`) still work through a small
+  redirect script that maps anchor ids to the new pages.
+- [ ] CI: a site job takes the JSON artifact of the DIG-5 Windows job, builds the site and deploys it
+  (GitHub Pages). Replacing the Slate job is decided together with the maintainers.
+- [ ] `tools/parity.py`: every anchor of the old `index.html` maps to a page of the new site, or is
+  listed as an accepted difference.
+
+Definition of done:
+
+- [ ] The site builds without warnings, and a link check finds no broken internal links.
+- [ ] For a sample list of symbols (functions, members, enum values, events), search shows the symbol
+  as the first result.
+- [ ] Old anchor links from the sample list land on the right item.
+- [ ] Building twice from the same JSON gives the same pages.
 
 
 
