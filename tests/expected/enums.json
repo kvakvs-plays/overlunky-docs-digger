@@ -125,6 +125,40 @@
       ]
     },
     {
+      "name": "DROP",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 150
+      },
+      "values": [
+        {
+          "doc": [
+            "see [drops.cpp](https://github.com/spelunky-fyi/overlunky/blob/main/src/game_api/drops.cpp) for a list of possible drops"
+          ],
+          "name": "",
+          "origin": "doc_comment",
+          "source": {
+            "column": 28,
+            "file": "enums.cpp",
+            "line": 152
+          },
+          "text": "...see__[drops.cpp](https://github.com/spelunky-fyi/overlunky/blob/main/src/game_api/drops.cpp\\]__for__a__list__of__possible__drops..."
+        },
+        {
+          "name": "ALTAR_DICE_CLIMBINGGLOVES",
+          "origin": "doc_comment",
+          "source": {
+            "column": 28,
+            "file": "enums.cpp",
+            "line": 151
+          },
+          "text": "0",
+          "value": 0
+        }
+      ]
+    },
+    {
       "doc": [
         "Entity types, filled from the game's database"
       ],
@@ -137,6 +171,9 @@
       },
       "values": [
         {
+          "doc": [
+            "check [entities.txt](game_data/entities.txt)"
+          ],
           "name": "",
           "origin": "doc_comment",
           "source": {
@@ -576,7 +613,7 @@
       }
     }
   ],
-  "schema_version": 4,
+  "schema_version": 5,
   "script_callbacks": [
     {
       "doc": [

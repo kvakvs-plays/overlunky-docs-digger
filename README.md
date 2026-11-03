@@ -114,7 +114,8 @@ are typed as `fun(...)` with the callback's arguments and returns, and the meani
 description. `/// NoDoc` items are left out; a NoDoc usertype that documented members return stays as a class without
 members. `--lua-prelude <file>` adds hand-written declarations (`config/lua_prelude.lua`: `json`, `inspect`, the
 `Meta` class); a global or function it declares replaces the generated one. `--lua-doc-url <url>` makes the
-`(#anchor)` links in doc comments absolute.
+`(#anchor)` and relative (`(game_data/textures.txt)`) links in doc comments absolute, as they were relative to the old
+docs page.
 
 Enum tables of bit flags (values written as `1 << n`, or powers of two) are marked `flags` in the JSON, each value
 with its `bit` or the single-bit keys it `combines`; the Lua files and the site list them by bit, in hex. With

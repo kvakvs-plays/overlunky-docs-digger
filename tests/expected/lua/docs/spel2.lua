@@ -36,6 +36,11 @@ function get_entity(uid) end
 ---@return integer
 function get_player_count() end
 
+---Like [convert_id](#convert_id), see [textures.txt](game_data/textures.txt) or [the wiki](https://example.com/wiki).
+---@param id integer
+---@return integer
+function linked(id) end
+
 ---Use `documented` instead.
 ---@deprecated
 ---@param depth integer

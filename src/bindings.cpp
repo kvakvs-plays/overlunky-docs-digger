@@ -252,6 +252,9 @@ namespace dd {
             entry.luaName = pair.luaName;
             entry.text = pair.text;
             entry.origin = EnumValueOrigin::DocComment;
+            if (entry.luaName.empty()) {
+                entry.doc.lines = {hintMarkdown(pair.text)};
+            }
             entry.loc = root_.locate(context.getSourceManager(), pair.loc).value_or(table.loc);
             if (long long number = 0; !llvm::StringRef(pair.text).getAsInteger(0, number)) {
                 entry.number = number;

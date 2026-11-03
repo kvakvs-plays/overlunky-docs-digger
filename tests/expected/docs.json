@@ -220,6 +220,40 @@
       }
     },
     {
+      "doc": [
+        "Like [convert_id](#convert_id), see [textures.txt](game_data/textures.txt) or [the wiki](https://example.com/wiki)."
+      ],
+      "group": "docs",
+      "name": "linked",
+      "overloads": [
+        {
+          "cpp": "lambda at docs.cpp:65",
+          "params": [
+            {
+              "name": "id",
+              "type": {
+                "kind": "int",
+                "lua": "integer",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "lua": "integer",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "docs.cpp",
+        "line": 65
+      }
+    },
+    {
       "deprecated": true,
       "doc": [
         "Use `documented` instead."
@@ -281,7 +315,7 @@
     "options"
   ],
   "libraries": [],
-  "schema_version": 4,
+  "schema_version": 5,
   "script_callbacks": [],
   "usertypes": [],
   "values": [

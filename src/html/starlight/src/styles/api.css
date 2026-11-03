@@ -1,6 +1,14 @@
 /* API entries: signatures, parameter lists, marks and the value tables. Colours come from Starlight's tokens, so
    light and dark themes both work. */
 
+/* The content uses all the width between the side panels: signatures and value tables are wide. Starlight sizes the
+   main pane as min(free space, content width + half the rest), so a content width above any screen fills it; the
+   `html:not(...)` part also covers pages without a sidebar, which Starlight sets to 67.5rem. */
+:root,
+html:not([data-has-sidebar]) {
+    --sl-content-width: 1000rem;
+}
+
 .dd-entry {
     border-top: 1px solid var(--sl-color-hairline);
     padding-top: 0.5rem;

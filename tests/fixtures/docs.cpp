@@ -56,3 +56,12 @@ void register_hinted(sol::state& lua)
                                       [](float id)
                                       { return id + 1.0f; });
 }
+
+// Links in docs: an old single-page anchor and a path relative to that page become absolute with --lua-doc-url; a full
+// URL stays.
+void register_linked(sol::state& lua)
+{
+    /// Like [convert_id](#convert_id), see [textures.txt](game_data/textures.txt) or [the wiki](https://example.com/wiki).
+    lua["linked"] = [](int id)
+    { return id; };
+}

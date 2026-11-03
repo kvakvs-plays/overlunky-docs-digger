@@ -1,6 +1,6 @@
 // HTML pieces built from the JSON: Lua types with links, signatures and doc text. Pages put them in with set:html.
 import {markdownToHtml} from 'satteri';
-import {resolveAnchor, slug, symbols, url} from './api.mjs';
+import {docsUrl, resolveAnchor, slug, symbols, url} from './api.mjs';
 
 // Text for HTML.
 export const escape = (text) =>
@@ -74,14 +74,18 @@ export const textHeadings = (text) =>
     textSections(text).sections.map((s) => ({depth: 2, slug: slug(s.title), text: s.title}));
 
 // Markdown as HTML; old single-page links (`(#spawn)`) point at the pages that have those items now. A link to an
-// anchor nothing has stays as its text (astro.config.mjs lists those at the end of the build).
+// anchor nothing has stays as its text (astro.config.mjs lists those at the end of the build). A relative link
+// (`game_data/textures.txt`) was relative to the old page in overlunky's docs/, so it points there.
 const markdownHtml = (md) => {
     if (!md.trim()) {
         return '';
     }
     const {html} = markdownToHtml(md, {features: {smartPunctuation: false, frontmatter: false}});
-    return html.trim().replace(/<a href="#([^"]*)">([\s\S]*?)<\/a>/g, (whole, anchor, text) => {
-        const href = resolveAnchor(decodeURIComponent(anchor));
-        return href ? `<a href="${url(href)}">${text}</a>` : text;
-    });
+    return html
+        .trim()
+        .replace(/<a href="#([^"]*)">([\s\S]*?)<\/a>/g, (whole, anchor, text) => {
+            const href = resolveAnchor(decodeURIComponent(anchor));
+            return href ? `<a href="${url(href)}">${text}</a>` : text;
+        })
+        .replace(/<a href="(?![a-z][a-z0-9+.-]*:|[#/])([^"]*)"/gi, (whole, path) => `<a href="${docsUrl}/${path}"`);
 };

@@ -2,8 +2,10 @@
 
 #include <clang/AST/RawCommentList.h>
 #include <clang/Basic/SourceManager.h>
+#include <llvm/ADT/STLExtras.h>
 #include <llvm/Support/Regex.h>
 
+#include <array>
 #include <map>
 #include <optional>
 
@@ -210,6 +212,21 @@ namespace dd {
             }
         }
         return found;
+    }
+
+    std::string hintMarkdown(llvm::StringRef text) {
+        text = text.trim();
+        text.consume_front("...");
+        text.consume_back("...");
+        static const std::array<std::pair<llvm::StringRef, char>, 3> escapes = {
+            {{"__", ' '}, {"\\[", '('}, {"\\]", ')'}}};
+        std::string out;
+        while (!text.empty()) {
+            const auto escape = llvm::find_if(escapes, [&text](const auto& e) { return text.starts_with(e.first); });
+            out += escape == escapes.end() ? text.front() : escape->second;
+            text = text.drop_front(escape == escapes.end() ? 1 : escape->first.size());
+        }
+        return out;
     }
 
     std::vector<CommentedPair> commentedPairs(clang::SourceRange range, const clang::ASTContext& context) {

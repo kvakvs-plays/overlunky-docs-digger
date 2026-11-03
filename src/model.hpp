@@ -17,7 +17,7 @@ namespace dd {
 
     // Version of the JSON output (schema/docs-digger.schema.json): raised with every change to its fields, so readers
     // can refuse output they do not know.
-    constexpr int SchemaVersion = 4;
+    constexpr int SchemaVersion = 5;
 
     // Where an extracted entity is written, so readers can jump to the binding and outputs stay comparable.
     struct SourceLoc {
@@ -334,7 +334,7 @@ namespace dd {
         std::optional<long long> number;
         // The value when it is a string.
         std::optional<std::string> string;
-        // From a `/* ENUM // KEY // doc */` block.
+        // From a `/* ENUM // KEY // doc */` block; for a hint (empty key), its text as Markdown.
         Doc doc;
         // Where the value is known from.
         EnumValueOrigin origin = EnumValueOrigin::Static;

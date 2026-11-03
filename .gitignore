@@ -3,3 +3,5 @@
 __pycache__/
 /src/html/*/node_modules
 /src/html/*/.astro/
+# HDMod planning and research notes: kept locally, not in the repository
+/.agents/hdmod-*

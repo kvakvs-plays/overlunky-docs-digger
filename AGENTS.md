@@ -115,3 +115,4 @@ These rules hold at all times, not only before a release.
 - **PREFERENCE** Slow processing is acceptable, this is documentation parser. Becoming faster is of course
   preferred but can be done in a later plan step. Parallel processing is preferred.
 - When committing do not add "Co-Authored By" line.
+- **IMPORTANT** For subagents choose faster model such as Sonnet at effort medium or low.

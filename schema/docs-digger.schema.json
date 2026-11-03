@@ -10,7 +10,7 @@
   "properties": {
     "schema_version": {
       "description": "Version of this schema. Raised with every change to the fields or their meaning.",
-      "const": 4
+      "const": 5
     },
     "functions": {
       "description": "Lua functions bound with `root[\"a\"][\"name\"] = <callable>` or documented by a commented-out binding, ordered by owner, name and source.",
@@ -237,7 +237,7 @@
         "name": {"description": "Key in Lua; empty for a commented-out hint such as `\"\", ...check [entities.txt]...`.", "type": "string"},
         "text": {"description": "The value as written (`ON::LOGO`, `0x1`), or as the runtime file has it.", "type": "string"},
         "value": {"description": "The value when it is an integer known at compile time (or in the runtime file), or a string.", "type": ["integer", "string"]},
-        "doc": {"$ref": "#/$defs/Doc", "description": "From a `/* ENUM // KEY // doc */` block."},
+        "doc": {"$ref": "#/$defs/Doc", "description": "From a `/* ENUM // KEY // doc */` block; for a hint (empty `name`), its `text` as Markdown: the `...` around it dropped, `__` read as a space and `\\[`, `\\]` as the parentheses of a link target."},
         "nodoc": {"$ref": "#/$defs/NoDoc"},
         "deprecated": {"$ref": "#/$defs/Deprecated"},
         "bit": {"description": "In a `flags` table: the value is the single bit `1 << bit` (0 to 63; the bit as written, also when the number overflowed: `1 << 31` in a signed enum).", "type": "integer"},

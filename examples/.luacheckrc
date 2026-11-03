@@ -4,4 +4,5 @@ std = "lua54"
 max_line_length = 120
 ignore = {
     "113", -- accessing undefined variable: the overlunky API globals
+    "112", -- mutating an undefined variable: setting fields of the API globals (`state.fadeout = 15`)
 }

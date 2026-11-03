@@ -53,6 +53,10 @@ namespace dd {
     // The commented-out pairs on the lines of range (the call that creates an enum).
     std::vector<CommentedPair> commentedPairs(clang::SourceRange range, const clang::ASTContext& context);
 
+    // A commented-out hint (`...check__[entities.txt]\[game_data/entities.txt\]...`) as Markdown: the `...` around it
+    // dropped and the old parser's escapes undone, `__` for a space and `\[`, `\]` for the parentheses of a link.
+    std::string hintMarkdown(llvm::StringRef text);
+
     // The `/* NAME // KEY // doc */` blocks in file: a block comment starting a line whose first line is one name.
     std::vector<BlockDoc> blockDocs(clang::FileID file, const clang::SourceManager& sm);
 

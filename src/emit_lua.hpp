@@ -29,7 +29,8 @@ namespace dd {
         // Hand-written declarations put after the header of the globals file (config/lua_prelude.lua): what the C++
         // side does not declare (`json`, `inspect`, the `Meta` class).
         std::string prelude;
-        // Base URL that makes the `(#anchor)` links of the docs absolute; empty keeps them.
+        // Base URL of the old docs page that makes the `(#anchor)` and relative (`(game_data/textures.txt)`) links of
+        // the docs absolute; empty keeps them.
         std::string docUrl;
         // A file that would grow past this many bytes continues in the next one (`spel2_types_2.lua`).
         std::size_t maxFileSize = 480000;

@@ -12,6 +12,11 @@ CONST = {
     MAX_TILES_VERT = nil, -- g_level_max_y
 }
 
+---@alias DROP integer
+DROP = {
+    ALTAR_DICE_CLIMBINGGLOVES = 0,
+}
+
 ---Entity types, filled from the game's database
 ---@alias ENT_TYPE integer
 ENT_TYPE = {

@@ -144,3 +144,11 @@ void run_callbacks(sol::state& lua)
         internal.value()();
     }
 }
+
+void register_drops(sol::state& lua)
+{
+    lua.create_named_table("DROP"
+                           //, "ALTAR_DICE_CLIMBINGGLOVES", 0
+                           //, "", ...see__[drops.cpp](https://github.com/spelunky-fyi/overlunky/blob/main/src/game_api/drops.cpp\]__for__a__list__of__possible__drops...
+    );
+}

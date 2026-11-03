@@ -60,6 +60,8 @@ dd_add_golden_test(groups)
 # The Lua files cut into several under a small size limit, and in the classic EmmyLua dialect.
 dd_add_golden_test(usertypes_split FIXTURE usertypes ARGS --lua-max-file-size=800)
 dd_add_golden_test(callbacks_emmylua FIXTURE callbacks ARGS --lua-style=emmylua)
+# Doc links made absolute against the old docs page.
+dd_add_golden_test(docs_links FIXTURE docs ARGS --lua-doc-url=https://example.org/docs/)
 
 # luacheck over the golden Lua files (tests/.luacheckrc: settings for definition files). luacheck is a LuaRocks
 # script: run with lua and the LuaRocks tree's module path, or a luacheck executable. Skipped when neither is found.

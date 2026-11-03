@@ -63,12 +63,32 @@ namespace dd {
             return names;
         }
 
-        // One doc line: `<br/>` (HTML for the old Markdown pages) dropped, `(#anchor)` links made absolute; a leading
-        // `@` is moved off so LuaLS reads no annotation.
+        // True for a Markdown link target that has no URL scheme and does not start at the root: `#spawn` and
+        // `game_data/textures.txt`, which were relative to the old docs page.
+        bool isRelativeLink(llvm::StringRef target) {
+            const llvm::StringRef scheme =
+                target.take_while([](char c) { return llvm::isAlnum(c) || c == '+' || c == '-' || c == '.'; });
+            return !target.empty() && !target.starts_with("/") &&
+                (scheme.empty() || !target.drop_front(scheme.size()).starts_with(":"));
+        }
+
+        // text with the relative link targets (`](#spawn`, `](game_data/textures.txt`) prefixed by base.
+        std::string absoluteLinks(llvm::StringRef text, llvm::StringRef base) {
+            std::string out;
+            for (std::size_t at = text.find("]("); at != llvm::StringRef::npos; at = text.find("](")) {
+                out += text.take_front(at + 2);
+                text = text.drop_front(at + 2);
+                out += isRelativeLink(text) ? base.str() : std::string();
+            }
+            return out + text.str();
+        }
+
+        // One doc line: `<br/>` (HTML for the old Markdown pages) dropped, relative links (`(#anchor)`,
+        // `(game_data/textures.txt)`) made absolute; a leading `@` is moved off so LuaLS reads no annotation.
         std::string docLine(llvm::StringRef line, const Context& context) {
             std::string text = llvm::join(llvm::split(line, "<br/>"), "");
             if (!context.settings.docUrl.empty()) {
-                text = llvm::join(llvm::split(text, "](#"), "](" + context.settings.docUrl + "#");
+                text = absoluteLinks(text, context.settings.docUrl);
             }
             return llvm::StringRef(text).ltrim().starts_with("@") ? " " + text : text;
         }

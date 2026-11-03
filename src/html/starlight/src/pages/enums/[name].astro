@@ -38,7 +38,7 @@ const shown = (v) => (e.flags && typeof v.value === 'number' && v.value > 0 ? `0
     )}
     <Example kind="enums" name={e.name} />
     <Doc lines={e.doc} />
-    {hints.map((v) => <Doc lines={v.text.replace(/^\.\.\.|\.\.\.$/g, '')} />)}
+    {hints.map((v) => <Doc lines={v.doc} />)}
     <Doc lines={e.usage} />
     <table class="dd-values">
         <thead>

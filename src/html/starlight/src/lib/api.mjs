@@ -15,13 +15,15 @@ export const site = process.env.DD_SITE_URL ?? 'https://spelunky-fyi.github.io';
 export const base = (process.env.DD_SITE_BASE ?? '/overlunky').replace(/\/$/, '');
 // Base of the source links: source paths in the JSON are relative to overlunky's src/game_api.
 export const sourceUrl = process.env.DD_SITE_SOURCE_URL ?? 'https://github.com/spelunky-fyi/overlunky/blob/main/src/game_api';
+// Base of relative links in doc text (`game_data/textures.txt`): the old single page lived in overlunky's docs/.
+export const docsUrl = process.env.DD_SITE_DOCS_URL ?? 'https://github.com/spelunky-fyi/overlunky/blob/main/docs';
 // overlunky's docs/examples/ and docs-digger's examples/ (both optional), and the staged Lua downloads (optional).
 const examplesDir = process.env.DD_SITE_EXAMPLES ?? '';
 const diggerExamplesDir = process.env.DD_SITE_DIGGER_EXAMPLES ?? '';
 export const downloadsDir = process.env.DD_SITE_DOWNLOADS ?? '';
 
-if (api.schema_version !== 4) {
-    throw new Error(`${jsonPath}: schema_version ${api.schema_version}, this site needs 4`);
+if (api.schema_version !== 5) {
+    throw new Error(`${jsonPath}: schema_version ${api.schema_version}, this site needs 5`);
 }
 
 // A site path with the base in front (`/types/Entity/` → `/overlunky/types/Entity/`).
