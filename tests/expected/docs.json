@@ -8,6 +8,7 @@
         "Documented on the binding.",
         "Default: `depth` is 1"
       ],
+      "group": "docs",
       "name": "documented",
       "overloads": [
         {
@@ -40,6 +41,7 @@
         "Dump the object as a recursive table."
       ],
       "doc_only": true,
+      "group": "docs",
       "name": "dump",
       "overloads": [
         {
@@ -79,6 +81,7 @@
         "Get the Entity behind an uid, converted to the correct type."
       ],
       "doc_only": true,
+      "group": "docs",
       "name": "get_entity",
       "overloads": [
         {
@@ -107,6 +110,7 @@
       }
     },
     {
+      "group": "docs",
       "name": "get_player_count",
       "overloads": [
         {
@@ -134,6 +138,7 @@
       "doc": [
         "Internal helper."
       ],
+      "group": "docs",
       "name": "internal",
       "nodoc": true,
       "overloads": [
@@ -159,6 +164,7 @@
       "doc": [
         "Use `documented` instead."
       ],
+      "group": "docs",
       "name": "old_name",
       "overloads": [
         {
@@ -187,6 +193,7 @@
       }
     },
     {
+      "group": "docs",
       "name": "undocumented",
       "overloads": [
         {
@@ -211,6 +218,7 @@
     "options"
   ],
   "libraries": [],
+  "schema_version": 1,
   "script_callbacks": [],
   "usertypes": [],
   "values": [

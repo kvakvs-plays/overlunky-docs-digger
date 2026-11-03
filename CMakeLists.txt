@@ -11,20 +11,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(THIRDPARTY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty")
 
 include(cmake/Download.cmake)
+include(cmake/LLVMPackage.cmake)
 
-# Prebuilt Clang/LLVM development package (static libs + CMake configs).
+# Prebuilt Clang/LLVM development package (static libs + CMake configs), pinned in cmake/LLVMPackage.cmake.
 # On Windows it is downloaded once into thirdparty/ unless Clang_DIR is given.
 # On Linux, Clang comes from distro packages or the Docker image (Clang_DIR / CMAKE_PREFIX_PATH).
-set(DOCS_DIGGER_LLVM_VERSION "23.1.2")
-
 if(WIN32 AND NOT Clang_DIR)
-  set(LLVM_PACKAGE "clang+llvm-${DOCS_DIGGER_LLVM_VERSION}-x86_64-pc-windows-msvc")
-  dd_fetch_archive(
-    "https://github.com/llvm/llvm-project/releases/download/llvmorg-${DOCS_DIGGER_LLVM_VERSION}/${LLVM_PACKAGE}.tar.xz"
-    "8fb91cdc44fcbbdcf6b3ffd0a1f9859abd14a3c3aae4423c2b6d4a4f90bf0095"
-    "${THIRDPARTY_DIR}" "${LLVM_PACKAGE}/lib/cmake/clang/ClangConfig.cmake")
-  set(Clang_DIR "${THIRDPARTY_DIR}/${LLVM_PACKAGE}/lib/cmake/clang")
-  set(LLVM_DIR "${THIRDPARTY_DIR}/${LLVM_PACKAGE}/lib/cmake/llvm")
+  dd_fetch_llvm("${THIRDPARTY_DIR}")
+  set(Clang_DIR "${THIRDPARTY_DIR}/${DOCS_DIGGER_LLVM_PACKAGE}/lib/cmake/clang")
+  set(LLVM_DIR "${THIRDPARTY_DIR}/${DOCS_DIGGER_LLVM_PACKAGE}/lib/cmake/llvm")
 endif()
 
 find_package(Clang REQUIRED CONFIG)
@@ -57,6 +52,8 @@ add_executable(docs-digger
   src/codec.hpp
   src/comments.cpp
   src/comments.hpp
+  src/groups.cpp
+  src/groups.hpp
   src/main.cpp
   src/merge.cpp
   src/merge.hpp

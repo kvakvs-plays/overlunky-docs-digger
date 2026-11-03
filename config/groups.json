@@ -1,0 +1,50 @@
+{
+  "fallback": "Generic functions",
+  "rules": [
+    {
+      "group": "Message functions",
+      "name_contains": ["prinspect", "messpect", "print", "message", "say", "speechbubble", "toast"]
+    },
+    {
+      "group": "Debug functions",
+      "name_contains": ["get_rva", "get_virtual_rva", "raise", "dump_network", "dump", "dump_string", "get_address"]
+    },
+    {"group": "Option functions", "name_contains": ["_option"]},
+    {"group": "Feat functions", "name_contains": ["feat"]},
+    {"group": "Tile code functions", "name_contains": ["tile_code"]},
+    {
+      "group": "Callback functions",
+      "name_contains": ["interval", "timeout", "callback", "set_on", "set_pre", "set_post"]
+    },
+    {"group": "Flag functions", "name_contains": ["flag", "clr_mask", "flip_mask", "set_mask", "test_mask"]},
+    {
+      "group": "Game patching functions",
+      "file_contains": ["game_patches_lua.cpp"],
+      "name_contains": ["replace_drop", "set_drop_chance"]
+    },
+    {"group": "Shop functions", "name_contains": ["shop"]},
+    {"group": "Room functions", "name_contains": ["_room"]},
+    {"group": "Spawn functions", "name_contains": ["spawn"], "names": ["door", "layer_door"]},
+    {
+      "group": "Entity functions",
+      "name_contains": [
+        "entity", "entities", "set_door", "get_door", "contents", "attach", "pick_up", "drop", "backitem", "carry",
+        "door_at", "get_type", "kapala", "sparktrap", "explosion", "rope", "door", "blood", "olmec", "ghost",
+        "jelly", "ankh", "player"
+      ]
+    },
+    {"group": "Movable Behavior functions", "name_contains": ["movable", "behavior"]},
+    {"group": "Theme functions", "name_contains": ["theme"]},
+    {"group": "Texture functions", "name_contains": ["_lut", "_texture"]},
+    {"group": "Input functions", "name_contains": ["_input", "_io", "mouse_"]},
+    {
+      "group": "Position functions",
+      "name_contains": ["bounds", "move", "position", "velocity", "distance", "size", "hitbox", "aabb", "zoom"]
+    },
+    {"group": "Particle functions", "name_contains": ["particle"]},
+    {"group": "String functions", "name_contains": ["string", "_name"]},
+    {"group": "Network functions", "name_contains": ["udp_", "http_"]},
+    {"group": "Lighting functions", "name_contains": ["illuminati"]},
+    {"group": "Sound functions", "name_contains": ["sound"]}
+  ]
+}

@@ -4,6 +4,7 @@
   "events": [],
   "functions": [
     {
+      "group": "key_paths",
       "name": "add",
       "overloads": [
         {
@@ -39,6 +40,7 @@
       }
     },
     {
+      "group": "key_paths",
       "name": "twice",
       "overloads": [
         {
@@ -67,6 +69,7 @@
       }
     },
     {
+      "group": "Ns",
       "name": "nested",
       "overloads": [
         {
@@ -100,6 +103,7 @@
   ],
   "global_variables": [],
   "libraries": [],
+  "schema_version": 1,
   "script_callbacks": [],
   "usertypes": [],
   "values": [

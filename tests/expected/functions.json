@@ -18,6 +18,7 @@
   "events": [],
   "functions": [
     {
+      "group": "functions",
       "name": "callbacks",
       "overloads": [
         {
@@ -106,6 +107,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "containers",
       "overloads": [
         {
@@ -162,6 +164,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "count_one",
       "overloads": [
         {
@@ -190,6 +193,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "get_entities_by",
       "overloads": [
         {
@@ -275,6 +279,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "hidden_state",
       "overloads": [
         {
@@ -326,6 +331,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "optional_args",
       "overloads": [
         {
@@ -381,6 +387,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "optional_return",
       "overloads": [
         {
@@ -423,6 +430,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "pair_return",
       "overloads": [
         {
@@ -447,6 +455,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "pointer_arg",
       "overloads": [
         {
@@ -491,6 +500,7 @@
     },
     {
       "defined_in_lua": true,
+      "group": "functions",
       "name": "printf",
       "overloads": [],
       "source": {
@@ -500,6 +510,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "set_flag",
       "overloads": [
         {
@@ -554,6 +565,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "spawn",
       "overloads": [
         {
@@ -604,6 +616,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "spawn_address",
       "overloads": [
         {
@@ -657,6 +670,7 @@
       "alias_of": [
         "spawn"
       ],
+      "group": "functions",
       "name": "spawn_alias",
       "overloads": [
         {
@@ -707,6 +721,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "spawn_tree",
       "overloads": [
         {
@@ -760,6 +775,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "tuple_return",
       "overloads": [
         {
@@ -789,6 +805,7 @@
       }
     },
     {
+      "group": "functions",
       "name": "variadic",
       "overloads": [
         {
@@ -817,6 +834,7 @@
       }
     },
     {
+      "group": "Ns",
       "name": "nested",
       "overloads": [
         {
@@ -850,6 +868,7 @@
   ],
   "global_variables": [],
   "libraries": [],
+  "schema_version": 1,
   "script_callbacks": [],
   "usertypes": [],
   "values": [

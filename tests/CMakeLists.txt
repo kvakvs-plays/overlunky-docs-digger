@@ -7,8 +7,14 @@ if(NOT EXISTS "${SOL2_INCLUDE_DIR}/sol/sol.hpp")
     "with submodules.")
 endif()
 
-# Registers the golden test for tests/fixtures/<name>.cpp.
+# The schema tests check the golden files against schema/docs-digger.schema.json with tools/check_schema.py.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
+# Registers the golden test for tests/fixtures/<name>.cpp, and the schema test of its golden file.
 function(dd_add_golden_test name)
+  add_test(NAME schema.${name}
+    COMMAND Python3::Interpreter "${PROJECT_SOURCE_DIR}/tools/check_schema.py"
+      "${PROJECT_SOURCE_DIR}/schema/docs-digger.schema.json" "${CMAKE_CURRENT_SOURCE_DIR}/expected/${name}.json")
   add_test(NAME golden.${name}
     COMMAND "${CMAKE_COMMAND}"
       "-DDIGGER=$<TARGET_FILE:docs-digger>"
@@ -28,3 +34,4 @@ dd_add_golden_test(usertypes)
 dd_add_golden_test(enums)
 dd_add_golden_test(callbacks)
 dd_add_golden_test(vtables)
+dd_add_golden_test(groups)

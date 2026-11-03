@@ -1,6 +1,6 @@
 @echo off
 rem Builds docs-digger (Release), refreshes overlunky's compile database and runs the digger on it, with the
-rem runtime enum dump from overlunky's docs. Results are cached per translation unit in build\digger-cache.sqlite
+rem runtime enum dump from overlunky's docs and the function groups of config\groups.json. Results are cached per translation unit in build\digger-cache.sqlite
 rem (valid while the files a unit read are unchanged); --no-cache parses everything.
 rem Usage: dig.bat [docs-digger options, e.g. -o out.json --jobs 8 --no-cache]
 rem overlunky checkout: %DD_OVERLUNKY_ROOT%, default ..\Playlunky\submodules\overlunky next to this repository.
@@ -19,6 +19,7 @@ cmake "-DOVERLUNKY_ROOT=%DD_OVERLUNKY_ROOT%" "-DBUILD_DIR=%ROOT%build\overlunky"
 if errorlevel 1 exit /b 1
 
 "%ROOT%build\digger\Release\docs-digger.exe" -p "%ROOT%build\overlunky" "--root=%DD_OVERLUNKY_ROOT%\src\game_api" ^
-    "--runtime-enums=%DD_OVERLUNKY_ROOT%\docs\game_data\lua_enums.txt" "--cache=%ROOT%build\digger-cache.sqlite" %*
+    "--runtime-enums=%DD_OVERLUNKY_ROOT%\docs\game_data\lua_enums.txt" "--groups=%ROOT%config\groups.json" ^
+    "--cache=%ROOT%build\digger-cache.sqlite" %*
 if errorlevel 1 exit /b 1
 exit /b 0

@@ -1,0 +1,300 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kvakvs-plays/overlunky-docs-digger/schema/docs-digger.schema.json",
+  "title": "docs-digger output",
+  "description": "overlunky's Lua API as docs-digger extracts it. Optional fields are left out when empty, false or default. C++ types are kept as written; turning them into Lua names is up to the output stage. Every object lists all its fields: a field not described here is an error.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "functions", "values", "usertypes", "enums", "aliases", "libraries",
+               "script_callbacks", "global_variables", "events"],
+  "properties": {
+    "schema_version": {
+      "description": "Version of this schema. Raised with every change to the fields or their meaning.",
+      "const": 1
+    },
+    "functions": {
+      "description": "Lua functions bound with `root[\"a\"][\"name\"] = <callable>` or documented by a commented-out binding, ordered by owner, name and source.",
+      "type": "array", "items": {"$ref": "#/$defs/Function"}
+    },
+    "values": {
+      "description": "Lua values that are not functions (`lua[\"players\"] = ...`), ordered like functions.",
+      "type": "array", "items": {"$ref": "#/$defs/Value"}
+    },
+    "usertypes": {
+      "description": "C++ types exposed with `new_usertype<T>(\"Name\", ...)`, ordered by Lua name.",
+      "type": "array", "items": {"$ref": "#/$defs/Usertype"}
+    },
+    "enums": {
+      "description": "Lua tables of named constants (`create_named_table`, `new_enum`, the runtime enum file), ordered by name.",
+      "type": "array", "items": {"$ref": "#/$defs/Enum"}
+    },
+    "aliases": {
+      "description": "Typedef and `using` names under the root that some Lua-visible type is written with, ordered by name.",
+      "type": "array", "items": {"$ref": "#/$defs/Alias"}
+    },
+    "libraries": {
+      "description": "`open_libraries(...)` calls, ordered by source.",
+      "type": "array", "items": {"$ref": "#/$defs/LibraryCall"}
+    },
+    "script_callbacks": {
+      "description": "Documented globals that scripts define and C++ reads (`on_frame`), ordered by name.",
+      "type": "array", "items": {"$ref": "#/$defs/ScriptCallback"}
+    },
+    "global_variables": {
+      "description": "Names of the documented values bound on the Lua state (`state`, `players`); their types are in `values`.",
+      "type": "array", "items": {"type": "string"}
+    },
+    "events": {
+      "description": "Callbacks of enum-keyed dispatches: one per key of the selecting enum (`ON.FRAME`, `THEME_OVERRIDE.SPAWN_LEVEL`), ordered by storage, table and key.",
+      "type": "array", "items": {"$ref": "#/$defs/Event"}
+    }
+  },
+  "$defs": {
+    "Source": {
+      "description": "Where an entity is written.",
+      "type": "object", "additionalProperties": false, "required": ["file", "line", "column"],
+      "properties": {
+        "file": {"description": "Path relative to the --root directory, '/' separated.", "type": "string"},
+        "line": {"description": "1-based line of the entity's first token.", "type": "integer"},
+        "column": {"description": "1-based column, telling several bindings on one line apart.", "type": "integer"}
+      }
+    },
+    "Doc": {
+      "description": "Lines of the `///` comment without the markers. Leading `NoDoc` / `Deprecated` lines and a `Group:` line are taken out (see `nodoc`, `deprecated`, `group`); `Returns`, `Default`, `note:` and `Warning:` stay in the text.",
+      "type": "array", "items": {"type": "string"}
+    },
+    "NoDoc": {"description": "`/// NoDoc`: exists in Lua but is kept out of the documentation.", "type": "boolean"},
+    "Deprecated": {"description": "`/// Deprecated`: still works; documented apart with its replacement.", "type": "boolean"},
+    "Owner": {
+      "description": "Table keys before the name (`[\"TYPE_MAP\"]` for `lua[\"TYPE_MAP\"][\"x\"]`); left out for globals.",
+      "type": "array", "items": {"type": "string"}
+    },
+    "Root": {
+      "description": "Source text of the root when it is neither the Lua state nor an environment (a local `sol::table`); left out otherwise.",
+      "type": "string"
+    },
+    "Type": {
+      "description": "One C++ type and what it means in Lua.",
+      "type": "object", "additionalProperties": false, "required": ["spelling", "kind"],
+      "properties": {
+        "spelling": {"description": "As written in the source, typedef names kept (`std::vector<ENT_TYPE>`).", "type": "string"},
+        "canonical": {"description": "Fully resolved type; only present when it differs from the spelling.", "type": "string"},
+        "kind": {
+          "description": "Lua meaning. `lua_object`: a sol2 handle to any Lua value (object, table, userdata, ...). `variadic`: any number of values. `nil`: an assignment that removes a value. `unknown`: not classified (the parity report lists these; doc-only entries are always unknown).",
+          "enum": ["void", "bool", "int", "float", "string", "enum", "record", "pointer", "optional", "container",
+                   "tuple", "function", "lua_object", "variadic", "nil", "unknown"]
+        },
+        "inner": {
+          "description": "Container elements, optional payload, pointee, tuple members, or the parameters of a `function` kind.",
+          "type": "array", "items": {"$ref": "#/$defs/Type"}
+        },
+        "returns": {"description": "Return types of a `function` kind with a known signature (`std::function`).", "type": "array", "items": {"$ref": "#/$defs/Type"}},
+        "nullable": {"description": "Lua may pass or get nil here (optional, raw pointer, `sol::object`).", "type": "boolean"},
+        "hidden": {"description": "Injected by sol2 (`sol::this_state`, ...): not a Lua-visible parameter.", "type": "boolean"}
+      }
+    },
+    "Param": {
+      "description": "A parameter of a bound C++ function, or an argument a Lua callback receives.",
+      "type": "object", "additionalProperties": false, "required": ["name", "type"],
+      "properties": {
+        "name": {"description": "Name in the C++ declaration; empty when unnamed.", "type": "string"},
+        "type": {"$ref": "#/$defs/Type"},
+        "omittable": {"description": "Part of the trailing run of nullable parameters: a Lua call may leave it out.", "type": "boolean"},
+        "binder": {
+          "description": "Callback arguments only: a value `make_safe_cb` adds in front of (`front`) or behind (`back`) the caller's arguments.",
+          "enum": ["front", "back"]
+        },
+        "callback": {"$ref": "#/$defs/Callback"}
+      }
+    },
+    "Callback": {
+      "description": "The Lua function a parameter receives: what it is called with, what it may return, and what nil means.",
+      "type": "object", "additionalProperties": false, "required": ["origin"],
+      "properties": {
+        "origin": {
+          "description": "How the signature was found: from a `std::function` type, `make_safe_cb<Sig>` binders, `handle_function<R>` on the parameter, a direct call, a stored callback dispatched elsewhere, an enum-keyed dispatch (signatures in `events`), a vtable hook, only the doc comment's `The callback signature is ...` prose, or not at all (`unresolved`).",
+          "enum": ["std_function", "make_safe_cb", "handle_function", "direct_call", "stored_handle_function",
+                   "event_dispatch", "vtable_hook", "doc_comment", "unresolved"]
+        },
+        "params": {"description": "Arguments the callback receives, binder values marked. Present unless unresolved or selected.", "type": "array", "items": {"$ref": "#/$defs/Param"}},
+        "returns": {"description": "Values the C++ side reads back; empty when the result is ignored. Present unless unresolved or selected.", "type": "array", "items": {"$ref": "#/$defs/Type"}},
+        "nil_allowed": {"description": "nil (or no return value) is accepted. Present unless unresolved or selected.", "type": "boolean"},
+        "nil_meaning": {"description": "What the C++ side does with nil (`ignored`, `treated as false`, `the original runs`, ...).", "type": "string"},
+        "stored_in": {"description": "Record field the callback is stored in (`ScreenCallback::func`), with ` in <container>` when known.", "type": "string"},
+        "selector": {"description": "Enum whose value selects the signature (`ON`); the signatures are in `events`.", "type": "string"},
+        "unresolved": {"description": "The pattern that stopped the search, when no signature was found in code.", "type": "string"},
+        "prose": {"description": "The `The callback signature is ...` text of the doc comment.", "type": "string"},
+        "conflicts": {"description": "Disagreements between dispatch sites, or between the code and the prose (doc fixes for overlunky).", "type": "array", "items": {"type": "string"}},
+        "source": {"$ref": "#/$defs/Source", "description": "Where the signature was read (the `make_safe_cb` or `handle_function` call)."}
+      }
+    },
+    "Signature": {
+      "description": "One callable form: a lambda, a C++ function, or one member of a `sol::overload`.",
+      "type": "object", "additionalProperties": false, "required": ["params", "returns", "cpp"],
+      "properties": {
+        "params": {"description": "Parameters in declaration order, hidden ones included.", "type": "array", "items": {"$ref": "#/$defs/Param"}},
+        "returns": {"description": "Values returned to Lua: empty for void, several for tuples and pairs.", "type": "array", "items": {"$ref": "#/$defs/Type"}},
+        "cpp": {"description": "Qualified name of the bound C++ function, or `lambda at <file>:<line>`; for doc-only entries the comment's text.", "type": "string"},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment of the C++ declaration, for named functions."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "self": {
+          "description": "Usertype members: the object is `this` of a C++ member function (`implicit`), or the first parameter (`first_param`).",
+          "enum": ["implicit", "first_param"]
+        }
+      }
+    },
+    "Function": {
+      "description": "A Lua function.",
+      "type": "object", "additionalProperties": false, "required": ["name", "source", "group", "overloads"],
+      "properties": {
+        "name": {"description": "Name in Lua.", "type": "string"},
+        "owner": {"$ref": "#/$defs/Owner"},
+        "root": {"$ref": "#/$defs/Root"},
+        "source": {"$ref": "#/$defs/Source", "description": "The binding statement."},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment above the binding statement."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "group": {
+          "description": "Documentation section: the `/// Group: <name>` directive, else the table it is bound in (root and owner joined with '.'), else the first matching rule of --groups (config/groups.json), else that file's fallback, else the source file name without `_lua` (`spawn_lua.cpp` gives `spawn`).",
+          "type": "string"
+        },
+        "overloads": {"description": "All callable forms; several for `sol::overload`. Empty for `defined_in_lua`.", "type": "array", "items": {"$ref": "#/$defs/Signature"}},
+        "doc_only": {"description": "Known only from a `///` block followed by a commented-out binding (`// lua[\"get_entity\"] = [](uint32_t uid) -> Entity*{};`): written in Lua; types are text only (kind `unknown`).", "type": "boolean"},
+        "defined_in_lua": {"description": "`lua[\"printf\"] = lua.safe_script(...)`: written in Lua, no C++ signature.", "type": "boolean"},
+        "alias_of": {"description": "`lua[\"a\"] = lua[\"b\"]`: the keys of the aliased function, whose overloads are copied here.", "type": "array", "items": {"type": "string"}}
+      }
+    },
+    "Value": {
+      "description": "A Lua value that is not a function.",
+      "type": "object", "additionalProperties": false, "required": ["name", "source", "type"],
+      "properties": {
+        "name": {"description": "Name in Lua.", "type": "string"},
+        "owner": {"$ref": "#/$defs/Owner"},
+        "root": {"$ref": "#/$defs/Root"},
+        "source": {"$ref": "#/$defs/Source", "description": "The binding statement."},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment above the binding statement."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "type": {"$ref": "#/$defs/Type", "description": "Type of the assigned C++ expression."},
+        "doc_only": {"description": "Known only from a commented-out binding; the type's spelling is the comment's text.", "type": "boolean"}
+      }
+    },
+    "Member": {
+      "description": "One member of a usertype. A key bound twice appears twice (sol2 keeps the last).",
+      "type": "object", "additionalProperties": false, "required": ["name", "kind", "source"],
+      "properties": {
+        "name": {"description": "Key in Lua; for meta functions the `sol::meta_function` name (`equal_to`).", "type": "string"},
+        "kind": {
+          "description": "`field`: `&T::field`, read and written. `readonly`: `sol::readonly(&T::field)`. `property`: `sol::property(get[, set])`. `method`: a callable (lambda, member function, `sol::overload`, vtable hook). `value`: anything else.",
+          "enum": ["field", "readonly", "property", "method", "value"]
+        },
+        "meta": {"description": "Keyed by a `sol::meta_function` (operators, `__index`, `__pairs`).", "type": "boolean"},
+        "source": {"$ref": "#/$defs/Source", "description": "The key argument or the `ut[\"k\"] = ...` statement."},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment above the binding, or from a `/* Usertype // key // doc */` block."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "cpp_doc": {"$ref": "#/$defs/Doc", "description": "Comment of the bound C++ field, the field a getter reads, an autodoc hint, or the C++ member of the same name."},
+        "type": {"$ref": "#/$defs/Type", "description": "All kinds but `method`: field type, property type (getter result), or value type."},
+        "overloads": {"description": "Callable forms of a `method`.", "type": "array", "items": {"$ref": "#/$defs/Signature"}},
+        "getter": {"$ref": "#/$defs/Signature", "description": "Getter of a `property`."},
+        "setter": {"$ref": "#/$defs/Signature", "description": "Setter of a `property`; left out when read only."}
+      }
+    },
+    "Usertype": {
+      "description": "A C++ type exposed to Lua.",
+      "type": "object", "additionalProperties": false, "required": ["name", "cpp", "source", "members"],
+      "properties": {
+        "name": {"description": "Name in Lua.", "type": "string"},
+        "cpp": {"description": "C++ type as written in `new_usertype<T>`.", "type": "string"},
+        "source": {"$ref": "#/$defs/Source", "description": "The `new_usertype` call."},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment above the `new_usertype` statement."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "cpp_doc": {"$ref": "#/$defs/Doc", "description": "Comment of the C++ class."},
+        "bases": {"description": "C++ base classes from `sol::bases<...>`, as written.", "type": "array", "items": {"type": "string"}},
+        "constructors": {"description": "From `sol::constructors<...>` or `\"new\", sol::initializers(...)`.", "type": "array", "items": {"$ref": "#/$defs/Signature"}},
+        "no_constructor": {"description": "`sol::no_constructor`: Lua cannot create it.", "type": "boolean"},
+        "members": {"description": "Members from the `new_usertype` arguments, `ut[\"k\"] = v`, `lua[\"Name\"][\"k\"] = v` and vtable hooks, ordered by name and source.", "type": "array", "items": {"$ref": "#/$defs/Member"}}
+      }
+    },
+    "EnumValue": {
+      "description": "One key of an enum table.",
+      "type": "object", "additionalProperties": false, "required": ["name", "text"],
+      "properties": {
+        "name": {"description": "Key in Lua; empty for a commented-out hint such as `\"\", ...check [entities.txt]...`.", "type": "string"},
+        "text": {"description": "The value as written (`ON::LOGO`, `0x1`), or as the runtime file has it.", "type": "string"},
+        "value": {"description": "The value when it is an integer known at compile time (or in the runtime file), or a string.", "type": ["integer", "string"]},
+        "doc": {"$ref": "#/$defs/Doc", "description": "From a `/* ENUM // KEY // doc */` block."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "origin": {
+          "description": "Left out for a pair written in code. `doc_comment`: a commented-out pair inside the call, an example of values added at runtime. `runtime_file`: from --runtime-enums (`lua_enums.txt`).",
+          "enum": ["doc_comment", "runtime_file"]
+        },
+        "source": {"$ref": "#/$defs/Source", "description": "The key in the code; left out for runtime values."}
+      }
+    },
+    "Enum": {
+      "description": "A Lua table of named constants.",
+      "type": "object", "additionalProperties": false, "required": ["name", "values"],
+      "properties": {
+        "name": {"description": "Name of the table in Lua.", "type": "string"},
+        "values": {"description": "Values ordered by key and source; a key may repeat with another origin.", "type": "array", "items": {"$ref": "#/$defs/EnumValue"}},
+        "source": {"$ref": "#/$defs/Source", "description": "The creating call; left out for tables only the runtime file knows (then `origin` is present)."},
+        "origin": {"description": "`runtime_file` for tables only the runtime file knows.", "const": "runtime_file"},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment above the creating call."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "filled_at_runtime": {"description": "Code also adds keys at runtime (`lua[\"ENT_TYPE\"][name] = ...` in a loop).", "type": "boolean"}
+      }
+    },
+    "Alias": {
+      "description": "A typedef or `using` name.",
+      "type": "object", "additionalProperties": false, "required": ["name", "type", "source"],
+      "properties": {
+        "name": {"description": "Unqualified name.", "type": "string"},
+        "type": {"$ref": "#/$defs/Type", "description": "The aliased type."},
+        "source": {"$ref": "#/$defs/Source", "description": "The declaration."},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment of the declaration."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"}
+      }
+    },
+    "LibraryCall": {
+      "description": "One `open_libraries(...)` call.",
+      "type": "object", "additionalProperties": false, "required": ["names", "function", "source"],
+      "properties": {
+        "names": {"description": "Lua standard library names (`math`, `io`).", "type": "array", "items": {"type": "string"}},
+        "function": {"description": "C++ function the call is in (`load_unsafe_libraries` opens the unsafe ones).", "type": "string"},
+        "source": {"$ref": "#/$defs/Source", "description": "The call."}
+      }
+    },
+    "ScriptCallback": {
+      "description": "A documented global that the script defines and C++ reads.",
+      "type": "object", "additionalProperties": false, "required": ["name", "type", "source"],
+      "properties": {
+        "name": {"description": "Name of the global (`on_frame`).", "type": "string"},
+        "type": {"$ref": "#/$defs/Type", "description": "C++ type the value is read as (`sol::optional<sol::function>`)."},
+        "source": {"$ref": "#/$defs/Source", "description": "The reading declaration."},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Comment above the read."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"}
+      }
+    },
+    "Event": {
+      "description": "The Lua callback for one key of an enum-keyed dispatch.",
+      "type": "object", "additionalProperties": false, "required": ["table", "name", "stored_in", "callback"],
+      "properties": {
+        "table": {"description": "Lua table of the key (`ON`).", "type": "string"},
+        "name": {"description": "Key in that table (`FRAME`).", "type": "string"},
+        "stored_in": {"description": "Record field the callbacks are stored in (`ScreenCallback::func`).", "type": "string"},
+        "callback": {"$ref": "#/$defs/Callback", "description": "Signature from the key's dispatch sites (merged), the generic dispatch, or unresolved."},
+        "generic": {"description": "The key has no dispatch site of its own: the signature is the generic dispatch's.", "type": "boolean"},
+        "doc": {"$ref": "#/$defs/Doc", "description": "Docs of the enum value."},
+        "nodoc": {"$ref": "#/$defs/NoDoc"},
+        "deprecated": {"$ref": "#/$defs/Deprecated"}
+      }
+    }
+  }
+}

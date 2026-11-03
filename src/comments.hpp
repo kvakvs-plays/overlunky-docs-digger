@@ -20,7 +20,8 @@ namespace dd {
     // them).
     Doc docOfDecl(const clang::Decl& decl, const clang::ASTContext& context);
 
-    // Comment lines with the leading `NoDoc` / `Deprecated` directive lines turned into flags.
+    // Comment lines with the leading `NoDoc` / `Deprecated` directive lines turned into flags, and a `Group: <name>`
+    // line anywhere taken out into Doc::group.
     Doc parseDoc(std::vector<std::string> lines);
 
     // A function written in Lua and documented in C++ by a `///` block followed by a commented-out binding,

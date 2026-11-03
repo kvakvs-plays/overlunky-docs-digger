@@ -1,0 +1,8 @@
+{
+  "fallback": "Generic functions",
+  "rules": [
+    {"group": "Spawn functions", "name_contains": ["spawn"]},
+    {"group": "Entity functions", "name_contains": ["entity"], "names": ["door"]},
+    {"group": "Game patching functions", "file_contains": ["groups_patches.hpp"]}
+  ]
+}

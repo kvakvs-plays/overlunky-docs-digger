@@ -137,9 +137,14 @@ P16 is a presentation concern. The digger emits C++ types plus structured type f
   needed) instead of the hand-maintained `header_files`/`api_files` lists. Headers are reached
   through includes. Results are filtered to declarations and statements located under
   `src/game_api/`.
-- **CI consequence:** `build-docs.yml` runs on `ubuntu-latest`. Add a `windows-latest` job that
-  configures overlunky, runs the digger and uploads the JSON as an artifact for the existing Slate
-  job. This is decided in DIG-5 and doesn't block extraction work.
+- **CI consequence:** `build-docs.yml` runs on `ubuntu-latest`. Decided in DIG-5: the `windows-latest`
+  job lives in this repository (`.github/workflows/dig.yml`), next to the digger and its pins, so
+  overlunky doesn't have to build it. It checks out overlunky (`spelunky-fyi/overlunky` `main` by
+  default, repository and ref are `workflow_dispatch` inputs), fetches the LLVM package first
+  (`cmake -P cmake/LLVMPackage.cmake`: a configure needs a compiler before it can download LLVM) and
+  compiles with the package's own clang-cl (`DD_LLVM_BIN`; verified locally), runs the tests, digs,
+  checks the schema and uploads the artifacts `docs-digger-api` and `parity-report` (informative,
+  `continue-on-error`). The Slate job takes the JSON with `gh run download` (README).
 
 
 
@@ -153,8 +158,10 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   build.bat, test.bat     build / build + CTest (clang-cl, Ninja Multi-Config, build/digger)
   dig.bat                 overlunky compile database (build/overlunky) + run the digger on it
   quality.bat             clang-format, Lizard, clang-tidy gate
-  cmake/                  downloads, zlib/zstd/SQLite builds, overlunky configure, quality checks
+  cmake/                  downloads (LLVM pin in LLVMPackage.cmake), zlib/zstd/SQLite builds, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
+  schema/                 docs-digger.schema.json: the frozen output format, every field described (DIG-5)
+  .github/workflows/      dig.yml: Windows CI that builds, tests, digs overlunky and uploads the JSON (DIG-5)
   src/main.cpp            CLI, merge steps, write output
   src/runner.cpp          TUs in parallel, each into its own Extraction (or from the cache); progress, ordered merge
   src/cache.cpp           SQLite result cache, content hashes of files
@@ -165,6 +172,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   src/comments.cpp        comment lookup for decls/statements, directive parsing
   src/bindings.cpp        AST matchers, B1 (lua[...] = ...), B3 (enum tables, typedefs), B4, script callback reads
   src/merge.cpp           steps after all TUs, no AST: runtime enum file, block docs, used aliases, global variables
+  src/groups.cpp          step after all TUs, no AST: function groups from the directive, owner and --groups rules (P14)
   src/resolve.cpp         sol2 expression helpers shared by the passes: key paths, definitionOf, resolveBound
   src/usertypes.cpp       B2: new_usertype arguments, members, constructors, bases, member docs
   src/callbacks.cpp       passes C2-C6 and the AST part of C5 (parameter flows, dispatch sites, keys, vtable hooks)
@@ -177,6 +185,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
   tests/RunGolden.cmake   runs one fixture and compares; DD_UPDATE_GOLDEN=1 rewrites the golden file
   tools/parity.py         loads <overlunky>/docs/parse_source.py results, diffs them with digger JSON (reuses the old parser as the oracle)
+  tools/check_schema.py   checks outputs against the schema (standard library only; CTest schema.<name>, CI)
 ```
 
 Expected size: about 1,500 to 2,000 lines of C++ in total. Most of it goes to sol2 pattern
@@ -476,6 +485,20 @@ Found in DIG-4 and handled there (`src/callbacks.cpp` reads the AST, the join ru
 
 Members of usertypes and namespace tables are grouped by their owner.
 
+Found in DIG-5 and handled there (`src/groups.cpp`, a step after all TUs):
+
+- `generate.py` has its own catch-all, "Generic functions" (126 functions). It is ported as the
+  `fallback` of `config/groups.json`, so every function keeps its old group; the source-file fallback
+  only applies when the `--groups` file has no fallback (or there is none, as in most fixtures). Rules
+  are tested in order with `name_contains`, `names` (whole names: `door`, `layer_door`) and
+  `file_contains` (`game_patches_lua.cpp`), as `func_cats` does;
+- namespace-table functions (`TYPE_MAP`, `io`, `os`) take their table (root and owner keys) as group,
+  before the rules; a `/// Group:` line is read anywhere in the comment and taken out of the text
+  (overlunky has none yet);
+- `tools/parity.py` runs the `func_cats` loop of `generate.py` itself (cut out of its source and
+  executed on `ps.funcs`, since the rest of `generate.py` writes the Markdown files): all 353 old
+  functions get the same group (23 groups).
+
 
 
 ## 6. Steps
@@ -500,24 +523,29 @@ far: DIG-0, DIG-1, DIG-2, DIG-3, DIG-4, DIG-4b.
 
 ### DIG-5. Grouping, finalization, CI (P14)
 
-- [ ] `config/groups.json` ported from `generate.py` `func_cats`.
-- [ ] Group selection order: `/// Group:` directive, then `config/groups.json`, then the source-file
+- [x] `config/groups.json` ported from `generate.py` `func_cats`.
+- [x] Group selection order: `/// Group:` directive, then `config/groups.json`, then the source-file
   fallback; members grouped by their owner.
-- [ ] `tools/parity.py`: group of every function against `generate.py`.
-- [ ] Freeze the JSON schema: document every field (schema file or section in `README.md`) and add a
-  `schema_version`.
+- [x] `tools/parity.py`: group of every function against `generate.py`.
+- [x] Freeze the JSON schema: document every field (schema file or section in `README.md`) and add a
+  `schema_version`. `schema/docs-digger.schema.json` (JSON Schema 2020-12, every property described,
+  `additionalProperties: false`), `schema_version: 1`; `tools/check_schema.py` checks the golden files
+  (CTest `schema.<name>`) and the CI output.
 - [ ] Windows CI job (`windows-latest`) that configures overlunky, builds and runs the digger and
   uploads the JSON as an artifact for the existing Slate job. Decide where the job lives
-  (overlunky's `build-docs.yml` or this repository).
-- [ ] `README.md` complete for a new contributor: setup, run, tests, quality gate, schema.
+  (overlunky's `build-docs.yml` or this repository). Written (`.github/workflows/dig.yml`, this
+  repository; see section 2) and its build with the package's clang-cl verified locally; open until
+  the first run on GitHub passes.
+- [x] `README.md` complete for a new contributor: setup, run, tests, quality gate, schema.
 
 Definition of done:
 
-- [ ] Every function gets the same group as in `generate.py`, or the difference is listed with a
+- [x] Every function gets the same group as in `generate.py`, or the difference is listed with a
   reason.
-- [ ] The parity report covers P1–P15 and has no unexplained gaps.
+- [x] The parity report covers P1–P15 and has no unexplained gaps. It prints the items it covers
+  (P16 is the output stage's).
 - [ ] The CI job passes on a real overlunky checkout and its artifact can be downloaded.
-- [ ] The schema document is committed and matches the output.
+- [x] The schema document is committed and matches the output.
 
 ### DIG-6. Lua names and LuaLS definition files (P16)
 
@@ -635,7 +663,7 @@ Definition of done:
 - **LLVM distribution on Windows.** Confirm the release archive contains the Clang CMake package. If
   it doesn't, fall back to vcpkg `llvm[clang]` (long build, cacheable in CI).
 - **Windows-only parsing.** Needs MSVC headers and the Windows SDK, so the docs pipeline gains a
-  Windows step. The alternative of cross-parsing on Linux with `clang-cl` + `xwin`-fetched SDK
+  Windows step (DIG-5: `.github/workflows/dig.yml`). The alternative of cross-parsing on Linux with `clang-cl` + `xwin`-fetched SDK
   headers is more moving parts. Not recommended unless the Windows runner is unacceptable.
 - **Parse cost.** sol2 is template-heavy. Measured in DIG-0 (Release, sequential, one TU at a time):
   50 script TUs in 154 s; median 2.2 s, min 1.4 s, max 10.3 s (`entities_monsters_lua.cpp`; then

@@ -23,10 +23,12 @@ toolchain setup.
 
 - The host has CMake, Ninja, Git, Python, Visual Studio (MSVC STL, Windows SDK, vcvars64) and LLVM in
   `C:\Program Files\LLVM\bin` (clang-cl, same LLVM major as the pinned development package).
-- The Clang/LLVM development package (static libraries and CMake configs) is pinned in `CMakeLists.txt`
+- The Clang/LLVM development package (static libraries and CMake configs) is pinned in `cmake/LLVMPackage.cmake`
   (`DOCS_DIGGER_LLVM_VERSION`) and unpacked into `thirdparty/` on the first configure. The Clang C++ API is not
   stable across majors: bump the pin only on purpose, together with the analyzer pins in
   `tools/requirements-quality.txt`.
+- There is Lua installed on the dev host with luacheck (no shortcut) use it to check quality of Lua
+  API files output.
 - Use the scripts; they enter the Visual Studio environment themselves (`tools\dev-env.cmd`):
   - `build.bat [Debug|Release|All]`: clang-cl + Ninja Multi-Config in `build/digger`;
   - `test.bat [Debug|Release|All]`: build + CTest; `set DD_UPDATE_GOLDEN=1` rewrites the golden files;
@@ -86,6 +88,9 @@ These rules hold at all times, not only before a release.
   `FetchContent` (URL + SHA256, `SYSTEM`, `SOURCE_DIR` under `thirdparty/`) like the LLVM package.
 - `tools/parity.py` compares the digger output with the old `parse_source.py` results. Run it at the end of
   every step and keep its report free of regressions.
+- The output format is frozen in `schema/docs-digger.schema.json` (every field described; the `schema.<name>` tests
+  check each golden file with `tools/check_schema.py`). A change to the output fields or their meaning updates the
+  schema in the same change and raises `schema_version` (`SchemaVersion` in `src/model.hpp` and the schema's `const`).
 - A change is finished when it builds, all tests pass and the quality gate passes.
 
 ## When Editing or Creating Code
@@ -99,6 +104,6 @@ These rules hold at all times, not only before a release.
 - Use RAII and values; avoid raw owning pointers.
 - The code is built without RTTI, like the LLVM libraries it links: no `dynamic_cast` or `typeid`; use
   `llvm::dyn_cast` / `llvm::isa` on Clang AST nodes.
-- **PREFERENCE** Slow processing is acceptable, this is documentation parser. Becoming faster is of course 
+- **PREFERENCE** Slow processing is acceptable, this is documentation parser. Becoming faster is of course
   preferred but can be done in a later plan step. Parallel processing is preferred.
 - When committing do not add "Co-Authored By" line.

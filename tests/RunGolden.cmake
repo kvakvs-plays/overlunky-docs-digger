@@ -6,16 +6,21 @@ get_filename_component(actual_dir "${ACTUAL}" DIRECTORY)
 file(MAKE_DIRECTORY "${actual_dir}")
 
 # A fixture may come with a runtime enum dump, <name>.lua_enums.txt, like overlunky's docs/game_data/lua_enums.txt.
-set(runtime_enums "")
+set(fixture_options "")
 if(EXISTS "${FIXTURE_DIR}/${NAME}.lua_enums.txt")
-  set(runtime_enums "--runtime-enums=${FIXTURE_DIR}/${NAME}.lua_enums.txt")
+  set(fixture_options "--runtime-enums=${FIXTURE_DIR}/${NAME}.lua_enums.txt")
+endif()
+# ... and with function group rules, <name>.groups.json, like config/groups.json.
+if(EXISTS "${FIXTURE_DIR}/${NAME}.groups.json")
+  list(APPEND fixture_options "--groups=${FIXTURE_DIR}/${NAME}.groups.json")
 endif()
 
 # Runs the digger with extra options, writing output; its progress lines go to the variable named by log_var.
 function(run_digger output log_var)
   # Same language mode and sol2 settings as overlunky's game_api target.
   execute_process(
-    COMMAND "${DIGGER}" "--root=${FIXTURE_DIR}" "-o" "${output}" ${runtime_enums} ${ARGN} "${FIXTURE_DIR}/${NAME}.cpp" --
+    COMMAND "${DIGGER}" "--root=${FIXTURE_DIR}" "-o" "${output}" ${fixture_options} ${ARGN}
+      "${FIXTURE_DIR}/${NAME}.cpp" --
       -std=c++20 "-I${SOL2_INCLUDE_DIR}" "-I${LUA_INCLUDE_DIR}" -DSOL_ALL_SAFETIES_ON=1 -DSOL_PRINT_ERRORS=0
     RESULT_VARIABLE digger_result
     ERROR_VARIABLE digger_log)

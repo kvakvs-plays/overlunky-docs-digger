@@ -128,10 +128,23 @@ namespace dd {
             return result;
         }
 
+        // Moves a `Group: <name>` line, wherever it is in the comment, out of the text into doc.group.
+        void takeGroup(std::vector<std::string>& lines, Doc& doc) {
+            std::erase_if(lines, [&doc](const std::string& line) {
+                llvm::StringRef text = llvm::StringRef(line).trim();
+                if (!text.consume_front("Group:")) {
+                    return false;
+                }
+                doc.group = text.trim().str();
+                return true;
+            });
+        }
+
     } // namespace
 
     Doc parseDoc(std::vector<std::string> lines) {
         Doc doc;
+        takeGroup(lines, doc);
         while (!lines.empty()) {
             const llvm::StringRef first = llvm::StringRef(lines.front()).trim();
             if (first.starts_with("NoDoc")) {

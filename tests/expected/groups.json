@@ -1,0 +1,225 @@
+{
+  "aliases": [],
+  "enums": [],
+  "events": [],
+  "functions": [
+    {
+      "doc": [
+        "Matches the second rule by its whole name."
+      ],
+      "group": "Entity functions",
+      "name": "door",
+      "overloads": [
+        {
+          "cpp": "lambda at groups.cpp:18",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 18
+      }
+    },
+    {
+      "doc": [
+        "No rule matches, so the fallback of the config applies."
+      ],
+      "group": "Generic functions",
+      "name": "frobnicate",
+      "overloads": [
+        {
+          "cpp": "lambda at groups.cpp:22",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 22
+      }
+    },
+    {
+      "doc": [
+        "A Group line first still lets the NoDoc after it be read."
+      ],
+      "group": "Special functions",
+      "name": "hidden_special",
+      "nodoc": true,
+      "overloads": [
+        {
+          "cpp": "lambda at groups.cpp:33",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 33
+      }
+    },
+    {
+      "doc": [
+        "Grouped by the file it is bound in."
+      ],
+      "group": "Game patching functions",
+      "name": "modify_ankh_health",
+      "overloads": [
+        {
+          "cpp": "lambda at groups_patches.hpp:9",
+          "params": [
+            {
+              "name": "max",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups_patches.hpp",
+        "line": 9
+      }
+    },
+    {
+      "doc": [
+        "Both rules match; the first one listed wins."
+      ],
+      "group": "Spawn functions",
+      "name": "spawn_entity",
+      "overloads": [
+        {
+          "cpp": "lambda at groups.cpp:14",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 14
+      }
+    },
+    {
+      "doc": [
+        "Spawns, but the directive overrides the rules."
+      ],
+      "group": "Special functions",
+      "name": "spawn_special",
+      "overloads": [
+        {
+          "cpp": "lambda at groups.cpp:27",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 27
+      }
+    },
+    {
+      "doc": [
+        "Matches the first rule by a substring of its name."
+      ],
+      "group": "Spawn functions",
+      "name": "spawn_thing",
+      "overloads": [
+        {
+          "cpp": "lambda at groups.cpp:10",
+          "params": [
+            {
+              "name": "count",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 10
+      }
+    },
+    {
+      "doc": [
+        "Bound in a namespace table: grouped by the table."
+      ],
+      "group": "Util",
+      "name": "spawn_helper",
+      "overloads": [
+        {
+          "cpp": "lambda at groups.cpp:38",
+          "params": [],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "owner": [
+        "Util"
+      ],
+      "source": {
+        "column": 5,
+        "file": "groups.cpp",
+        "line": 38
+      }
+    }
+  ],
+  "global_variables": [],
+  "libraries": [],
+  "schema_version": 1,
+  "script_callbacks": [],
+  "usertypes": [],
+  "values": []
+}

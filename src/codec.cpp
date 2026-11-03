@@ -50,8 +50,9 @@ namespace dd {
         };
         template <>
         struct Fields<Doc> {
-            static constexpr auto list = std::make_tuple(field("lines", &Doc::lines), field("nodoc", &Doc::nodoc),
-                                                         field("deprecated", &Doc::deprecated));
+            static constexpr auto list =
+                std::make_tuple(field("lines", &Doc::lines), field("nodoc", &Doc::nodoc),
+                                field("deprecated", &Doc::deprecated), field("group", &Doc::group));
         };
         template <>
         struct Fields<TypeInfo> {
@@ -90,7 +91,7 @@ namespace dd {
                 field("owner", &Function::owner), field("luaName", &Function::luaName), field("root", &Function::root),
                 field("loc", &Function::loc), field("doc", &Function::doc), field("overloads", &Function::overloads),
                 field("docOnly", &Function::docOnly), field("definedInLua", &Function::definedInLua),
-                field("aliasOf", &Function::aliasOf));
+                field("aliasOf", &Function::aliasOf), field("group", &Function::group));
         };
         template <>
         struct Fields<Value> {

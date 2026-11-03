@@ -327,6 +327,7 @@
   "events": [],
   "functions": [
     {
+      "group": "enums",
       "name": "level",
       "overloads": [
         {
@@ -356,6 +357,7 @@
       }
     },
     {
+      "group": "enums",
       "name": "set_flag",
       "overloads": [
         {
@@ -395,6 +397,7 @@
         "set_flag"
       ],
       "deprecated": true,
+      "group": "enums",
       "name": "setflag",
       "overloads": [
         {
@@ -430,6 +433,7 @@
       }
     },
     {
+      "group": "enums",
       "name": "spawn",
       "overloads": [
         {
@@ -489,6 +493,7 @@
       }
     },
     {
+      "group": "Util",
       "name": "twice",
       "overloads": [
         {
@@ -550,6 +555,7 @@
       }
     }
   ],
+  "schema_version": 1,
   "script_callbacks": [
     {
       "doc": [

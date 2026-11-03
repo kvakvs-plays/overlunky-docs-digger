@@ -15,6 +15,10 @@
 // The extracted Lua API as plain data (plan section 4). JSON is the only output; toJSON() overloads write it.
 namespace dd {
 
+    // Version of the JSON output (schema/docs-digger.schema.json): raised with every change to its fields, so readers
+    // can refuse output they do not know.
+    constexpr int SchemaVersion = 1;
+
     // Where an extracted entity is written, so readers can jump to the binding and outputs stay comparable.
     struct SourceLoc {
         // Path relative to the --root directory, with '/' separators on every platform.
@@ -35,6 +39,8 @@ namespace dd {
         bool nodoc = false;
         // `/// Deprecated`: still works, documented apart with its replacement.
         bool deprecated = false;
+        // `/// Group: <name>`: the documentation section a function goes in, overriding config/groups.json.
+        std::string group;
     };
 
     // What a C++ type means on the Lua side; the output stage turns it into Lua names.
@@ -206,6 +212,8 @@ namespace dd {
         // `lua["load_script"] = lua["import"]`: the keys of the aliased function, whose overloads are copied here
         // once every translation unit is parsed.
         std::vector<std::string> aliasOf;
+        // Documentation section (plan P14), chosen once every translation unit is parsed (groups.hpp).
+        std::string group;
     };
 
     // A Lua value that is not a function: `lua["players"] = ...`, `lua["on_frame"] = sol::lua_nil`.

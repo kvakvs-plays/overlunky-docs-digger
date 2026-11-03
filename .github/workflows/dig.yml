@@ -1,0 +1,97 @@
+# Builds and tests docs-digger, runs it over an overlunky checkout and uploads the extracted Lua API as the artifact
+# `docs-digger-api` (docs-digger-api.json, schema/docs-digger.schema.json), with the parity report against overlunky's
+# old docs/parse_source.py as `parity-report`. Windows only: overlunky parses with the MSVC STL and the Windows SDK.
+name: Dig
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      overlunky_repository:
+        description: overlunky repository to dig
+        default: spelunky-fyi/overlunky
+      overlunky_ref:
+        description: Branch, tag or commit of that repository
+        default: main
+
+jobs:
+  dig:
+    name: Build, test and dig (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 120
+    env:
+      DD_OVERLUNKY_ROOT: ${{ github.workspace }}\overlunky
+    steps:
+      - name: Check out docs-digger
+        uses: actions/checkout@v5
+        with:
+          path: digger
+
+      - name: Check out overlunky
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.overlunky_repository || 'spelunky-fyi/overlunky' }}
+          ref: ${{ inputs.overlunky_ref || 'main' }}
+          path: overlunky
+          submodules: recursive
+
+      # thirdparty/ holds every pinned download (above all the 4 GB LLVM package); the pins are in cmake/.
+      - name: Restore downloads
+        uses: actions/cache@v4
+        with:
+          path: digger/thirdparty
+          key: thirdparty-${{ runner.os }}-${{ hashFiles('digger/cmake/*.cmake') }}
+
+      # A configure needs a compiler before it can download LLVM: fetch the package first and compile with its clang-cl.
+      - name: Fetch the LLVM package
+        shell: pwsh
+        run: |
+          cmake "-DTHIRDPARTY_DIR=${{ github.workspace }}/digger/thirdparty" -P digger/cmake/LLVMPackage.cmake
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $package = Get-ChildItem digger/thirdparty -Directory -Filter 'clang+llvm-*-x86_64-pc-windows-msvc'
+          "DD_LLVM_BIN=$($package.FullName)\bin" >> $env:GITHUB_ENV
+
+      - name: Install Ninja if missing
+        shell: pwsh
+        run: if (-not (Get-Command ninja -ErrorAction SilentlyContinue)) { choco install ninja --no-progress -y }
+
+      - name: Build and test
+        shell: cmd
+        run: digger\test.bat Release
+
+      - name: Dig
+        shell: cmd
+        run: digger\dig.bat -o "%GITHUB_WORKSPACE%\docs-digger-api.json"
+
+      - name: Check the output against the schema
+        run: python digger/tools/check_schema.py digger/schema/docs-digger.schema.json docs-digger-api.json
+
+      # Informative: a newer overlunky may bring differences the report does not explain yet.
+      - name: Parity report
+        continue-on-error: true
+        shell: pwsh
+        # Only the report's own output is UTF-8: the old parser must keep reading sources with the Windows code page.
+        env:
+          PYTHONIOENCODING: utf-8
+        run: |
+          python digger/tools/parity.py overlunky docs-digger-api.json | Tee-Object parity-report.txt
+          exit $LASTEXITCODE
+
+      - name: Upload the API
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-digger-api
+          path: |
+            docs-digger-api.json
+            digger/schema/docs-digger.schema.json
+          if-no-files-found: error
+
+      - name: Upload the parity report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parity-report
+          path: parity-report.txt
+          if-no-files-found: ignore

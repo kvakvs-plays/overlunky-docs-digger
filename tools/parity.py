@@ -10,6 +10,7 @@ every enum (ps.enums): presence, comment, and per value presence, value and bloc
 every alias, library and entity cast (ps.aliases, ps.lualibs, ps.known_casts) for presence;
 the events (ps.events), and the global variables against the old hardcoded not_functions list;
 the vtable hook members (P7: set_pre_<name> / set_post_<name> names and NoDoc flags);
+the group of every old function against generate.py's func_cats (P14);
 and lists every type the digger left unclassified. The callback report (DIG-4) counts callback parameters and events
 per origin and lists the unresolved ones and the conflicts (doc fixes for overlunky, not failures). Differences that are understood are listed in ACCEPTED and
 ACCEPTED_PATTERNS with their reason; anything else makes the script exit with 1.
@@ -57,6 +58,26 @@ ACCEPTED_PATTERNS = [
      'reads; they are not bound (Lua reaches them through the ThemeInfo base)'),
 ]
 
+# What the report checks, by parity item of the plan (.agents/01-plan.md, section 1).
+COVERAGE = [
+    ('P1', 'global functions: presence, parameter counts, docs'),
+    ('P2', 'namespaced and member functions: usertype members (the old member_funs)'),
+    ('P3', 'deprecated flags'),
+    ('P4', 'NoDoc (old lists skip those) and the directive text kept in docs'),
+    ('P5', 'usertypes: bases, docs, constructors, members and their kinds'),
+    ('P6', 'C++ member docs (cpp_doc of members and getters)'),
+    ('P7', 'vtable hook members and their NoDoc'),
+    ('P8', 'events: documented reads of script globals'),
+    ('P9', 'enums: tables, docs, values (numbers or text) and block docs'),
+    ('P10', 'entity casts'),
+    ('P11', 'libraries'),
+    ('P12', 'aliases and their types'),
+    ('P13', 'global variables against not_functions'),
+    ('P14', 'function groups against generate.py func_cats'),
+    ('P15', 'callback report: origins, unresolved callbacks, conflicts with the prose'),
+    ('P16', 'not compared: the C++ to Lua type names are applied by the output stage'),
+]
+
 # Usertype members the old parser generates for vtable hooks; checked by check_vtable_hooks (P7).
 VTABLE_MEMBERS = ('set_pre_', 'set_post_', 'clear_virtual')
 
@@ -74,6 +95,16 @@ def load_old_parser(overlunky_root):
     ps.configure_parse(lambda text: text, 'docs-digger-parity.pickle')
     ps.run_parse()
     return ps
+
+
+def old_groups(overlunky_root, ps):
+    """The group generate.py gives each old function, by name: its func_cats loop runs alone on ps.funcs (the rest of
+    generate.py writes the markdown files)."""
+    with open(os.path.join(overlunky_root, 'docs', 'generate.py'), encoding='utf-8') as f:
+        text = f.read()
+    scope = {'ps': ps}
+    exec(text[text.index('func_cats = dict()'):text.index('for cat in sorted(func_cats):')], scope)
+    return {func['name']: group for group, funcs in scope['func_cats'].items() for func in funcs}
 
 
 def count_params(ps, param_text):
@@ -372,6 +403,14 @@ def check_globals(report, ps, digger, values_in_digger):
             report.add(name, 'old function is a value in the digger, neither a global variable nor a callback')
 
 
+def check_groups(report, groups, globals_by_name):
+    """P14: every old function the digger has keeps its generate.py group."""
+    for name, old in sorted(groups.items()):
+        new = sorted({b['group'] for b in globals_by_name.get(name, [])})
+        if new and old not in new:
+            report.add(name, f'group: old {old}, digger {new}')
+
+
 def check_vtable_hooks(report, ps, digger):
     """P7: every old set_pre_ / set_post_ member exists without NoDoc, and every documented digger hook is old."""
     by_name = {u['name']: u for u in digger['usertypes']}
@@ -463,11 +502,16 @@ def main():
     check_lists(report, ps, digger)
     check_globals(report, ps, digger, values_in_digger)
     check_vtable_hooks(report, ps, digger)
+    groups = old_groups(overlunky_root, ps)
+    check_groups(report, groups, globals_by_name)
     callbacks = callback_report(report, digger)
 
     unknown = unknown_types(digger)
     doc_only = sorted(f['name'] for f in digger['functions'] + digger['values'] if f.get('doc_only'))
-    print(f'old parser: {len(ps.funcs)} functions + {len(ps.deprecated_funcs)} deprecated')
+    print('covered parity items:')
+    for item, what in COVERAGE:
+        print(f'  {item}: {what}')
+    print(f'\nold parser: {len(ps.funcs)} functions + {len(ps.deprecated_funcs)} deprecated')
     print(f'old parser usertypes: {len(ps.types)}, with {sum(len(t["vars"]) for t in ps.types)} members')
     print(f'old parser: {len(ps.enums)} enums, {len(ps.aliases)} aliases, {len(ps.lualibs)} libraries, '
           f'{len(ps.known_casts)} casts, {len(ps.events)} events')
@@ -475,6 +519,7 @@ def main():
           f'{len(digger["values"])} values, {len(digger["usertypes"])} usertypes, {len(digger["enums"])} enums, '
           f'{len(digger["aliases"])} aliases, {len(digger["script_callbacks"])} script callbacks')
     print(f'global variables: {digger["global_variables"]}')
+    print(f'groups: {len(groups)} old functions in {len(set(groups.values()))} groups compared')
     print(f'doc-only functions (text signatures, kinds not classified): {doc_only}')
     print()
     for line in callbacks:

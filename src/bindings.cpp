@@ -162,7 +162,7 @@ namespace dd {
         const std::string root = isLuaState(rootExpr.getType()) ? std::string() : sourceText(&rootExpr, context);
         const clang::Expr* value = assignment.getArg(1);
         const Doc doc = bindingDoc(assignment, context);
-        Function function{key.owner, key.luaName, root, key.loc, doc, {}, false, false, {}};
+        Function function{key.owner, key.luaName, root, key.loc, doc, {}, false, false, {}, {}};
         if (describeFunction(function, value, context)) {
             out_.functions.emplace(std::move(key), std::move(function));
             return;

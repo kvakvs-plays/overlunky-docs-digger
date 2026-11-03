@@ -5,6 +5,7 @@
   "functions": [],
   "global_variables": [],
   "libraries": [],
+  "schema_version": 1,
   "script_callbacks": [],
   "usertypes": [
     {

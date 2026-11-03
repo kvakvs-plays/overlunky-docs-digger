@@ -16,10 +16,12 @@ call "%DD_VSDIR%\VC\Auxiliary\Build\vcvars64.bat" >nul 2>nul
 if errorlevel 1 exit /b 1
 
 rem PATH holds "(x86)", so it is changed outside any parenthesized block.
-if exist "%ProgramFiles%\LLVM\bin\clang-cl.exe" goto llvm
-echo clang-cl not found in "%ProgramFiles%\LLVM\bin". Install LLVM.
+rem DD_LLVM_BIN selects another LLVM bin directory (CI uses the clang-cl of the pinned package); default: installed LLVM.
+if not defined DD_LLVM_BIN set "DD_LLVM_BIN=%ProgramFiles%\LLVM\bin"
+if exist "%DD_LLVM_BIN%\clang-cl.exe" goto llvm
+echo clang-cl not found in "%DD_LLVM_BIN%". Install LLVM or set DD_LLVM_BIN.
 exit /b 1
 :llvm
-set "PATH=%ProgramFiles%\LLVM\bin;%PATH%"
+set "PATH=%DD_LLVM_BIN%;%PATH%"
 set "DD_DEV_ENV=1"
 exit /b 0

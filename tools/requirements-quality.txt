@@ -1,5 +1,5 @@
 # Quality analyzers and runtime dependencies, pinned for comparable reports.
-# clang-format and clang-tidy follow the LLVM major that CMakeLists.txt pins (DOCS_DIGGER_LLVM_VERSION).
+# clang-format and clang-tidy follow the LLVM major that cmake/LLVMPackage.cmake pins (DOCS_DIGGER_LLVM_VERSION).
 clang-format==23.1.2
 clang-tidy==23.1.3
 lizard==1.24.0

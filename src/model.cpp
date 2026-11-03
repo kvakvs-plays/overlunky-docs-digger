@@ -181,6 +181,7 @@ namespace dd {
         llvm::json::Object object;
         addBinding(object, function);
         addDoc(object, function.doc);
+        object["group"] = function.group;
         object["overloads"] = arrayOf(function.overloads);
         if (function.docOnly) {
             object["doc_only"] = true;
@@ -324,7 +325,8 @@ namespace dd {
                                   {"libraries", arrayOfValues(extraction.libraries)},
                                   {"script_callbacks", arrayOfValues(extraction.scriptCallbacks)},
                                   {"global_variables", llvm::json::Array(extraction.globalVariables)},
-                                  {"events", arrayOfValues(extraction.events)}};
+                                  {"events", arrayOfValues(extraction.events)},
+                                  {"schema_version", SchemaVersion}};
     }
 
 } // namespace dd

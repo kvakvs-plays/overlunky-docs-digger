@@ -247,6 +247,7 @@
       "doc": [
         "The function `bool is_valid(float x, float y)` filters, the function `nil do_spawn(float x, float y)` spawns."
       ],
+      "group": "callbacks",
       "name": "define_spawn",
       "overloads": [
         {
@@ -343,6 +344,7 @@
       "doc": [
         "Direct call: the result converted to bool."
       ],
+      "group": "callbacks",
       "name": "filter",
       "overloads": [
         {
@@ -420,6 +422,7 @@
         "Passed to a function defined elsewhere: unresolved, the prose fills in.",
         "<br/>The callback signature is nil command(string text)"
       ],
+      "group": "callbacks",
       "name": "register_command",
       "overloads": [
         {
@@ -463,6 +466,7 @@
       "doc": [
         "C4: the signature depends on the event."
       ],
+      "group": "callbacks",
       "name": "set_callback",
       "overloads": [
         {
@@ -509,6 +513,7 @@
         "C3: stored, dispatched elsewhere; nil keeps the timer (value_or on a local).",
         "<br/>The callback signature is bool interval()"
       ],
+      "group": "callbacks",
       "name": "set_interval",
       "overloads": [
         {
@@ -568,6 +573,7 @@
       "doc": [
         "Direct handle_function on a capture; the result is returned (nil passes on)."
       ],
+      "group": "callbacks",
       "name": "set_open",
       "overloads": [
         {
@@ -662,6 +668,7 @@
       }
     },
     {
+      "group": "callbacks",
       "name": "set_post_spawn",
       "overloads": [
         {
@@ -723,6 +730,7 @@
       "doc": [
         "C3: one record type in two containers; each binding gets the sites of its own container."
       ],
+      "group": "callbacks",
       "name": "set_pre_spawn",
       "overloads": [
         {
@@ -783,6 +791,7 @@
         "C2 with binders: the prose disagrees on the parameter count.",
         "<br/>The callback signature is bool render(Entity self)"
       ],
+      "group": "callbacks",
       "name": "set_render",
       "overloads": [
         {
@@ -875,6 +884,7 @@
       "doc": [
         "Forwarded to another Lua function: copies its callback."
       ],
+      "group": "callbacks",
       "name": "set_render_compat",
       "overloads": [
         {
@@ -963,6 +973,7 @@
       "doc": [
         "C2 with an optional result."
       ],
+      "group": "callbacks",
       "name": "set_spawn",
       "overloads": [
         {
@@ -1035,6 +1046,7 @@
       "doc": [
         "C1: the signature is the type."
       ],
+      "group": "callbacks",
       "name": "sort",
       "overloads": [
         {
@@ -1128,6 +1140,7 @@
       "doc": [
         "Followed into a function defined here: stored in a field nothing reads."
       ],
+      "group": "callbacks",
       "name": "store_command",
       "overloads": [
         {
@@ -1159,6 +1172,7 @@
   ],
   "global_variables": [],
   "libraries": [],
+  "schema_version": 1,
   "script_callbacks": [],
   "usertypes": [],
   "values": []
