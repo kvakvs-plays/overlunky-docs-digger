@@ -17,27 +17,6 @@ namespace dd {
 
     namespace {
 
-        // The type arguments of the class template specialization type is, packs expanded.
-        std::vector<clang::QualType> templateTypeArguments(clang::QualType type) {
-            std::vector<clang::QualType> types;
-            const auto* specialization = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(
-                type.getNonReferenceType()->getAsCXXRecordDecl());
-            if (specialization == nullptr) {
-                return types;
-            }
-            for (const clang::TemplateArgument& argument : specialization->getTemplateArgs().asArray()) {
-                if (argument.getKind() == clang::TemplateArgument::Type) {
-                    types.push_back(argument.getAsType());
-                }
-                else if (argument.getKind() == clang::TemplateArgument::Pack) {
-                    for (const clang::TemplateArgument& element : argument.pack_elements()) {
-                        types.push_back(element.getAsType());
-                    }
-                }
-            }
-            return types;
-        }
-
         // Type names as people write them, for bases.
         std::string typeName(clang::QualType type, const clang::ASTContext& context) {
             clang::PrintingPolicy policy(context.getLangOpts());
@@ -259,7 +238,7 @@ namespace dd {
                 }
                 else {
                     for (const clang::QualType param : signature->getParamTypes()) {
-                        sig.params.push_back({std::string(), classifyType(param, context), false});
+                        sig.params.emplace_back().type = classifyType(param, context);
                     }
                     sig.cppTarget = usertype.cppType;
                 }

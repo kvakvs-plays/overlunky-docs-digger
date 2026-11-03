@@ -1,0 +1,1165 @@
+{
+  "aliases": [
+    {
+      "name": "CallbackId",
+      "source": {
+        "column": 7,
+        "file": "callbacks.cpp",
+        "line": 15
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int"
+      }
+    }
+  ],
+  "enums": [
+    {
+      "name": "ON",
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 193
+      },
+      "values": [
+        {
+          "doc": [
+            "Runs every frame."
+          ],
+          "name": "FRAME",
+          "source": {
+            "column": 34,
+            "file": "callbacks.cpp",
+            "line": 193
+          },
+          "text": "ON::FRAME",
+          "value": 0
+        },
+        {
+          "doc": [
+            "Params: int screen",
+            "Runs on a level."
+          ],
+          "name": "LEVEL",
+          "source": {
+            "column": 54,
+            "file": "callbacks.cpp",
+            "line": 193
+          },
+          "text": "ON::LEVEL",
+          "value": 1
+        },
+        {
+          "doc": [
+            "Params: LoadContext load_ctx, int extra",
+            "Runs when loading."
+          ],
+          "name": "LOAD",
+          "source": {
+            "column": 74,
+            "file": "callbacks.cpp",
+            "line": 193
+          },
+          "text": "ON::LOAD",
+          "value": 2
+        },
+        {
+          "doc": [
+            "Runs on the logo screen."
+          ],
+          "name": "LOGO",
+          "source": {
+            "column": 122,
+            "file": "callbacks.cpp",
+            "line": 193
+          },
+          "text": "ON::LOGO",
+          "value": 4
+        },
+        {
+          "doc": [
+            "Params: RenderContext render_ctx",
+            "Return: `bool skip`",
+            "Runs before rendering."
+          ],
+          "name": "RENDER_PRE",
+          "source": {
+            "column": 92,
+            "file": "callbacks.cpp",
+            "line": 193
+          },
+          "text": "ON::RENDER_PRE",
+          "value": 3
+        }
+      ]
+    }
+  ],
+  "events": [
+    {
+      "callback": {
+        "nil_allowed": true,
+        "nil_meaning": "ignored",
+        "origin": "event_dispatch",
+        "params": [],
+        "returns": [],
+        "source": {
+          "column": 17,
+          "file": "callbacks.cpp",
+          "line": 120
+        },
+        "stored_in": "ScreenCallback::func"
+      },
+      "doc": [
+        "Runs every frame."
+      ],
+      "name": "FRAME",
+      "stored_in": "ScreenCallback::func",
+      "table": "ON"
+    },
+    {
+      "callback": {
+        "nil_allowed": true,
+        "nil_meaning": "ignored",
+        "origin": "event_dispatch",
+        "params": [
+          {
+            "name": "screen",
+            "type": {
+              "kind": "int",
+              "spelling": "int"
+            }
+          }
+        ],
+        "prose": "int screen",
+        "returns": [],
+        "source": {
+          "column": 13,
+          "file": "callbacks.cpp",
+          "line": 129
+        },
+        "stored_in": "ScreenCallback::func"
+      },
+      "doc": [
+        "Params: int screen",
+        "Runs on a level."
+      ],
+      "name": "LEVEL",
+      "stored_in": "ScreenCallback::func",
+      "table": "ON"
+    },
+    {
+      "callback": {
+        "conflicts": [
+          "the doc lists 2 parameters, the code passes 1: (std::string) -> nil"
+        ],
+        "nil_allowed": true,
+        "nil_meaning": "ignored",
+        "origin": "event_dispatch",
+        "params": [
+          {
+            "name": "",
+            "type": {
+              "canonical": "std::basic_string<char>",
+              "kind": "string",
+              "spelling": "std::string"
+            }
+          }
+        ],
+        "prose": "LoadContext load_ctx, int extra",
+        "returns": [],
+        "source": {
+          "column": 9,
+          "file": "callbacks.cpp",
+          "line": 106
+        },
+        "stored_in": "ScreenCallback::func"
+      },
+      "doc": [
+        "Params: LoadContext load_ctx, int extra",
+        "Runs when loading."
+      ],
+      "name": "LOAD",
+      "stored_in": "ScreenCallback::func",
+      "table": "ON"
+    },
+    {
+      "callback": {
+        "nil_allowed": true,
+        "nil_meaning": "ignored",
+        "origin": "event_dispatch",
+        "params": [],
+        "returns": [],
+        "source": {
+          "column": 13,
+          "file": "callbacks.cpp",
+          "line": 112
+        },
+        "stored_in": "ScreenCallback::func"
+      },
+      "doc": [
+        "Runs on the logo screen."
+      ],
+      "generic": true,
+      "name": "LOGO",
+      "stored_in": "ScreenCallback::func",
+      "table": "ON"
+    },
+    {
+      "callback": {
+        "nil_allowed": true,
+        "nil_meaning": "treated as false",
+        "origin": "event_dispatch",
+        "params": [
+          {
+            "name": "render_ctx",
+            "type": {
+              "kind": "record",
+              "spelling": "RenderContext"
+            }
+          }
+        ],
+        "prose": "RenderContext render_ctx",
+        "returns": [
+          {
+            "kind": "bool",
+            "spelling": "bool"
+          }
+        ],
+        "source": {
+          "column": 21,
+          "file": "callbacks.cpp",
+          "line": 150
+        },
+        "stored_in": "ScreenCallback::func"
+      },
+      "doc": [
+        "Params: RenderContext render_ctx",
+        "Return: `bool skip`",
+        "Runs before rendering."
+      ],
+      "name": "RENDER_PRE",
+      "stored_in": "ScreenCallback::func",
+      "table": "ON"
+    }
+  ],
+  "functions": [
+    {
+      "doc": [
+        "The function `bool is_valid(float x, float y)` filters, the function `nil do_spawn(float x, float y)` spawns."
+      ],
+      "name": "define_spawn",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:257",
+          "params": [
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "ignored",
+                "origin": "make_safe_cb",
+                "params": [
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "float",
+                      "spelling": "float"
+                    }
+                  },
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "float",
+                      "spelling": "float"
+                    }
+                  }
+                ],
+                "prose": "nil do_spawn(float x, float y)",
+                "returns": [],
+                "source": {
+                  "column": 22,
+                  "file": "callbacks.cpp",
+                  "line": 260
+                }
+              },
+              "name": "do_spawn",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            },
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "treated as false",
+                "origin": "make_safe_cb",
+                "params": [
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "float",
+                      "spelling": "float"
+                    }
+                  },
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "float",
+                      "spelling": "float"
+                    }
+                  }
+                ],
+                "prose": "bool is_valid(float x, float y)",
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "source": {
+                  "column": 22,
+                  "file": "callbacks.cpp",
+                  "line": 259
+                }
+              },
+              "name": "is_valid",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": []
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 257
+      }
+    },
+    {
+      "doc": [
+        "Direct call: the result converted to bool."
+      ],
+      "name": "filter",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:264",
+          "params": [
+            {
+              "name": "uids",
+              "type": {
+                "inner": [
+                  {
+                    "kind": "int",
+                    "spelling": "int"
+                  }
+                ],
+                "kind": "container",
+                "spelling": "std::vector<int>"
+              }
+            },
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "treated as false",
+                "origin": "direct_call",
+                "params": [
+                  {
+                    "name": "uid",
+                    "type": {
+                      "kind": "int",
+                      "spelling": "int"
+                    }
+                  }
+                ],
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "source": {
+                  "column": 35,
+                  "file": "callbacks.cpp",
+                  "line": 269
+                }
+              },
+              "name": "predicate",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "inner": [
+                {
+                  "kind": "int",
+                  "spelling": "int"
+                }
+              ],
+              "kind": "container",
+              "spelling": "std::vector<int>"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 264
+      }
+    },
+    {
+      "doc": [
+        "Passed to a function defined elsewhere: unresolved, the prose fills in.",
+        "<br/>The callback signature is nil command(string text)"
+      ],
+      "name": "register_command",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:285",
+          "params": [
+            {
+              "callback": {
+                "nil_allowed": false,
+                "origin": "doc_comment",
+                "params": [
+                  {
+                    "name": "text",
+                    "type": {
+                      "kind": "unknown",
+                      "spelling": "string"
+                    }
+                  }
+                ],
+                "prose": "nil command(string text)",
+                "returns": [],
+                "unresolved": "passed to register_elsewhere"
+              },
+              "name": "command",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": []
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 285
+      }
+    },
+    {
+      "doc": [
+        "C4: the signature depends on the event."
+      ],
+      "name": "set_callback",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:212",
+          "params": [
+            {
+              "callback": {
+                "origin": "event_dispatch",
+                "selector": "ON",
+                "stored_in": "ScreenCallback::func"
+              },
+              "name": "cb",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            },
+            {
+              "name": "event",
+              "type": {
+                "kind": "enum",
+                "spelling": "ON"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 212
+      }
+    },
+    {
+      "doc": [
+        "C3: stored, dispatched elsewhere; nil keeps the timer (value_or on a local).",
+        "<br/>The callback signature is bool interval()"
+      ],
+      "name": "set_interval",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:224",
+          "params": [
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "treated as true",
+                "origin": "stored_handle_function",
+                "params": [],
+                "prose": "bool interval()",
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "source": {
+                  "column": 42,
+                  "file": "callbacks.cpp",
+                  "line": 134
+                },
+                "stored_in": "IntervalCallback::func"
+              },
+              "name": "cb",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            },
+            {
+              "name": "frames",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 224
+      }
+    },
+    {
+      "doc": [
+        "Direct handle_function on a capture; the result is returned (nil passes on)."
+      ],
+      "name": "set_open",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:250",
+          "params": [
+            {
+              "name": "uid",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "passed on as an empty optional",
+                "origin": "handle_function",
+                "params": [
+                  {
+                    "name": "opener",
+                    "type": {
+                      "inner": [
+                        {
+                          "kind": "record",
+                          "spelling": "Entity"
+                        }
+                      ],
+                      "kind": "pointer",
+                      "nullable": true,
+                      "spelling": "Entity *"
+                    }
+                  }
+                ],
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "source": {
+                  "column": 18,
+                  "file": "callbacks.cpp",
+                  "line": 254
+                }
+              },
+              "name": "fun",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "inner": [
+                {
+                  "inner": [
+                    {
+                      "kind": "record",
+                      "spelling": "Entity"
+                    }
+                  ],
+                  "kind": "pointer",
+                  "nullable": true,
+                  "spelling": "Entity *"
+                }
+              ],
+              "kind": "function",
+              "returns": [
+                {
+                  "inner": [
+                    {
+                      "kind": "bool",
+                      "spelling": "bool"
+                    }
+                  ],
+                  "kind": "optional",
+                  "nullable": true,
+                  "spelling": "std::optional<bool>"
+                }
+              ],
+              "spelling": "std::function<std::optional<bool> (Entity *)>"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 250
+      }
+    },
+    {
+      "name": "set_post_spawn",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:294",
+          "params": [
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "ignored",
+                "origin": "stored_handle_function",
+                "params": [
+                  {
+                    "name": "entity",
+                    "type": {
+                      "inner": [
+                        {
+                          "kind": "record",
+                          "spelling": "Entity"
+                        }
+                      ],
+                      "kind": "pointer",
+                      "nullable": true,
+                      "spelling": "Entity *"
+                    }
+                  }
+                ],
+                "returns": [],
+                "source": {
+                  "column": 9,
+                  "file": "callbacks.cpp",
+                  "line": 170
+                },
+                "stored_in": "SpawnCallback::func in LuaBackend::post_spawn_callbacks"
+              },
+              "name": "cb",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 294
+      }
+    },
+    {
+      "doc": [
+        "C3: one record type in two containers; each binding gets the sites of its own container."
+      ],
+      "name": "set_pre_spawn",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:288",
+          "params": [
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "no override: the C++ side keeps its default",
+                "origin": "stored_handle_function",
+                "params": [
+                  {
+                    "name": "x",
+                    "type": {
+                      "kind": "float",
+                      "spelling": "float"
+                    }
+                  }
+                ],
+                "returns": [
+                  {
+                    "kind": "int",
+                    "spelling": "int"
+                  }
+                ],
+                "source": {
+                  "column": 32,
+                  "file": "callbacks.cpp",
+                  "line": 160
+                },
+                "stored_in": "SpawnCallback::func in LuaBackend::pre_spawn_callbacks"
+              },
+              "name": "cb",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 288
+      }
+    },
+    {
+      "doc": [
+        "C2 with binders: the prose disagrees on the parameter count.",
+        "<br/>The callback signature is bool render(Entity self)"
+      ],
+      "name": "set_render",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:232",
+          "params": [
+            {
+              "name": "uid",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "callback": {
+                "conflicts": [
+                  "the doc lists 1 parameters, the code passes 3: (RenderContext, Entity *, int) -> bool"
+                ],
+                "nil_allowed": true,
+                "nil_meaning": "treated as false",
+                "origin": "make_safe_cb",
+                "params": [
+                  {
+                    "binder": "front",
+                    "name": "",
+                    "type": {
+                      "kind": "record",
+                      "spelling": "RenderContext"
+                    }
+                  },
+                  {
+                    "name": "",
+                    "type": {
+                      "inner": [
+                        {
+                          "kind": "record",
+                          "spelling": "Entity"
+                        }
+                      ],
+                      "kind": "pointer",
+                      "nullable": true,
+                      "spelling": "Entity *"
+                    }
+                  },
+                  {
+                    "binder": "back",
+                    "name": "",
+                    "type": {
+                      "kind": "int",
+                      "spelling": "int"
+                    }
+                  }
+                ],
+                "prose": "bool render(Entity self)",
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "source": {
+                  "column": 21,
+                  "file": "callbacks.cpp",
+                  "line": 234
+                }
+              },
+              "name": "fun",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 232
+      }
+    },
+    {
+      "doc": [
+        "Forwarded to another Lua function: copies its callback."
+      ],
+      "name": "set_render_compat",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:301",
+          "params": [
+            {
+              "name": "uid",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "treated as false",
+                "origin": "make_safe_cb",
+                "params": [
+                  {
+                    "binder": "front",
+                    "name": "",
+                    "type": {
+                      "kind": "record",
+                      "spelling": "RenderContext"
+                    }
+                  },
+                  {
+                    "name": "",
+                    "type": {
+                      "inner": [
+                        {
+                          "kind": "record",
+                          "spelling": "Entity"
+                        }
+                      ],
+                      "kind": "pointer",
+                      "nullable": true,
+                      "spelling": "Entity *"
+                    }
+                  },
+                  {
+                    "binder": "back",
+                    "name": "",
+                    "type": {
+                      "kind": "int",
+                      "spelling": "int"
+                    }
+                  }
+                ],
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "source": {
+                  "column": 21,
+                  "file": "callbacks.cpp",
+                  "line": 234
+                }
+              },
+              "name": "fun",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 301
+      }
+    },
+    {
+      "doc": [
+        "C2 with an optional result."
+      ],
+      "name": "set_spawn",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:243",
+          "params": [
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "passed on as an empty optional",
+                "origin": "make_safe_cb",
+                "params": [
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "float",
+                      "spelling": "float"
+                    }
+                  },
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "float",
+                      "spelling": "float"
+                    }
+                  }
+                ],
+                "returns": [
+                  {
+                    "inner": [
+                      {
+                        "kind": "int",
+                        "spelling": "int"
+                      }
+                    ],
+                    "kind": "optional",
+                    "nullable": true,
+                    "spelling": "std::optional<int>"
+                  }
+                ],
+                "source": {
+                  "column": 64,
+                  "file": "callbacks.cpp",
+                  "line": 245
+                }
+              },
+              "name": "fun",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 243
+      }
+    },
+    {
+      "doc": [
+        "C1: the signature is the type."
+      ],
+      "name": "sort",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:275",
+          "params": [
+            {
+              "name": "uids",
+              "type": {
+                "inner": [
+                  {
+                    "kind": "int",
+                    "spelling": "int"
+                  }
+                ],
+                "kind": "container",
+                "spelling": "std::vector<int>"
+              }
+            },
+            {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "treated as false",
+                "origin": "std_function",
+                "params": [
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "int",
+                      "spelling": "int"
+                    }
+                  },
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "int",
+                      "spelling": "int"
+                    }
+                  }
+                ],
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ]
+              },
+              "name": "less",
+              "type": {
+                "inner": [
+                  {
+                    "kind": "int",
+                    "spelling": "int"
+                  },
+                  {
+                    "kind": "int",
+                    "spelling": "int"
+                  }
+                ],
+                "kind": "function",
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ],
+                "spelling": "std::function<bool (int, int)>"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "inner": [
+                {
+                  "kind": "int",
+                  "spelling": "int"
+                }
+              ],
+              "kind": "container",
+              "spelling": "std::vector<int>"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 275
+      }
+    },
+    {
+      "doc": [
+        "Followed into a function defined here: stored in a field nothing reads."
+      ],
+      "name": "store_command",
+      "overloads": [
+        {
+          "cpp": "lambda at callbacks.cpp:281",
+          "params": [
+            {
+              "callback": {
+                "origin": "unresolved",
+                "stored_in": "OrphanCallback::func in LuaBackend::orphans",
+                "unresolved": "stored in OrphanCallback::func in LuaBackend::orphans, which no handle_function call reads"
+              },
+              "name": "command",
+              "type": {
+                "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                "kind": "function",
+                "spelling": "sol::function"
+              }
+            }
+          ],
+          "returns": []
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "callbacks.cpp",
+        "line": 281
+      }
+    }
+  ],
+  "global_variables": [],
+  "libraries": [],
+  "script_callbacks": [],
+  "usertypes": [],
+  "values": []
+}

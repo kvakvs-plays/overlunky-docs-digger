@@ -60,6 +60,22 @@ namespace dd {
     // `/// NoDoc` binding. Only the member name is returned: some hints name the wrong class after copy-paste.
     std::optional<std::string> autodocHint(clang::SourceLocation loc, const clang::ASTContext& context);
 
+    // A callback signature written in a doc comment: `The callback signature is bool on_x(Entity self)` or
+    // ``the function `nil do_spawn(float x, float y)` ``.
+    struct ProseCallback {
+        // The callback's name in the text, which may name the parameter that receives it (`do_spawn`).
+        std::string name;
+        // Its parameters and return as text only (origin DocComment), and the matched text as prose.
+        CallbackSig callback;
+    };
+
+    // Every callback signature written in lines (the old reSignature regex, ported).
+    std::vector<ProseCallback> proseCallbacks(const std::vector<std::string>& lines);
+
+    // The callback an event's docs describe: params from a `Params: T a, U b` line, a return when a `Return: ...`
+    // line exists (text only); prose is the Params line.
+    CallbackSig eventProse(const std::vector<std::string>& lines);
+
     // Parameters and return of lambda text such as `[](uint32_t uid) -> Entity*{}`; types keep only their
     // spelling (kind Unknown), since the text is not compiled.
     FunctionSig signatureFromText(llvm::StringRef text);

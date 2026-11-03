@@ -1,0 +1,991 @@
+{
+  "aliases": [],
+  "enums": [],
+  "events": [],
+  "functions": [],
+  "global_variables": [],
+  "libraries": [],
+  "script_callbacks": [],
+  "usertypes": [
+    {
+      "cpp": "Entity",
+      "members": [
+        {
+          "kind": "method",
+          "name": "clear_virtual",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:99",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "name": "callback_id",
+                  "type": {
+                    "canonical": "unsigned int",
+                    "kind": "int",
+                    "spelling": "std::uint32_t"
+                  }
+                }
+              ],
+              "returns": [],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 99
+          }
+        },
+        {
+          "kind": "method",
+          "name": "set_post_dtor",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:84",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "ignored",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 86
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 144
+          }
+        },
+        {
+          "cpp_doc": [
+            "Kills the entity."
+          ],
+          "kind": "method",
+          "name": "set_post_kill",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:84",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "ignored",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      },
+                      {
+                        "name": "destroy_corpse",
+                        "type": {
+                          "kind": "bool",
+                          "spelling": "bool"
+                        }
+                      },
+                      {
+                        "name": "responsible",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 86
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 145
+          }
+        },
+        {
+          "cpp_doc": [
+            "Can the entity be pushed."
+          ],
+          "kind": "method",
+          "name": "set_post_pushable",
+          "nodoc": true,
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:84",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "ignored",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 86
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 147
+          }
+        },
+        {
+          "kind": "method",
+          "name": "set_post_render",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:84",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "ignored",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      },
+                      {
+                        "name": "",
+                        "type": {
+                          "kind": "float",
+                          "spelling": "float"
+                        }
+                      },
+                      {
+                        "binder": "back",
+                        "name": "",
+                        "type": {
+                          "kind": "record",
+                          "spelling": "RenderContext"
+                        }
+                      }
+                    ],
+                    "returns": [],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 86
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 148
+          }
+        },
+        {
+          "kind": "method",
+          "name": "set_pre_dtor",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:78",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "treated as false: the original function runs (true skips it)",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [
+                      {
+                        "kind": "bool",
+                        "spelling": "bool"
+                      }
+                    ],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 80
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 144
+          }
+        },
+        {
+          "cpp_doc": [
+            "Kills the entity."
+          ],
+          "kind": "method",
+          "name": "set_pre_kill",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:78",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "treated as false: the original function runs (true skips it)",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      },
+                      {
+                        "name": "destroy_corpse",
+                        "type": {
+                          "kind": "bool",
+                          "spelling": "bool"
+                        }
+                      },
+                      {
+                        "name": "responsible",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [
+                      {
+                        "kind": "bool",
+                        "spelling": "bool"
+                      }
+                    ],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 80
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 145
+          }
+        },
+        {
+          "cpp_doc": [
+            "Can the entity be pushed."
+          ],
+          "kind": "method",
+          "name": "set_pre_pushable",
+          "nodoc": true,
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:78",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "the original function runs (a value replaces its result and skips it)",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [
+                      {
+                        "inner": [
+                          {
+                            "kind": "bool",
+                            "spelling": "bool"
+                          }
+                        ],
+                        "kind": "optional",
+                        "nullable": true,
+                        "spelling": "std::optional<bool>"
+                      }
+                    ],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 80
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 147
+          }
+        },
+        {
+          "kind": "method",
+          "name": "set_pre_render",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:78",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "treated as false: the original function runs (true skips it)",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      },
+                      {
+                        "name": "",
+                        "type": {
+                          "kind": "float",
+                          "spelling": "float"
+                        }
+                      },
+                      {
+                        "binder": "back",
+                        "name": "",
+                        "type": {
+                          "kind": "record",
+                          "spelling": "RenderContext"
+                        }
+                      }
+                    ],
+                    "returns": [
+                      {
+                        "kind": "bool",
+                        "spelling": "bool"
+                      }
+                    ],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 80
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 148
+          }
+        },
+        {
+          "kind": "field",
+          "name": "uid",
+          "source": {
+            "column": 40,
+            "file": "vtables.cpp",
+            "line": 139
+          },
+          "type": {
+            "kind": "int",
+            "spelling": "int"
+          }
+        }
+      ],
+      "name": "Entity",
+      "source": {
+        "column": 5,
+        "file": "vtables.cpp",
+        "line": 139
+      }
+    },
+    {
+      "bases": [
+        "Entity"
+      ],
+      "cpp": "Movable",
+      "members": [
+        {
+          "kind": "method",
+          "name": "clear_virtual",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:99",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "name": "callback_id",
+                  "type": {
+                    "canonical": "unsigned int",
+                    "kind": "int",
+                    "spelling": "std::uint32_t"
+                  }
+                }
+              ],
+              "returns": [],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 99
+          }
+        },
+        {
+          "cpp_doc": [
+            "How much damage the movable deals."
+          ],
+          "kind": "method",
+          "name": "set_post_get_damage",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:84",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "ignored",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 86
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 154
+          }
+        },
+        {
+          "cpp_doc": [
+            "How much damage the movable deals."
+          ],
+          "kind": "method",
+          "name": "set_pre_get_damage",
+          "overloads": [
+            {
+              "cpp": "lambda at vtables.cpp:78",
+              "params": [
+                {
+                  "name": "self",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "spelling": "Entity"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "nullable": true,
+                    "spelling": "Entity *"
+                  }
+                },
+                {
+                  "callback": {
+                    "nil_allowed": true,
+                    "nil_meaning": "the original function runs (a value replaces its result and skips it)",
+                    "origin": "vtable_hook",
+                    "params": [
+                      {
+                        "name": "self",
+                        "type": {
+                          "inner": [
+                            {
+                              "kind": "record",
+                              "spelling": "Entity"
+                            }
+                          ],
+                          "kind": "pointer",
+                          "nullable": true,
+                          "spelling": "Entity *"
+                        }
+                      }
+                    ],
+                    "returns": [
+                      {
+                        "inner": [
+                          {
+                            "kind": "int",
+                            "spelling": "unsigned char"
+                          }
+                        ],
+                        "kind": "optional",
+                        "nullable": true,
+                        "spelling": "std::optional<unsigned char>"
+                      }
+                    ],
+                    "source": {
+                      "column": 25,
+                      "file": "vtables.cpp",
+                      "line": 80
+                    }
+                  },
+                  "name": "fun",
+                  "type": {
+                    "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+                    "kind": "function",
+                    "spelling": "sol::function"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "canonical": "unsigned int",
+                  "kind": "int",
+                  "spelling": "std::uint32_t"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 9,
+            "file": "vtables.cpp",
+            "line": 154
+          }
+        }
+      ],
+      "name": "Movable",
+      "source": {
+        "column": 5,
+        "file": "vtables.cpp",
+        "line": 140
+      }
+    }
+  ],
+  "values": []
+}

@@ -9,7 +9,9 @@ every usertype (ps.types, ps.constructors):
 every enum (ps.enums): presence, comment, and per value presence, value and block docs;
 every alias, library and entity cast (ps.aliases, ps.lualibs, ps.known_casts) for presence;
 the events (ps.events), and the global variables against the old hardcoded not_functions list;
-and lists every type the digger left unclassified. Differences that are understood are listed in ACCEPTED and
+the vtable hook members (P7: set_pre_<name> / set_post_<name> names and NoDoc flags);
+and lists every type the digger left unclassified. The callback report (DIG-4) counts callback parameters and events
+per origin and lists the unresolved ones and the conflicts (doc fixes for overlunky, not failures). Differences that are understood are listed in ACCEPTED and
 ACCEPTED_PATTERNS with their reason; anything else makes the script exit with 1.
 """
 import json
@@ -55,8 +57,11 @@ ACCEPTED_PATTERNS = [
      'reads; they are not bound (Lua reaches them through the ThemeInfo base)'),
 ]
 
-# Usertype members the old parser generates for vtable hooks; checked with the callback passes (DIG-4).
+# Usertype members the old parser generates for vtable hooks; checked by check_vtable_hooks (P7).
 VTABLE_MEMBERS = ('set_pre_', 'set_post_', 'clear_virtual')
+
+# sol2 types of a Lua function parameter, which must get a callback signature.
+LUA_FUNCTION_TYPES = ('sol::basic_function<', 'sol::basic_protected_function<')
 
 def load_old_parser(overlunky_root):
     """Runs the old parser in overlunky's docs/ directory and returns the module with its results."""
@@ -144,10 +149,13 @@ def walk_types(type_info, path, found):
 
 
 def walk_signature(sig, path, found):
-    """Collects the unknown kinds of a signature's parameters and returns."""
-    for param in sig['params']:
+    """Collects the unknown kinds of a signature's parameters and returns, and of the callbacks found in code."""
+    for param in sig.get('params', []):
         walk_types(param['type'], f'{path}({param["name"]})', found)
-    for returned in sig['returns']:
+        callback = param.get('callback', {})
+        if callback.get('origin') not in (None, 'doc_comment', 'unresolved'):
+            walk_signature(callback, f'{path}({param["name"]}) callback', found)
+    for returned in sig.get('returns', []):
         walk_types(returned, f'{path} -> ', found)
 
 
@@ -364,6 +372,71 @@ def check_globals(report, ps, digger, values_in_digger):
             report.add(name, 'old function is a value in the digger, neither a global variable nor a callback')
 
 
+def check_vtable_hooks(report, ps, digger):
+    """P7: every old set_pre_ / set_post_ member exists without NoDoc, and every documented digger hook is old."""
+    by_name = {u['name']: u for u in digger['usertypes']}
+    for old_type in ps.types:
+        old = {v['name'] for v in old_type['vars'] if v['name'].startswith(VTABLE_MEMBERS)}
+        if not old:
+            continue
+        members = by_name.get(old_type['name'], {'members': []})['members']
+        hooks = {m['name']: m for m in members if m['name'].startswith(VTABLE_MEMBERS)}
+        documented = {name for name, m in hooks.items() if not m.get('nodoc')}
+        for name in sorted(old - set(hooks)):
+            report.add(f'{old_type["name"]}.{name}', 'vtable hook missing in the digger output')
+        for name in sorted((old & set(hooks)) - documented):
+            report.add(f'{old_type["name"]}.{name}', 'vtable hook: old documented, digger NoDoc')
+        for name in sorted(documented - old):
+            report.add(f'{old_type["name"]}.{name}', 'vtable hook: digger documented, old has none')
+
+
+def signatures(digger):
+    """(path, signature) of every bound signature: functions, constructors and member accessors and overloads."""
+    for function in digger['functions']:
+        for sig in function['overloads']:
+            yield '.'.join(function.get('owner', []) + [function['name']]), sig
+    for usertype in digger['usertypes']:
+        for sig in usertype.get('constructors', []):
+            yield f'{usertype["name"]}.new', sig
+        for member in usertype['members']:
+            for sig in member.get('overloads', []) + [member[s] for s in ('getter', 'setter') if s in member]:
+                yield f'{usertype["name"]}.{member["name"]}', sig
+
+
+def callback_report(report, digger):
+    """Callback parameters and events per origin, the unresolved ones and the conflicts; a Lua function parameter
+    without a callback is a problem. Returns the lines to print."""
+    origins, unresolved, conflicts = {}, [], []
+    for path, sig in signatures(digger):
+        for param in sig['params']:
+            callback = param.get('callback')
+            canonical = param['type'].get('canonical', param['type']['spelling'])
+            if callback is None:
+                if canonical.startswith(LUA_FUNCTION_TYPES):
+                    report.add(f'{path}({param["name"]})', 'Lua function parameter without a callback')
+                continue
+            where = f'{path}({param["name"]})'
+            origins[callback['origin']] = origins.get(callback['origin'], 0) + 1
+            if 'unresolved' in callback:
+                unresolved.append(f'{where}: {callback["unresolved"]}'
+                                  + (' (prose used)' if callback['origin'] == 'doc_comment' else ''))
+            conflicts += [f'{where}: {c}' for c in callback.get('conflicts', [])]
+    events = {}
+    for event in digger['events']:
+        callback = event['callback']
+        kind = 'unresolved' if callback['origin'] == 'unresolved' else ('generic' if event.get('generic') else 'sites')
+        events[kind] = events.get(kind, 0) + 1
+        where = f'{event["table"]}.{event["name"]} ({event["stored_in"]})'
+        if kind == 'unresolved':
+            unresolved.append(f'{where}: {callback["unresolved"]}')
+        conflicts += [f'{where}: {c}' for c in callback.get('conflicts', [])]
+    lines = [f'callback parameters by origin: {dict(sorted(origins.items()))}',
+             f'events: {len(digger["events"])} {dict(sorted(events.items()))}',
+             f'\nunresolved callbacks: {len(unresolved)}'] + [f'  {u}' for u in unresolved]
+    lines += [f'\ncallback conflicts (doc fixes for overlunky): {len(conflicts)}'] + [f'  {c}' for c in conflicts]
+    return lines
+
+
 def main():
     """Runs both parsers' results through the checks and prints the report."""
     overlunky_root, digger_file = os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])
@@ -389,6 +462,8 @@ def main():
     check_enums(report, ps, digger)
     check_lists(report, ps, digger)
     check_globals(report, ps, digger, values_in_digger)
+    check_vtable_hooks(report, ps, digger)
+    callbacks = callback_report(report, digger)
 
     unknown = unknown_types(digger)
     doc_only = sorted(f['name'] for f in digger['functions'] + digger['values'] if f.get('doc_only'))
@@ -401,6 +476,9 @@ def main():
           f'{len(digger["aliases"])} aliases, {len(digger["script_callbacks"])} script callbacks')
     print(f'global variables: {digger["global_variables"]}')
     print(f'doc-only functions (text signatures, kinds not classified): {doc_only}')
+    print()
+    for line in callbacks:
+        print(line)
     print(f'\nunclassified types: {len(unknown)}')
     for path, spelling in unknown:
         print(f'  {path}: {spelling}')

@@ -47,6 +47,9 @@ set(OVERLUNKY_ROOT "${DD_DEFAULT_OVERLUNKY_ROOT}" CACHE PATH "overlunky source r
 add_executable(docs-digger
   src/bindings.cpp
   src/bindings.hpp
+  src/callback_join.cpp
+  src/callbacks.cpp
+  src/callbacks.hpp
   src/comments.cpp
   src/comments.hpp
   src/main.cpp

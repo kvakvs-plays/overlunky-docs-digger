@@ -15,6 +15,7 @@
     }
   ],
   "enums": [],
+  "events": [],
   "functions": [
     {
       "name": "callbacks",
@@ -23,6 +24,10 @@
           "cpp": "lambda at functions.cpp:64",
           "params": [
             {
+              "callback": {
+                "origin": "unresolved",
+                "unresolved": "no use of the parameter matches a known pattern"
+              },
               "name": "cb",
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
@@ -31,6 +36,34 @@
               }
             },
             {
+              "callback": {
+                "nil_allowed": true,
+                "nil_meaning": "treated as false",
+                "origin": "std_function",
+                "params": [
+                  {
+                    "name": "",
+                    "type": {
+                      "kind": "int",
+                      "spelling": "int"
+                    }
+                  },
+                  {
+                    "name": "",
+                    "type": {
+                      "canonical": "std::basic_string<char>",
+                      "kind": "string",
+                      "spelling": "std::string"
+                    }
+                  }
+                ],
+                "returns": [
+                  {
+                    "kind": "bool",
+                    "spelling": "bool"
+                  }
+                ]
+              },
               "name": "filter",
               "type": {
                 "canonical": "std::function<bool (int, std::basic_string<char>)>",

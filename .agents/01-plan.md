@@ -150,7 +150,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   quality.bat             clang-format, Lizard, clang-tidy gate
   cmake/                  downloads, zlib/zstd build, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
-  src/main.cpp            CLI, ClangTool per TU, register passes, merge, write output
+  src/main.cpp            CLI, ClangTool per TU (progress line per TU, 10 s heartbeat), register passes, merge, write output
   src/model.hpp/.cpp      plain structs for the data model + toJSON() overloads (llvm::json)
   src/source_root.cpp     --root: which files results may come from, root-relative paths
   src/types.cpp           QualType -> TypeInfo (section 4)
@@ -159,7 +159,8 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   src/merge.cpp           steps after all TUs, no AST: runtime enum file, block docs, used aliases, global variables
   src/resolve.cpp         sol2 expression helpers shared by the passes: key paths, definitionOf, resolveBound
   src/usertypes.cpp       B2: new_usertype arguments, members, constructors, bases, member docs
-  src/callbacks.cpp       passes C1-C6 (callback signatures, nil semantics)
+  src/callbacks.cpp       passes C2-C6 and the AST part of C5 (parameter flows, dispatch sites, keys, vtable hooks)
+  src/callback_join.cpp   callback steps after all TUs, no AST: C1, joins, events, vtable members, C7 prose
   tests/fixtures/*.cpp    small sources using the real sol2 headers from <overlunky>/src/sol2
   tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
   tests/RunGolden.cmake   runs one fixture and compares; DD_UPDATE_GOLDEN=1 rewrites the golden file
@@ -209,12 +210,16 @@ Default, Group, ...}}`.
   the field a getter reads, an autodoc hint, or the C++ member of the same name).
 - **CallbackSig**: `params[]` (with front/back binder params marked), `returns`, `nil_allowed`,
   `nil_meaning` (for example "treated as false", "original call proceeds"), `origin`
-  (`std_function | make_safe_cb | stored_handle_function | event_dispatch | vtable_hook | doc_comment`),
-  `conflicts[]` (disagreement with the prose comment).
+  (`std_function | make_safe_cb | handle_function | direct_call | stored_handle_function | event_dispatch |
+  vtable_hook | doc_comment | unresolved`), `stored_in` (`Record::field`, `in Container` when known),
+  `selector` (enum whose value selects the signature; then the signatures are in `events`), `unresolved` (the
+  pattern that stopped the search), `prose`, `conflicts[]` (between dispatch sites, or with the prose comment),
+  `source` (the site it was read from).
 - **Enum**: `name`, `doc`, `values[] {name, text, value? (number or string), doc, origin (static |
   doc_comment | runtime_file)}`, `filled_at_runtime` (code adds keys in a loop); a table only the
   runtime file knows has `origin: runtime_file` and no source.
-- **Event**: `ON.<name>`, `callback: CallbackSig`, `doc` (DIG-4).
+- **Event**: `table` (`ON`, `THEME_OVERRIDE`), `name`, `stored_in`, `callback: CallbackSig`, `generic` (the
+  key has no site of its own; the generic dispatch's signature), `doc` (of the enum value) (DIG-4).
 - **ScriptCallback** (P8): a documented global the script defines and C++ reads (`on_frame`):
   `name`, `type`, `doc`.
 - **Alias** (`name`, `type`, `doc`), **LibraryCall** (`names[]`, enclosing `function`),
@@ -385,6 +390,63 @@ aren't documented today.
 - For `make_safe_cb` with a non-optional `R`, mark the return as "required; nil converts by sol2
   rules". Exact semantics are to be confirmed by reading `safe_cb.inl`.
 
+Rules read from `safe_cb.hpp` / `safe_cb.inl`, `handle_lua_function.inl` and `hookable_vtable.inl` in DIG-4
+(encoded once in `src/callbacks.cpp`):
+
+- binders: Lua gets `FrontBinder` values + the `Sig` params + `BackBinder` values. A bound value of type T is
+  passed as is, unless T is invocable: then its call result is passed (`Binder<T>::get` calls it without
+  arguments, or with the callback's arguments), so the param type is the call operator's return type;
+- `handle_function<R>(backend, f, args...)` returns `optional<R>` (`bool` "call succeeded" for `R = void`):
+  `nil`, no value, a Lua error and a failed conversion all give an empty optional. `R = std::monostate`
+  ignores the result like `void`. Entity pointers in `args` are cast to their real Lua type;
+- `make_safe_cb<R(A...)>` on a `sol::function`: `R = void` ignores the result, `optional<T>` passes an empty
+  optional on, any other `R` turns `nil` into `R{}` (`false`, `0`, an empty value);
+- `std::function<R(A...)>` params (C1) convert through sol2: `void` ignores the result, `bool` takes `nil` as
+  `false`, nullable `R` takes it as empty; other `R` need a value;
+- vtable hooks: a pre-hook of a `void` function returns `bool` through `make_safe_clearable_cb`, so `nil` is
+  `false` ("the original runs"); `true` skips the original (the last pre-hook's answer counts). A pre-hook of
+  an `R` function returns `optional<R>`: a value replaces the result and skips the original (the first value
+  wins), `nil` lets the original run. Post-hooks return nothing. Hooks get the object first (cast to its real
+  type), then the virtual's params, then the `BackBinder` values;
+- consumers of `handle_function` (C6): `.value_or(X)` (also on a local `optional` read later) means "nil is
+  X"; the optional used as a condition or `if (auto r = ...)` means "nil keeps the default behavior"; a
+  returned optional is passed on.
+
+Found in DIG-4 and handled there (`src/callbacks.cpp` reads the AST, the join runs in `src/merge.cpp`):
+
+- a `sol::function` param is followed through `std::move`, locals and lambda captures (also init captures)
+  to the first of: `make_safe_cb` (C2), `handle_function` on it (origin `handle_function`), a direct call
+  `f(args)` (`direct_call`, `filter_entities`), a record it is stored in (`ScreenCallback{cb, ...}`,
+  `x->func = f`; C3, keyed `Record::field`), a C++ function it is passed to (followed into that function's
+  body when the TU has it), or a Lua function it is passed to (`lua["Entity"]["set_pre_x"](ent, fun)`, the
+  deprecated entity callbacks: the target's callback is copied after all TUs). Facts are keyed by the
+  function (qualified name, template arguments, parameter types; lambdas by location) and parameter index, so
+  a declaration in a header and its definition in another TU meet; they are joined with the bound signatures
+  after all TUs;
+- one record type may be stored in several containers (`EntitySpawnCallback` in `pre_entity_spawn_callbacks`
+  and `post_entity_spawn_callbacks`): a record added with `push_back`/`emplace_back` keeps its container, and a
+  dispatch site keeps the container of the range-for around it (`stored_in: "Record::field in Container"`);
+- dispatch sites are `handle_function` calls on a stored field. A site's key (C4) is the enum constant it is
+  guarded by (`case ON::FRAME:`, `if (callback.screen == ON::LOAD)`, compared with a member of the same
+  object), or an enum param of its function (compared that way, or used in the storage expression:
+  `overrides[index]->func`). Enum params are followed back through calls (`pre_event(ON::PRE_UPDATE)` →
+  `on_pre(event)`) and locals (`auto index = THEME_OVERRIDE::X; run_pre_func(index)`), across TUs. A site in a
+  range-for over a container takes the constant that guarded the write into it (`load_callbacks[id] = cb`
+  under `if (cb.screen == ON::LOAD)`). Unkeyed sites on a keyed storage are the generic dispatch (screen
+  events) and serve the keys without a site of their own (`events[].generic`);
+- events are the keys of a storage whose binding also takes an enum param of the key's type (`set_callback(cb,
+  ON event)`, `CustomTheme:override(THEME_OVERRIDE, function)`): every value of the Lua table of that name gets
+  an entry (`events`), with the signature of its sites, the generic one, or none (unresolved);
+- the triggering TUs are outside `script/` (`state.cpp`, `level_api.cpp`, `render_api.cpp`): the default
+  `--select` now covers all of `src/game_api/` (101 TUs);
+- event prose (C7) is checked only for tables whose docs use the `Params:` convention (`ON`); `THEME_OVERRIDE`
+  has none;
+- vtable hooks (C5) come from the `HookableVTable<Self, Cb, Entries...>` variables (`static EntityVTable
+  vt(lua, lua["Entity"], "ENTITY_OVERRIDE")`): the usertype is the key path of the second argument, entries
+  and their `/// NoDoc` come from the written alias, signatures from the registration lambdas in the
+  `register_hooks` instantiations (keys joined from the `LiteralString` template arguments). The generic B1
+  records of those lambdas (root `lua_type`) are replaced by the usertype members.
+
 **C7. Doc-prose fallback and lint.**
 
 - Keep parsing `The callback signature is ...` (the `reSignature` regex, ported to `llvm::Regex`).
@@ -409,7 +471,7 @@ Members of usertypes and namespace tables are grouped by their owner.
 Work through the steps in order. Check items off (`[x]`) as they are finished. A step is finished
 when its own definition of done and the common one below are both met. A finished step moves to
 `00-finished.md` as one compact bullet; its discoveries stay in sections 2, 3 and 7. Finished so
-far: DIG-0, DIG-1, DIG-2, DIG-3.
+far: DIG-0, DIG-1, DIG-2, DIG-3, DIG-4.
 
 **Definition of done for every step**
 
@@ -424,35 +486,28 @@ far: DIG-0, DIG-1, DIG-2, DIG-3.
 - [ ] Discoveries that change the plan (new patterns, rejected approaches, timings) are written into
   this file.
 
-### DIG-4. Callback signatures (C1–C7; P7, P15)
+### DIG-4b. Per-TU result cache (SQLite) and parallel parsing
 
-- [ ] Read `safe_cb.hpp` / `safe_cb.inl` and `hookable_vtable.hpp`; write the binder and `nil` rules
-  down (section 5) before coding them.
-- [ ] C1: `std::function<R(A...)>` params.
-- [ ] C2: `make_safe_cb<Sig>` / `make_safe_clearable_cb<Sig>` with `FrontBinder` / `BackBinder`
-  params.
-- [ ] C3: stored callbacks dispatched through `handle_function<Ret>`; several call sites merged,
-  mismatches recorded as conflicts.
-- [ ] C4: per-event signatures from the `ON` dispatch `switch`.
-- [ ] C5: vtable hooks: `set_pre_<name>` / `set_post_<name>` per usertype, `NoDoc` per entry,
-  pre-hook return rule.
-- [ ] C6: `nil` semantics: `.value_or(X)`, `has_value()` / `operator bool` branches,
-  `handle_function<void>`, non-optional `R` in `make_safe_cb`.
-- [ ] C7: prose fallback (`The callback signature is ...` through `llvm::Regex`) and `conflicts[]`.
-- [ ] Callback report: callback params resolved per `origin`, the unresolved list, the conflict
-  list.
-- [ ] Fixtures for each of C1–C7.
+A full run parses 101 TUs in about 7 minutes; repeated runs by a developer mostly see unchanged sources.
+
+- [ ] Each TU fills its own `Extraction`; the partial results are merged in source order (the first TU that
+  sees an entity wins, as today), so the output stays byte-identical. Needs a JSON reader for the model
+  (`llvm::json` `fromJSON`), including the internal callback facts.
+- [ ] Cache in SQLite (amalgamation pinned by URL + SHA256 in `thirdparty/`, like zlib/zstd; LLVM ships no
+  equivalent): key = TU path + compile command (with the digger's added flags) + digger version (hash of the
+  executable); value = the TU's dependency list (every file it included, with a content hash) and its partial
+  result. A hit needs every dependency hash to match; anything else re-parses and replaces the row. Keyed on
+  content, not on the git hash: local uncommitted edits (see section 7) must not serve stale results.
+- [ ] `--cache <file>` (default `build/digger-cache.sqlite`; decided with the user: content-hash key, cache under
+  `build/`, so deleting `build/` only costs one full parse), `--no-cache`; the progress line says `cached` or the
+  parse time.
+- [ ] Parse the missing TUs in parallel (`--jobs N`), measuring memory per sol2 TU first (section 7).
 
 Definition of done:
 
-- [ ] Every `sol::function` param of a bound function has a `CallbackSig`, or is in the unresolved
-  list with the pattern that blocked it.
-- [ ] Every `ON` event has a callback signature, or is in the unresolved list.
-- [ ] Every prose `The callback signature is ...` either matches the extracted signature or appears
-  in the conflict list.
-- [ ] Vtable hook names and their `NoDoc` flags match the old output (P7).
-- [ ] The conflict list is handed over as a list of doc fixes for overlunky (they are not fixed in
-  this project).
+- [ ] A second run with no source change parses nothing and gives byte-identical output.
+- [ ] Touching one header re-parses exactly the TUs that include it.
+- [ ] Cached, uncached and parallel runs give byte-identical output.
 
 ### DIG-5. Grouping, finalization, CI (P14)
 
@@ -493,7 +548,10 @@ out of scope here.
   work runs on fixtures (under 1 s each), and 2.5 minutes is acceptable for parity runs and CI.
   Revisit with the all-TUs executor if parity runs become the bottleneck; measure memory per TU
   first, since 32 parallel sol2 TUs may not fit. Caching on file hashes, as `parse_cache.py` does
-  today, stays an option.
+  today, stays an option. DIG-4 widened the selection to all 101 `src/game_api` TUs (events are triggered from
+  `state.cpp`, `level_api.cpp`, `render_api.cpp`; all parse with 0 errors): about 7 minutes sequential, the 51
+  non-script TUs adding about 140 s. The digger prints a line per TU and a heartbeat every 10 s (single TUs take
+  up to 22 s). Cache and parallel parsing: DIG-4b.
 - **Callback dataflow heuristics (C3).** Unusual storage patterns will be missed. C7 fallback and
   the DIG-4 report make misses visible. Don't build general dataflow; add patterns only as the
   report demands.

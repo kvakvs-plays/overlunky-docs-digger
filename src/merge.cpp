@@ -119,15 +119,24 @@ namespace dd {
             }
         }
 
+        // Adds the names in the parameter types (with their callbacks) and the return types.
+        void addNames(const std::vector<Param>& params, const std::vector<TypeInfo>& returns,
+                      std::set<std::string>& names) {
+            for (const Param& param : params) {
+                addNames(param.type, names);
+                for (const CallbackSig& callback : param.callback) {
+                    addNames(callback.params, callback.returns, names);
+                }
+            }
+            for (const TypeInfo& returned : returns) {
+                addNames(returned, names);
+            }
+        }
+
         // Adds the names in the parameter and return types of signatures.
         void addNames(const std::vector<FunctionSig>& signatures, std::set<std::string>& names) {
             for (const FunctionSig& sig : signatures) {
-                for (const Param& param : sig.params) {
-                    addNames(param.type, names);
-                }
-                for (const TypeInfo& returned : sig.returns) {
-                    addNames(returned, names);
-                }
+                addNames(sig.params, sig.returns, names);
             }
         }
 
@@ -156,6 +165,9 @@ namespace dd {
             }
             for (const auto& [key, callback] : extraction.scriptCallbacks) {
                 addNames(callback.type, names);
+            }
+            for (const auto& [key, event] : extraction.events) {
+                addNames(event.callback.params, event.callback.returns, names);
             }
             return names;
         }

@@ -52,19 +52,23 @@ The scripts enter the Visual Studio environment themselves; run them from any sh
 - `build.bat [Debug|Release|All]`: builds `docs-digger` with clang-cl and Ninja Multi-Config in `build\digger`.
 - `test.bat [Debug|Release|All]`: builds and runs the CTest suite (golden-file tests).
 - `dig.bat [options]`: builds Release, configures overlunky into `build\overlunky` for its `compile_commands.json`
-  (configure only) and runs the digger on `src/game_api/script/**`, adding the enum values of
+  (configure only) and runs the digger on `src/game_api/**` (the events are triggered outside `script/`),
+  adding the enum values of
   `docs/game_data/lua_enums.txt` (`--runtime-enums`).
 - `quality.bat [changed|all]`: the clang-format, Lizard and clang-tidy gate.
 
 `dig.bat` passes its arguments to `docs-digger`, for example `dig.bat -o api.json --timings`. The output is
-JSON: `functions`, `values`, `usertypes`, `enums`, `aliases`, `libraries`, `script_callbacks` and
-`global_variables`, each with its source location, documentation and C++ types (see `.agents/01-plan.md`,
-section 4). Run `build\digger\Release\docs-digger.exe --help` for all options. A full run
-over the 50 script translation units takes about 2.5 minutes.
+JSON: `functions`, `values`, `usertypes`, `enums`, `aliases`, `libraries`, `script_callbacks`,
+`global_variables` and `events`, each with its source location, documentation and C++ types; parameters that
+receive a Lua function carry a `callback` signature (see `.agents/01-plan.md`, sections 4 and 5). Run
+`build\digger\Release\docs-digger.exe --help` for all options. A full run over the 101 `game_api` translation
+units takes about 7 minutes; the digger prints a line per translation unit and a heartbeat every 10 s while one
+is being parsed.
 
 `python tools\parity.py <overlunky root> api.json` runs overlunky's old `docs/parse_source.py` and compares its
 results with the digger's. It lists accepted differences with their reasons and exits with 1 on anything
-unexplained.
+unexplained. Its callback report counts callback signatures per origin and lists the unresolved ones and the
+conflicts between the code and the `The callback signature is ...` / `Params:` docs (doc fixes for overlunky).
 
 Golden tests compare the output for each `tests/fixtures/<name>.cpp` with `tests/expected/<name>.json`; a
 `tests/fixtures/<name>.lua_enums.txt` next to a fixture is passed as `--runtime-enums`. After an

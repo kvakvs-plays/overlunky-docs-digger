@@ -30,6 +30,16 @@ namespace dd {
         constexpr std::array<const char*, 3> OriginNames = {"static", "doc_comment", "runtime_file"};
         static_assert(OriginNames.size() == static_cast<std::size_t>(EnumValueOrigin::RuntimeFile) + 1);
 
+        // Callback origins, in CallbackOrigin order.
+        constexpr std::array<const char*, 9> CallbackOriginNames = {
+            "std_function",   "make_safe_cb", "handle_function", "direct_call", "stored_handle_function",
+            "event_dispatch", "vtable_hook",  "doc_comment",     "unresolved"};
+        static_assert(CallbackOriginNames.size() == static_cast<std::size_t>(CallbackOrigin::Unresolved) + 1);
+
+        // Binder names, in Binder order (None is not written).
+        constexpr std::array<const char*, 3> BinderNames = {"none", "front", "back"};
+        static_assert(BinderNames.size() == static_cast<std::size_t>(Binder::Back) + 1);
+
         // A JSON array of the toJSON() of every element.
         template <typename T>
         llvm::json::Array arrayOf(const std::vector<T>& items) {
@@ -109,6 +119,51 @@ namespace dd {
         if (param.omittable) {
             object["omittable"] = true;
         }
+        if (param.binder != Binder::None) {
+            object["binder"] = BinderNames.at(static_cast<std::size_t>(param.binder));
+        }
+        if (!param.callback.empty()) {
+            object["callback"] = toJSON(param.callback.front());
+        }
+        return object;
+    }
+
+    llvm::json::Value toJSON(const CallbackSig& callback) {
+        llvm::json::Object object{{"origin", CallbackOriginNames.at(static_cast<std::size_t>(callback.origin))}};
+        // A selected callback's signatures are in the events.
+        if (callback.origin != CallbackOrigin::Unresolved && callback.selector.empty()) {
+            object["params"] = arrayOf(callback.params);
+            object["returns"] = arrayOf(callback.returns);
+            object["nil_allowed"] = callback.nilAllowed;
+        }
+        const std::pair<const char*, const std::string*> texts[] = {{"nil_meaning", &callback.nilMeaning},
+                                                                    {"stored_in", &callback.storedIn},
+                                                                    {"selector", &callback.selector},
+                                                                    {"unresolved", &callback.unresolved},
+                                                                    {"prose", &callback.prose}};
+        for (const auto& [key, text] : texts) {
+            if (!text->empty()) {
+                object[key] = *text;
+            }
+        }
+        if (!callback.conflicts.empty()) {
+            object["conflicts"] = llvm::json::Array(callback.conflicts);
+        }
+        if (!callback.loc.file.empty()) {
+            object["source"] = toJSON(callback.loc);
+        }
+        return object;
+    }
+
+    llvm::json::Value toJSON(const Event& event) {
+        llvm::json::Object object{{"table", event.table},
+                                  {"name", event.luaName},
+                                  {"stored_in", event.storedIn},
+                                  {"callback", toJSON(event.callback)}};
+        if (event.generic) {
+            object["generic"] = true;
+        }
+        addDoc(object, event.doc);
         return object;
     }
 
@@ -268,7 +323,8 @@ namespace dd {
                                   {"aliases", arrayOfValues(extraction.aliases)},
                                   {"libraries", arrayOfValues(extraction.libraries)},
                                   {"script_callbacks", arrayOfValues(extraction.scriptCallbacks)},
-                                  {"global_variables", llvm::json::Array(extraction.globalVariables)}};
+                                  {"global_variables", llvm::json::Array(extraction.globalVariables)},
+                                  {"events", arrayOfValues(extraction.events)}};
     }
 
 } // namespace dd

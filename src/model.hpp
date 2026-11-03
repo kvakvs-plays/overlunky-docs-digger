@@ -6,7 +6,10 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <set>
 #include <string>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 // The extracted Lua API as plain data (plan section 4). JSON is the only output; toJSON() overloads write it.
@@ -76,7 +79,19 @@ namespace dd {
         bool hidden = false;
     };
 
-    // One parameter of a bound C++ function.
+    // Which end of a callback's arguments a value bound by make_safe_cb comes from.
+    enum class Binder : std::uint8_t {
+        // An argument of the C++ caller.
+        None,
+        // A FrontBinder value, passed before the caller's arguments.
+        Front,
+        // A BackBinder value, passed after them.
+        Back,
+    };
+
+    struct CallbackSig;
+
+    // One parameter of a bound C++ function, or one argument a Lua callback receives.
     struct Param {
         // Name in the C++ declaration; empty when unnamed.
         std::string name;
@@ -84,6 +99,65 @@ namespace dd {
         TypeInfo type;
         // Part of the trailing run of nullable parameters, so a Lua call may leave it out.
         bool omittable = false;
+        // For callback arguments: a value make_safe_cb adds in front of or behind the caller's arguments.
+        Binder binder = Binder::None;
+        // The Lua function this parameter receives: empty or one signature (C1 to C7).
+        std::vector<CallbackSig> callback{};
+        // The function and parameter (resolve.hpp parameterKey), to join the callback facts found where the function
+        // is defined, maybe in another translation unit (not written).
+        std::string key{};
+    };
+
+    // How a callback signature was found (plan C1 to C7).
+    enum class CallbackOrigin : std::uint8_t {
+        // A std::function<R(A...)> parameter: sol2 converts the Lua function.
+        StdFunction,
+        // make_safe_cb<Sig> / make_safe_clearable_cb<Sig> with binders.
+        MakeSafeCb,
+        // handle_function<R> called on the parameter itself (or a capture of it).
+        HandleFunction,
+        // The parameter is called directly (`pred(entity)`).
+        DirectCall,
+        // Stored in a record field and dispatched with handle_function<R> elsewhere.
+        StoredHandleFunction,
+        // Stored and dispatched per enum key (`set_callback(cb, ON.X)`): the signatures are in Extraction::events.
+        EventDispatch,
+        // A vtable hook (`set_pre_<name>` / `set_post_<name>`).
+        VtableHook,
+        // Only the `The callback signature is ...` prose of the doc comment.
+        DocComment,
+        // No pattern matched; CallbackSig::unresolved says why.
+        Unresolved,
+    };
+
+    // What a Lua callback receives and returns, and what a nil return means.
+    struct CallbackSig {
+        // Arguments the callback receives, binder values marked.
+        std::vector<Param> params;
+        // Values the C++ side reads back: empty when the result is ignored.
+        std::vector<TypeInfo> returns;
+        // nil (or no return) is accepted.
+        bool nilAllowed = false;
+        // What the C++ side does with nil ("ignored", "treated as false", ...).
+        std::string nilMeaning;
+        // How the signature was found.
+        CallbackOrigin origin = CallbackOrigin::Unresolved;
+        // The record field the callback is stored in (`ScreenCallback::func`), for stored callbacks.
+        std::string storedIn;
+        // The enum whose value selects the signature (`ON`); the signatures are in Extraction::events.
+        std::string selector;
+        // Why no signature was found, for Unresolved; the pattern that stopped the search.
+        std::string unresolved;
+        // The `The callback signature is ...` text of the doc comment, when there is one.
+        std::string prose;
+        // Disagreements between dispatch sites, or between the code and the prose.
+        std::vector<std::string> conflicts;
+        // Where the signature was read (make_safe_cb or handle_function call); empty for type-only origins.
+        SourceLoc loc;
+        // For DocComment and forwarded callbacks: the Lua function whose callback this is (not written).
+        std::vector<std::string> forwardedTo;
+        // For forwarded callbacks: the parameter of forwardedTo that receives it (not written).
+        unsigned forwardedParam = 0;
     };
 
     // How a usertype method receives its object (Lua calls it as `object:method(...)`).
@@ -309,6 +383,77 @@ namespace dd {
         std::vector<std::string> lines;
     };
 
+    // The Lua callback for one key of an enum-keyed dispatch: an event (`set_callback(cb, ON.FRAME)`) or a theme
+    // override (`CustomTheme:override(THEME_OVERRIDE.SPAWN_LEVEL, f)`).
+    struct Event {
+        // Lua table of the key (`ON`).
+        std::string table;
+        // Key in that table (`FRAME`).
+        std::string luaName;
+        // Record field the callbacks are stored in (`ScreenCallback::func`).
+        std::string storedIn;
+        // Signature from the key's dispatch sites (merged), or unresolved.
+        CallbackSig callback;
+        // The key has no dispatch site of its own: the signature is the generic dispatch's (screen events).
+        bool generic = false;
+        // Docs of the enum value.
+        Doc doc;
+    };
+
+    // A handle_function call on a stored callback, with the key that selects it (plan C3, C4).
+    struct DispatchSite {
+        // Record field the callback is read from (`ScreenCallback::func`).
+        std::string storage;
+        // Arguments, return and nil meaning at this call.
+        CallbackSig signature;
+        // The enum constant guarding the call (`ON::FRAME`), as `Enum::Value`.
+        std::string constant;
+        // A function and enum parameter guarding the call (`LuaBackend::on_pre` param 0): its callers decide.
+        std::string selectorFunction;
+        // Index of that parameter.
+        unsigned selectorParam = 0;
+        // A range-for over this container field encloses the call (`LuaBackend::load_callbacks`).
+        std::string container;
+        // The container field of the closest range-for around the call, which tells callbacks of the same record
+        // type apart (`pre_entity_spawn_callbacks`, `post_entity_spawn_callbacks`).
+        std::string loop;
+    };
+
+    // An enum argument passed to a function parameter: a constant, or the caller's own enum parameter (plan C4).
+    struct SelectorEdge {
+        // Called function, with template arguments.
+        std::string callee;
+        // Parameter index in the callee.
+        unsigned param = 0;
+        // The constant passed (`ON::PRE_UPDATE`); empty when a caller parameter is forwarded.
+        std::string constant;
+        // The forwarding caller, with template arguments.
+        std::string caller;
+        // Parameter index in the caller.
+        unsigned callerParam = 0;
+
+        auto operator<=>(const SelectorEdge&) const = default;
+    };
+
+    // Callback facts collected per translation unit and joined after all of them (not written).
+    struct CallbackFacts {
+        // What the code does with each sol::function parameter, by parameterKey.
+        std::map<std::string, CallbackSig> flows;
+        // Dispatch sites by location and enclosing function (template instantiations share locations).
+        std::map<std::pair<SourceLoc, std::string>, DispatchSite> sites;
+        // Enum arguments of calls.
+        std::set<SelectorEdge> edges;
+        // Container fields written under an enum constant guard: (container, constant).
+        std::set<std::pair<std::string, std::string>> containerKeys;
+        // Enum types of the other parameters of functions that store a callback, by storage field: the keys of
+        // that storage are a Lua API (events).
+        std::map<std::string, std::set<std::string>> storageSelectors;
+        // Vtable hook members by usertype Lua name.
+        std::map<std::string, std::vector<Member>> vtableHooks;
+        // Bindings the vtable pass replaced (the registration lambdas, recorded by B1 with root `lua_type`).
+        std::set<SourceLoc> consumedBindings;
+    };
+
     // Identity of a binding: bindings repeat across translation units (headers, templates) and must stay once.
     struct BindingKey {
         // Table keys before the name.
@@ -339,6 +484,10 @@ namespace dd {
         std::map<MemberKey, ScriptCallback> scriptCallbacks;
         // Names of documented values on the state: the API's global variables (`state`, `players`).
         std::vector<std::string> globalVariables;
+        // Callbacks of enum-keyed dispatches (events, theme overrides) by storage, table and key.
+        std::map<std::tuple<std::string, std::string, std::string>, Event> events;
+        // Callback facts waiting for the join after all translation units (not written).
+        CallbackFacts callbackFacts;
         // Block comments waiting to be matched with enum values and members (not written).
         std::vector<BlockDoc> blockDocs;
     };
@@ -348,6 +497,8 @@ namespace dd {
     llvm::json::Value toJSON(const Doc& doc);
     llvm::json::Value toJSON(const TypeInfo& type);
     llvm::json::Value toJSON(const Param& param);
+    llvm::json::Value toJSON(const CallbackSig& callback);
+    llvm::json::Value toJSON(const Event& event);
     llvm::json::Value toJSON(const FunctionSig& sig);
     llvm::json::Value toJSON(const Function& function);
     llvm::json::Value toJSON(const Value& value);

@@ -1,4 +1,5 @@
 #include "bindings.hpp"
+#include "callbacks.hpp"
 #include "merge.hpp"
 #include "model.hpp"
 #include "source_root.hpp"
@@ -15,8 +16,11 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <chrono>
+#include <condition_variable>
 #include <memory>
+#include <mutex>
 #include <string>
+#include <thread>
 #include <vector>
 
 namespace {
@@ -53,8 +57,7 @@ namespace {
             "select",
             llvm::cl::desc("Regex over compilation database paths: the translation units to parse when no source "
                            "paths are given"),
-            llvm::cl::value_desc("regex"), llvm::cl::init(R"([/\\]src[/\\]game_api[/\\]script[/\\])"),
-            llvm::cl::cat(category)};
+            llvm::cl::value_desc("regex"), llvm::cl::init(R"([/\\]src[/\\]game_api[/\\])"), llvm::cl::cat(category)};
 
         // Flags a database lacks for parsing with this Clang, without editing the database.
         llvm::cl::list<std::string> extraArgs{"extra-arg",
@@ -129,6 +132,50 @@ namespace {
         return result;
     }
 
+    // How often a translation unit that is still being parsed is reported.
+    constexpr std::chrono::seconds HeartbeatInterval{10};
+
+    // Reports every HeartbeatInterval that a long translation unit (sol2 headers take up to 20 s) is still being
+    // parsed, so a run never stays silent; stops when destroyed.
+    class Heartbeat {
+    public:
+        // Starts reporting on source.
+        explicit Heartbeat(std::string source) : source_(std::move(source)), thread_([this] { report(); }) {}
+        Heartbeat(const Heartbeat&) = delete;
+        Heartbeat& operator=(const Heartbeat&) = delete;
+        Heartbeat(Heartbeat&&) = delete;
+        Heartbeat& operator=(Heartbeat&&) = delete;
+        ~Heartbeat() {
+            {
+                const std::lock_guard lock(mutex_);
+                done_ = true;
+            }
+            wake_.notify_one();
+            thread_.join();
+        }
+
+    private:
+        // Thread body: prints a line per interval until done_.
+        void report() {
+            std::unique_lock lock(mutex_);
+            for (auto elapsed = HeartbeatInterval; !wake_.wait_for(lock, HeartbeatInterval, [this] { return done_; });
+                 elapsed += HeartbeatInterval) {
+                llvm::errs() << "docs-digger:   still parsing " << source_ << " (" << elapsed.count() << " s)\n";
+            }
+        }
+
+        // The translation unit being parsed.
+        std::string source_;
+        // Guards done_.
+        std::mutex mutex_;
+        // Wakes the thread early when parsing ends.
+        std::condition_variable wake_;
+        // Set when parsing ended.
+        bool done_ = false;
+        // The reporting thread; declared last so the members it uses exist before it starts.
+        std::thread thread_;
+    };
+
     // Parses one translation unit; returns whether Clang reported no errors.
     bool runOne(const Options& options, const clang::tooling::CompilationDatabase& database, const std::string& source,
                 clang::tooling::FrontendActionFactory& factory) {
@@ -150,18 +197,25 @@ namespace {
         return tool.run(&factory) == 0;
     }
 
-    // Parses every source; returns how many had errors.
+    // Parses every source; returns how many had errors. A progress line per translation unit (each takes a few
+    // seconds) shows that a run of several minutes is moving.
     unsigned runAll(const Options& options, const clang::tooling::CompilationDatabase& database,
                     const std::vector<std::string>& sources, clang::tooling::FrontendActionFactory& factory) {
         unsigned failed = 0;
-        for (const std::string& source : sources) {
+        for (std::size_t i = 0; i < sources.size(); ++i) {
+            llvm::errs() << llvm::formatv("docs-digger: [{0}/{1}] {2}\n", i + 1, sources.size(), sources[i]);
             const auto start = std::chrono::steady_clock::now();
-            if (!runOne(options, database, source, factory)) {
+            bool parsed = false;
+            {
+                const Heartbeat heartbeat(sources[i]);
+                parsed = runOne(options, database, sources[i], factory);
+            }
+            if (!parsed) {
                 ++failed;
             }
             if (options.timings) {
                 const std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - start;
-                llvm::errs() << llvm::format("%8.2f s  ", elapsed.count()) << source << '\n';
+                llvm::errs() << llvm::format("%8.2f s  ", elapsed.count()) << sources[i] << '\n';
             }
         }
         return failed;
@@ -191,6 +245,7 @@ namespace {
     // Runs the steps that need every translation unit; false when the runtime enum file cannot be read.
     bool merge(const Options& options, dd::Extraction& extraction) {
         dd::resolveAliases(extraction);
+        dd::attachVtableHooks(extraction);
         dd::attachOwnedBindings(extraction);
         if (!options.runtimeEnums.empty() && !dd::addRuntimeEnums(extraction, options.runtimeEnums)) {
             llvm::errs() << "docs-digger: cannot read " << options.runtimeEnums << '\n';
@@ -198,6 +253,9 @@ namespace {
         }
         dd::attachBlockDocs(extraction);
         dd::dropEmptyEnums(extraction);
+        dd::attachCallbacks(extraction);
+        dd::buildEvents(extraction);
+        dd::checkProse(extraction);
         dd::keepUsedAliases(extraction);
         dd::collectGlobalVariables(extraction);
         return true;
@@ -213,12 +271,15 @@ namespace {
         const dd::SourceRoot root(options.root);
         dd::Extraction extraction;
         dd::TableAssignmentCollector collector(root, extraction);
+        dd::CallbackCollector callbacks(root, extraction.callbackFacts);
         clang::ast_matchers::MatchFinder finder;
         collector.registerMatchers(finder);
+        callbacks.registerMatchers(finder);
         const std::unique_ptr<clang::tooling::FrontendActionFactory> factory =
             clang::tooling::newFrontendActionFactory(&finder);
 
         const unsigned failed = runAll(options, database, sources, *factory);
+        llvm::errs() << "docs-digger: merging the results of " << sources.size() << " translation units\n";
         if (!merge(options, extraction)) {
             return 1;
         }

@@ -106,6 +106,28 @@ namespace dd {
             return param;
         }
 
+        // A text-only type (kind Unknown), for signatures written in comments.
+        TypeInfo textType(llvm::StringRef text) {
+            TypeInfo type;
+            type.spelling = text.trim().str();
+            return type;
+        }
+
+        // One regex match of a prose callback signature: groups 2 to 4 are return, name and parameters.
+        ProseCallback proseCallback(llvm::ArrayRef<llvm::StringRef> groups) {
+            ProseCallback result{groups[3].str(), {}};
+            CallbackSig& sig = result.callback;
+            sig.origin = CallbackOrigin::DocComment;
+            sig.prose = (groups[2] + " " + groups[3] + "(" + groups[4] + ")").str();
+            for (const std::string& part : splitTopLevel(groups[4])) {
+                sig.params.push_back(paramFromText(part));
+            }
+            if (groups[2] != "nil" && groups[2] != "void") {
+                sig.returns.push_back(textType(groups[2]));
+            }
+            return result;
+        }
+
     } // namespace
 
     Doc parseDoc(std::vector<std::string> lines) {
@@ -229,6 +251,38 @@ namespace dd {
             }
         }
         return std::nullopt;
+    }
+
+    std::vector<ProseCallback> proseCallbacks(const std::vector<std::string>& lines) {
+        static const llvm::Regex prose(R"re((signature[^`]* is|function) `?([^ `]+) ([A-Za-z0-9_]*)\(([^)]*)\))re");
+        std::vector<ProseCallback> found;
+        for (const std::string& line : lines) {
+            llvm::StringRef rest = line;
+            llvm::SmallVector<llvm::StringRef, 5> groups;
+            while (prose.match(rest, &groups)) {
+                found.push_back(proseCallback(groups));
+                rest = rest.substr(static_cast<size_t>(groups[0].end() - rest.begin()));
+            }
+        }
+        return found;
+    }
+
+    CallbackSig eventProse(const std::vector<std::string>& lines) {
+        CallbackSig sig;
+        sig.origin = CallbackOrigin::DocComment;
+        for (const std::string& raw : lines) {
+            llvm::StringRef line = llvm::StringRef(raw).trim();
+            if (line.consume_front("Params:")) {
+                sig.prose = line.trim().str();
+                for (const std::string& part : splitTopLevel(line)) {
+                    sig.params.push_back(paramFromText(part));
+                }
+            }
+            else if (line.consume_front("Return:")) {
+                sig.returns.push_back(textType(line));
+            }
+        }
+        return sig;
     }
 
     FunctionSig signatureFromText(llvm::StringRef text) {

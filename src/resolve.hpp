@@ -35,6 +35,16 @@ namespace dd {
     // Qualified name of the class template type is a specialization of, or empty.
     std::string templateName(clang::QualType type);
 
+    // The type arguments of the class template specialization type is, packs expanded.
+    std::vector<clang::QualType> templateTypeArguments(clang::QualType type);
+
+    // Identity of a function that is the same in every translation unit and for every redeclaration: qualified
+    // name with template arguments and parameter types (lambdas are named by their location).
+    std::string functionKey(const clang::FunctionDecl& function);
+
+    // Identity of one parameter of a function, for joining facts about it across translation units.
+    std::string parameterKey(const clang::FunctionDecl& function, unsigned index);
+
     // True for sol2 objects (state, state_view, table, proxy, usertype): plain maps are not Lua tables.
     bool isSolObject(clang::QualType type);
 

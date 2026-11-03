@@ -48,3 +48,21 @@ plan (sections 2, 3 and 7), where later steps read them.
   `ps.aliases`, `ps.lualibs`, `ps.known_casts`, `ps.events` and `not_functions`: 0 unexplained,
   88 accepted, 0 unclassified types; two runs byte-identical. Fixture: `enums` (with
   `enums.lua_enums.txt`).
+- **DIG-4. Callback signatures (C1–C7; P7, P15)**: every parameter that receives a Lua function carries a
+  `callback` (params with front/back binders marked, returns, `nil_allowed`, `nil_meaning`, origin, `stored_in`,
+  `selector`, `prose`, `conflicts`); new output section `events`. `src/callbacks.cpp` follows each
+  `sol::function` param through moves, locals and captures to `make_safe_cb` (binders), `handle_function`, a
+  direct call, a record field (also per container), a C++ function (followed into its body) or a Lua function
+  (callback copied); dispatch sites are keyed by enum guards, enum params followed back through callers, and
+  container writes; C6 reads `.value_or(X)`, condition and return consumers. C1 (`std::function`) and the joins
+  run in `src/callback_join.cpp`. C5 builds `set_pre_`/`set_post_`/`*_virtual` members from the
+  `HookableVTable` variables (`LiteralString` keys, `/// NoDoc` from the written alias, hook nil rules). C7 ports
+  `reSignature` (prose fills unresolved callbacks) and checks `Params:` lines of `ON` events. Default `--select`
+  widened to all 101 `game_api` TUs (0 errors, about 7 minutes); progress line per TU and a 10 s heartbeat.
+  Overlunky: 358 callback params (287 vtable hooks, 30 unresolved: `set_*_virtual` choose the hook at runtime,
+  two functions defined in other TUs), 247 events (211 from sites, 30 generic screen events, 6 never dispatched
+  `THEME_OVERRIDE` keys); every `ON` event resolved. P7 hook names and NoDoc match the old parser.
+  `tools/parity.py`: 0 unexplained, 88 accepted, 0 unclassified types, callback report with 8 conflicts handed
+  over as overlunky doc fixes (`set_on_damage`, `set_on_destroy`, `set_on_kill` x2, `set_post_render`,
+  `set_vanilla_sound_callback`, `ON.PRE_GET_FEAT`, `ON.PRE_SET_FEAT`); two runs byte-identical. Fixtures:
+  `callbacks`, `vtables`.

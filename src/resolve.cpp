@@ -8,6 +8,7 @@
 #include <clang/AST/ExprCXX.h>
 #include <clang/AST/StmtCXX.h>
 #include <clang/Lex/Lexer.h>
+#include <llvm/Support/raw_ostream.h>
 
 #include <algorithm>
 
@@ -182,6 +183,48 @@ namespace dd {
                                          : specialization->getSpecializedTemplate()->getQualifiedNameAsString();
     }
 
+    std::vector<clang::QualType> templateTypeArguments(clang::QualType type) {
+        std::vector<clang::QualType> types;
+        const auto* specialization = llvm::dyn_cast_or_null<clang::ClassTemplateSpecializationDecl>(
+            type.getNonReferenceType()->getAsCXXRecordDecl());
+        if (specialization == nullptr) {
+            return types;
+        }
+        for (const clang::TemplateArgument& argument : specialization->getTemplateArgs().asArray()) {
+            if (argument.getKind() == clang::TemplateArgument::Type) {
+                types.push_back(argument.getAsType());
+            }
+            else if (argument.getKind() == clang::TemplateArgument::Pack) {
+                for (const clang::TemplateArgument& element : argument.pack_elements()) {
+                    types.push_back(element.getAsType());
+                }
+            }
+        }
+        return types;
+    }
+
+    std::string functionKey(const clang::FunctionDecl& function) {
+        const clang::PrintingPolicy policy(function.getASTContext().getLangOpts());
+        std::string key;
+        llvm::raw_string_ostream out(key);
+        function.getNameForDiagnostic(out, policy, true);
+        out << '(';
+        for (const clang::ParmVarDecl* param : function.parameters()) {
+            out << param->getType().getCanonicalType().getAsString(policy) << ',';
+        }
+        out << ')';
+        // Lambdas print without their location; tell them apart by it (absolute, so it is only a join key).
+        const auto* method = llvm::dyn_cast<clang::CXXMethodDecl>(&function);
+        if (method != nullptr && method->getParent()->isLambda()) {
+            out << '@' << method->getParent()->getLocation().printToString(function.getASTContext().getSourceManager());
+        }
+        return key;
+    }
+
+    std::string parameterKey(const clang::FunctionDecl& function, unsigned index) {
+        return functionKey(function) + '#' + std::to_string(index);
+    }
+
     bool isSolObject(clang::QualType type) { return llvm::StringRef(recordName(type)).starts_with("sol::"); }
 
     bool isLuaState(clang::QualType type) {
@@ -261,7 +304,10 @@ namespace dd {
                             const clang::ASTContext& context) {
         FunctionSig sig;
         for (const clang::ParmVarDecl* param : function.parameters()) {
-            sig.params.push_back({param->getNameAsString(), classifyType(param->getType(), context), false});
+            Param& added = sig.params.emplace_back();
+            added.name = param->getNameAsString();
+            added.type = classifyType(param->getType(), context);
+            added.key = parameterKey(function, param->getFunctionScopeIndex());
         }
         markOmittable(sig.params);
         sig.returns = classifyReturns(function.getReturnType(), context);
