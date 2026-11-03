@@ -187,3 +187,51 @@ void register_torch(sol::state& lua)
     torch_type["is_lit"] = &Torch::is_lit;
     torch_type[sol::base_classes] = sol::bases<Entity, Movable>();
 }
+
+// overlunky's self_return: a wrapper that calls a member function on its sol::object first parameter and returns
+// it. Lua sees a method with the member's parameter names that returns the object.
+template <typename, typename, auto>
+struct ProFunc;
+template <template <typename...> class C, typename... Ts, typename T, auto fun>
+struct ProFunc<C<Ts...>, T, fun>
+{
+    static auto func(sol::object obj, Ts... args)
+    {
+        (obj.as<T&>().*fun)(std::forward<Ts>(args)...);
+        return obj;
+    }
+};
+
+struct Box
+{
+    /// Moves the box.
+    void offset(float dx, float dy);
+};
+
+template <auto fun>
+auto box_return()
+{
+    return ProFunc<std::tuple<float, float>, Box, fun>::func;
+}
+
+void register_box(sol::state& lua)
+{
+    auto box_type = lua.new_usertype<Box>("Box");
+    box_type["offset"] = box_return<&Box::offset>();
+}
+
+// A NoDoc usertype that a documented function returns: declared as a class only, with its index field.
+struct Crowd
+{
+    Entity* at(int index);
+};
+
+void register_crowd(sol::state& lua)
+{
+    /// NoDoc
+    lua.new_usertype<Crowd>("Crowd", sol::no_constructor, sol::meta_function::index, [](Crowd* crowd, int index)
+                            { return crowd->at(index - 1); });
+    /// The people around.
+    lua["get_crowd"] = []() -> Crowd*
+    { return nullptr; };
+}

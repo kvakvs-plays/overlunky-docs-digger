@@ -1,6 +1,5 @@
 {
   "names": {
-    "BucketItem": "any",
     "EmittedParticlesInfo": "Particle[]",
     "ENTITY_MASK": "MASK",
     "ImVec2": "Vec2",

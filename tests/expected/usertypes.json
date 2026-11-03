@@ -2,12 +2,110 @@
   "aliases": [],
   "enums": [],
   "events": [],
-  "functions": [],
+  "functions": [
+    {
+      "doc": [
+        "The people around."
+      ],
+      "group": "usertypes",
+      "name": "get_crowd",
+      "overloads": [
+        {
+          "cpp": "lambda at usertypes.cpp:235",
+          "params": [],
+          "returns": [
+            {
+              "inner": [
+                {
+                  "kind": "record",
+                  "lua": "Crowd",
+                  "spelling": "Crowd"
+                }
+              ],
+              "kind": "pointer",
+              "lua": "Crowd?",
+              "nullable": true,
+              "spelling": "Crowd *"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "usertypes.cpp",
+        "line": 235
+      }
+    }
+  ],
   "global_variables": [],
   "libraries": [],
   "schema_version": 2,
   "script_callbacks": [],
   "usertypes": [
+    {
+      "cpp": "Box",
+      "members": [
+        {
+          "cpp_doc": [
+            "Moves the box."
+          ],
+          "kind": "method",
+          "name": "offset",
+          "overloads": [
+            {
+              "cpp": "ProFunc<std::tuple<float, float>, Box, &Box::offset>::func",
+              "params": [
+                {
+                  "name": "obj",
+                  "type": {
+                    "canonical": "sol::basic_object<sol::basic_reference<false>>",
+                    "kind": "lua_object",
+                    "lua": "any",
+                    "nullable": true,
+                    "spelling": "sol::object"
+                  }
+                },
+                {
+                  "name": "dx",
+                  "type": {
+                    "kind": "float",
+                    "lua": "number",
+                    "spelling": "float"
+                  }
+                },
+                {
+                  "name": "dy",
+                  "type": {
+                    "kind": "float",
+                    "lua": "number",
+                    "spelling": "float"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "kind": "record",
+                  "lua": "Box",
+                  "spelling": "Box"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 220
+          }
+        }
+      ],
+      "name": "Box",
+      "source": {
+        "column": 21,
+        "file": "usertypes.cpp",
+        "line": 219
+      }
+    },
     {
       "constructors": [
         {
@@ -228,6 +326,77 @@
         "column": 23,
         "file": "usertypes.cpp",
         "line": 102
+      }
+    },
+    {
+      "cpp": "Crowd",
+      "members": [
+        {
+          "kind": "method",
+          "meta": true,
+          "name": "index",
+          "nodoc": true,
+          "overloads": [
+            {
+              "cpp": "lambda at usertypes.cpp:232",
+              "params": [
+                {
+                  "name": "crowd",
+                  "type": {
+                    "inner": [
+                      {
+                        "kind": "record",
+                        "lua": "Crowd",
+                        "spelling": "Crowd"
+                      }
+                    ],
+                    "kind": "pointer",
+                    "lua": "Crowd?",
+                    "nullable": true,
+                    "spelling": "Crowd *"
+                  }
+                },
+                {
+                  "name": "index",
+                  "type": {
+                    "kind": "int",
+                    "lua": "integer",
+                    "spelling": "int"
+                  }
+                }
+              ],
+              "returns": [
+                {
+                  "inner": [
+                    {
+                      "kind": "record",
+                      "lua": "Entity",
+                      "spelling": "Entity"
+                    }
+                  ],
+                  "kind": "pointer",
+                  "lua": "Entity?",
+                  "nullable": true,
+                  "spelling": "Entity *"
+                }
+              ],
+              "self": "first_param"
+            }
+          ],
+          "source": {
+            "column": 59,
+            "file": "usertypes.cpp",
+            "line": 232
+          }
+        }
+      ],
+      "name": "Crowd",
+      "no_constructor": true,
+      "nodoc": true,
+      "source": {
+        "column": 5,
+        "file": "usertypes.cpp",
+        "line": 232
       }
     },
     {
@@ -824,7 +993,8 @@
               }
             }
           ],
-          "returns": []
+          "returns": [],
+          "self": "first_param"
         }
       ],
       "cpp": "Particle",

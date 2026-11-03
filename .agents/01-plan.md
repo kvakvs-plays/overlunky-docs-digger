@@ -155,6 +155,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   cmake/                  downloads (LLVM pin in LLVMPackage.cmake), zlib/zstd/SQLite/GoogleTest builds, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
   config/lua_types.json   Lua names for C++ types the type facts cannot name (P16, DIG-6a)
+  config/lua_prelude.lua  hand-written Lua declarations put at the start of spel2.lua (DIG-6b)
   schema/                 docs-digger.schema.json: the frozen output format, every field described (DIG-5)
   .github/workflows/      dig.yml: Windows CI that builds, tests, digs overlunky and uploads the JSON (DIG-5)
   src/main.cpp            CLI, merge steps, write output
@@ -179,6 +180,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   tests/fixtures/*.cpp    small sources using the real sol2 headers from <overlunky>/src/sol2
   tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
   tests/RunGolden.cmake   runs one fixture and compares; DD_UPDATE_GOLDEN=1 rewrites the golden file
+  tests/expected/lua/     golden Lua definition files per test; tests/.luacheckrc, RunLuacheck.cmake (DIG-6b)
   tests/unit/*.cpp        GoogleTest unit tests of pure helpers (Lua names), linking docs-digger-lib
   tools/parity.py         loads <overlunky>/docs/parse_source.py results, diffs them with digger JSON (reuses the old parser as the oracle)
   tools/check_schema.py   checks outputs against the schema (standard library only; CTest schema.<name>, CI)
@@ -577,7 +579,7 @@ definition of done).
     FetchContent keeps its download stamp in `build/`, so deleting `build/` would download again. The
     digger's sources became the static library `docs-digger-lib`, which the executable and the unit
     tests (`tests/unit/`, CTest `unit`) link.
-- [ ] `src/emit_lua.cpp` (`--lua-out <dir>`) writes `---@meta` files with LuaLS annotations:
+- [x] `src/emit_lua.cpp` (`--lua-out <dir>`) writes `---@meta` files with LuaLS annotations:
   - globals and global variables as `---@type`;
   - functions with `---@param name type? doc`, `---@return type doc` (nil meaning in the text),
     `---@overload fun(...)` for further overloads, `---@deprecated`, doc text, a callback param typed
@@ -587,19 +589,56 @@ definition of done).
     `set_post_*` with their typed callbacks;
   - enums as `---@enum NAME` tables with their values; aliases as `---@alias`; libraries;
   - `/// NoDoc` items left out.
+
+  Done in DIG-6b; found there (probed with `lua-language-server --check` 3.19.2):
+  - enums are plain tables with `---@alias NAME integer` (as the old file), not `---@enum`: an
+    `---@enum` parameter rejects plain numbers (`param-type-mismatch` on every computed entity id).
+    The plain table keeps literal values, and `---@overload fun(cb: fun(ctx: Movable), event: 12)`
+    then types the callback of `set_callback(f, ON.FRAME)` per event, while `ON.LEVEL` picks another
+    overload (checked with an undefined-field probe). That settles the event bullet for DIG-6c;
+  - added on request: `--lua-style emmylua` writes the more limited classic EmmyLua dialect for older
+    IDE plugins (`T|nil` for `T?` and `name?`, `table` for tuples, `---@vararg`, descriptions after `@`,
+    no `---@operator` or index fields); `luals` stays the default. The LuaLS type strings of DIG-6a are
+    converted where they are written;
+  - the old generator's hand-written parts live in `config/lua_prelude.lua` (`--lua-prelude`: `Meta`,
+    `Exports`, `json`, `inspect`, `f`, `F`); a global or function it declares replaces the generated
+    one (`meta` is bound in C++ as a plain table). `--lua-doc-url` makes `(#anchor)` links absolute,
+    `<br/>` is dropped from doc lines, as before;
+  - functions bound in a namespace table that nothing else declares get `Name = {}`; bindings whose
+    keys are no Lua names (`TYPE_MAP[...]`, 739) are left out, as before; a key bound twice keeps its
+    first function (members: the last binding, as sol2 does); omittable parameters are `name?` with the
+    type's own `?` dropped; meta functions become `---@operator` and `---@field [K] V` (`__index`);
+  - a NoDoc usertype that documented members return (`WebGun` from `as_webgun`, `Players` of
+    `players`) is written as a class line without members, so the names resolve;
+  - extraction fixes found on the way: a bound value's type is its expression's own type
+    (`definitionOf` strips casts: `savegame` was `unsigned long long`, now `SaveData?`); a lambda taking
+    the object as a pointer (`Players*`) receives it (`first_param`); overlunky's
+    `self_return<&T::f>()` wrapper (`proFunc<Args, T, &T::f>::func(sol::object obj, Ts... args)`, 22
+    members, also in overload sets) takes the parameter names of the member function named by the
+    wrapper class's template argument, and returns the object because its body ends in `return obj;`;
+    `sol::initializers` functions receive the object first;
+  - real overlunky output: `spel2.lua` 120 KB, `spel2_types.lua` 339 KB, `spel2_enums.lua` 169 KB (627 KB
+    against the old single 574 KB file, which lacked the FMOD enums, callback types and more); luacheck
+    reports nothing and `lua-language-server --check` finds no problems. LuaLS mangles paths containing
+    `--` (`f--Projects` became `f--check_worker`), so check from a path without them.
 - [ ] Event callbacks (`set_callback(cb, ON.X)`, `CustomTheme:override`): decide in the step how to
       type them so LuaLS shows the per-event signature. Try `---@overload` per event with a literal value
       type in VS Code; if LuaLS cannot tell enum values apart, keep the generic signature and list the
       per-event signatures in the doc text.
-- [ ] Split: whole declarations go into files by kind (`spel2.lua` for globals, functions, aliases and
+- [x] Split: whole declarations go into files by kind (`spel2.lua` for globals, functions, aliases and
       libraries; `spel2_types.lua`; `spel2_enums.lua`). A file that would go over the limit
       (`--lua-max-file-size`, default 480,000 bytes, a margin under 500 KB) continues in `_2`, `_3`, cut at
       group (types: name) boundaries in a stable order. Each file stands on its own (`---@meta`, no
       `require`). Expected: 3 to 4 files.
-- [ ] Tests: a golden `.lua` output for the existing fixtures plus one that crosses a small size
+- [x] Tests: a golden `.lua` output for the existing fixtures plus one that crosses a small size
       limit; a CTest that runs `luacheck` (config `tests/.luacheckrc` for definition files) over the golden
       outputs, skipped with a message when luacheck is not found. If `lua-language-server` is installed,
       `--check` on the real output in `dig.bat` reports annotation errors (optional, not a CTest).
+      Done in DIG-6b except the `dig.bat` check (DIG-6c): golden files in `tests/expected/lua/<name>/`,
+      variants `usertypes_split` (limit 800 bytes, three types files) and `callbacks_emmylua`; CTest
+      `luacheck` (`tests/RunLuacheck.cmake`) runs the LuaRocks script with its module path, from the
+      config's directory (luacheck does not open a config given as an absolute Windows path); the
+      config ignores 122 (overlunky replaces `os.date` and other standard functions), 131, 142 and 212.
 - [ ] `tools/parity.py`: every class, field, function and enum value declared in the old `spel2.lua`
       is in the new files, or listed as an accepted difference.
 

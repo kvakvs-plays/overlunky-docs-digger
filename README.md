@@ -53,7 +53,8 @@ The scripts enter the Visual Studio environment themselves (`tools\dev-env.cmd`)
   (configure only, nothing of overlunky is built) and runs the digger on all `src/game_api` translation units. It passes
   the runtime enum dump `docs/game_data/lua_enums.txt` (`--runtime-enums`), the function groups `config\groups.json`
   (`--groups`), the Lua type names `config\lua_types.json` (`--lua-types`) and the result cache
-  `build\digger-cache.sqlite` (`--cache`). Its own arguments go to the digger, for example
+  `build\digger-cache.sqlite` (`--cache`), and writes the LuaLS definition files into `build\lua` (`--lua-out`, with
+  `config\lua_prelude.lua` and the links of the published docs). Its own arguments go to the digger, for example
   `dig.bat -o F:\out\api.json --jobs 8`; give `-o` an absolute path.
 - `quality.bat [changed|all]`: the quality gate (below).
 
@@ -95,6 +96,26 @@ type, spelling or unqualified name). A parameter that receives a Lua function ha
 does not describe fails. When the output changes, update the schema in the same change and raise `schema_version`
 (`SchemaVersion` in `src/model.hpp` and the `const` in the schema).
 
+### Lua definition files
+
+`--lua-out <dir>` writes `---@meta` files for the Lua language server (the VS Code Lua extension), which replace
+overlunky's `docs/game_data/spel2.lua`: `spel2.lua` (global variables, script callbacks, functions by group, aliases),
+`spel2_types.lua` (one class per usertype: fields, operators, constructors as `Name.new`, methods as `Name:method`)
+and `spel2_enums.lua`. A file that would grow past `--lua-max-file-size` (default 480,000 bytes, under the 500 KB
+LuaLS loads by default) continues in `_2`, `_3`, cut between groups or types. Parameters that receive a Lua function
+are typed as `fun(...)` with the callback's arguments and returns, and the meaning of a nil return in the
+description. `/// NoDoc` items are left out; a NoDoc usertype that documented members return stays as a class without
+members. `--lua-prelude <file>` adds hand-written declarations (`config/lua_prelude.lua`: `json`, `inspect`, the
+`Meta` class); a global or function it declares replaces the generated one. `--lua-doc-url <url>` makes the
+`(#anchor)` links in doc comments absolute.
+
+`--lua-style` picks the annotation dialect: `luals` (default) for lua-language-server, or `emmylua` for the more
+limited classic EmmyLua of older IDE plugins (`T|nil` instead of `T?` and `name?`, `table` instead of tuple types,
+`---@vararg`, descriptions after `@`, no `---@operator` or index fields).
+
+Enums are written as plain tables with `---@alias NAME integer`, as the old file did: a `---@enum` parameter rejects
+plain numbers (computed entity ids), and the literal values let LuaLS tell `ON.FRAME` from `ON.LEVEL`.
+
 ### Function groups
 
 Every function has a `group`, the documentation section it is listed in. The first of these decides:
@@ -126,10 +147,15 @@ of its tests does:
 `test.bat` runs two tests per fixture:
 
 - `golden.<name>` runs the digger on `tests/fixtures/<name>.cpp` (small sources using overlunky's real sol2 headers) and
-  compares the output with `tests/expected/<name>.json`. A `<name>.lua_enums.txt` next to the fixture is passed as
-  `--runtime-enums`, a `<name>.groups.json` as `--groups`. The fixture then runs through the result cache twice (fill,
-  then read), and both outputs must be the same.
+  compares the JSON with `tests/expected/<name>.json` and the Lua files with `tests/expected/lua/<name>/`. A
+  `<name>.lua_enums.txt` next to the fixture is passed as `--runtime-enums`, a `<name>.groups.json` as `--groups`. The
+  fixture then runs through the result cache twice (fill, then read), and both outputs must be the same.
 - `schema.<name>` checks the golden file against the schema.
+
+Variants of a fixture with other options have their own Lua golden files
+(`dd_add_golden_test(usertypes_split FIXTURE usertypes ARGS --lua-max-file-size=800)`; also `callbacks_emmylua`).
+`luacheck` checks all golden Lua files with `tests/.luacheckrc` (settings for definition files); it needs Lua and
+luacheck from LuaRocks (`luarocks install luacheck`) and is skipped without them.
 
 `unit` runs the GoogleTest unit tests of pure helper logic (`tests/unit/`, the Lua type names); they link
 `docs-digger-lib`, which holds all of the digger but `main()`. GoogleTest is pinned in `cmake/GoogleTest.cmake`.
@@ -163,9 +189,9 @@ Format files you touch with `thirdparty\venv-quality\Scripts\clang-format.exe -i
 `.github/workflows/dig.yml` runs on `windows-latest` for pushes to `master`, pull requests and by hand
 (`workflow_dispatch`, with the overlunky repository and ref to dig; default `spelunky-fyi/overlunky` `main`). It
 fetches the LLVM package (cached with the other downloads in `thirdparty/`), builds with the package's clang-cl, runs
-the tests, digs a fresh overlunky checkout, checks the output against the schema and uploads two artifacts:
-`docs-digger-api` (`docs-digger-api.json` and the schema) and `parity-report` (informative; a newer overlunky may bring
-differences the report does not explain yet).
+the tests, digs a fresh overlunky checkout, checks the output against the schema and uploads three artifacts:
+`docs-digger-api` (`docs-digger-api.json` and the schema), `docs-digger-lua` (the LuaLS definition files) and
+`parity-report` (informative; a newer overlunky may bring differences the report does not explain yet).
 
 The job lives in this repository, next to the digger and its pins, so overlunky does not need to build it. overlunky's
 Slate job (`build-docs.yml`, on Ubuntu) can take the JSON of the latest successful run:
@@ -184,7 +210,7 @@ CMakeLists.txt            the digger; tests; quality targets
 build.bat, test.bat, dig.bat, quality.bat
 cmake/                    pinned downloads (LLVMPackage.cmake, Download.cmake), zlib/zstd/SQLite builds,
                           overlunky configure, quality checks
-config/                   function group rules, Lua type names
+config/                   function group rules, Lua type names, Lua prelude
 schema/                   JSON Schema of the output
 src/main.cpp              command line, steps after all translation units, output
 src/runner.cpp            parallel parsing, progress, ordered merge; cache.cpp and codec.cpp: the result cache
@@ -193,7 +219,8 @@ src/usertypes.cpp         new_usertype and its members
 src/callbacks.cpp         callback flows, dispatch sites, vtable hooks (AST); callback_join.cpp joins them
 src/resolve.cpp, types.cpp, comments.cpp   sol2 expressions, type classification, comments and directives
 src/merge.cpp, groups.cpp, lua_names.cpp   steps after all translation units (no AST)
+src/emit_lua.cpp          the LuaLS / EmmyLua definition files
 src/model.hpp/.cpp        the data model and its JSON
-tests/                    fixtures, golden files, RunGolden.cmake
+tests/                    fixtures, golden JSON and Lua files, unit tests, RunGolden.cmake, RunLuacheck.cmake
 tools/                    parity.py, check_schema.py, dev-env.cmd, analyzer pins
 ```

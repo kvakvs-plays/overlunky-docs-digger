@@ -945,7 +945,9 @@
       }
     }
   ],
-  "global_variables": [],
+  "global_variables": [
+    "savegame"
+  ],
   "libraries": [],
   "schema_version": 2,
   "script_callbacks": [],
@@ -1020,6 +1022,30 @@
         "lua": "nil",
         "nullable": true,
         "spelling": "const lua_nil_t"
+      }
+    },
+    {
+      "doc": [
+        "The save data."
+      ],
+      "name": "savegame",
+      "source": {
+        "column": 5,
+        "file": "functions.cpp",
+        "line": 111
+      },
+      "type": {
+        "inner": [
+          {
+            "kind": "record",
+            "lua": "SaveData",
+            "spelling": "SaveData"
+          }
+        ],
+        "kind": "pointer",
+        "lua": "SaveData?",
+        "nullable": true,
+        "spelling": "SaveData *"
       }
     },
     {

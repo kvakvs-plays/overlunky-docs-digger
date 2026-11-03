@@ -20,6 +20,7 @@ if errorlevel 1 exit /b 1
 
 "%ROOT%build\digger\Release\docs-digger.exe" -p "%ROOT%build\overlunky" "--root=%DD_OVERLUNKY_ROOT%\src\game_api" ^
     "--runtime-enums=%DD_OVERLUNKY_ROOT%\docs\game_data\lua_enums.txt" "--groups=%ROOT%config\groups.json" "--lua-types=%ROOT%config\lua_types.json" ^
-    "--cache=%ROOT%build\digger-cache.sqlite" %*
+    "--lua-out=%ROOT%build\lua" "--lua-prelude=%ROOT%config\lua_prelude.lua" ^
+    "--lua-doc-url=https://spelunky-fyi.github.io/overlunky/" "--cache=%ROOT%build\digger-cache.sqlite" %*
 if errorlevel 1 exit /b 1
 exit /b 0

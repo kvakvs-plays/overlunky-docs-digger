@@ -1,5 +1,6 @@
 #include "bindings.hpp"
 #include "cache.hpp"
+#include "emit_lua.hpp"
 #include "groups.hpp"
 #include "lua_names.hpp"
 #include "merge.hpp"
@@ -11,6 +12,7 @@
 #include <llvm/Support/CommandLine.h>
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormatVariadic.h>
+#include <llvm/Support/MemoryBuffer.h>
 #include <llvm/Support/Regex.h>
 #include <llvm/Support/Threading.h>
 #include <llvm/Support/raw_ostream.h>
@@ -74,6 +76,33 @@ namespace {
         // Lua names for C++ types the type facts cannot name (config/lua_types.json).
         llvm::cl::opt<std::string> luaTypes{"lua-types", llvm::cl::desc("JSON names of C++ types in the Lua outputs"),
                                             llvm::cl::value_desc("file"), llvm::cl::cat(category)};
+
+        // Directory for the LuaLS definition files (spel2*.lua); none are written without it.
+        llvm::cl::opt<std::string> luaOut{"lua-out", llvm::cl::desc("Write LuaLS definition files into <dir>"),
+                                          llvm::cl::value_desc("dir"), llvm::cl::cat(category)};
+
+        // Annotation dialect of the Lua files: LuaLS by default, classic EmmyLua for older IDE plugins.
+        llvm::cl::opt<dd::LuaStyle> luaStyle{
+            "lua-style", llvm::cl::desc("Annotation dialect of the Lua definition files"),
+            llvm::cl::values(
+                clEnumValN(dd::LuaStyle::LuaLS, "luals", "lua-language-server (default)"),
+                clEnumValN(dd::LuaStyle::EmmyLua, "emmylua", "classic EmmyLua: no `?`, tuples or operators")),
+            llvm::cl::init(dd::LuaStyle::LuaLS), llvm::cl::cat(category)};
+
+        // Under the 500 KB LuaLS preloads by default, with a margin.
+        llvm::cl::opt<std::size_t> luaMaxFileSize{
+            "lua-max-file-size", llvm::cl::desc("Largest Lua definition file in bytes; more continues in _2, _3"),
+            llvm::cl::value_desc("bytes"), llvm::cl::init(480000), llvm::cl::cat(category)};
+
+        // Hand-written declarations for the globals file (config/lua_prelude.lua).
+        llvm::cl::opt<std::string> luaPrelude{"lua-prelude",
+                                              llvm::cl::desc("Lua declarations put at the start of spel2.lua"),
+                                              llvm::cl::value_desc("file"), llvm::cl::cat(category)};
+
+        // Where the `(#anchor)` links of the docs point in the Lua files (the published HTML documentation).
+        llvm::cl::opt<std::string> luaDocUrl{"lua-doc-url",
+                                             llvm::cl::desc("Base URL for the `(#anchor)` links in Lua doc comments"),
+                                             llvm::cl::value_desc("url"), llvm::cl::cat(category)};
 
         // The per-TU result cache (dig.bat passes build/digger-cache.sqlite); empty for none.
         llvm::cl::opt<std::string> cache{"cache",
@@ -145,6 +174,31 @@ namespace {
             return false;
         }
         writeExtraction(extraction, out);
+        return true;
+    }
+
+    // Writes the LuaLS definition files when --lua-out is given; false after printing why it failed.
+    bool writeLua(const Options& options, const dd::Extraction& extraction) {
+        if (options.luaOut.empty()) {
+            return true;
+        }
+        dd::LuaFileSettings settings;
+        settings.style = options.luaStyle;
+        settings.docUrl = options.luaDocUrl;
+        settings.maxFileSize = options.luaMaxFileSize;
+        if (!options.luaPrelude.empty()) {
+            llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> prelude =
+                llvm::MemoryBuffer::getFile(options.luaPrelude, true);
+            if (!prelude) {
+                llvm::errs() << "docs-digger: cannot read " << options.luaPrelude << '\n';
+                return false;
+            }
+            settings.prelude = (*prelude)->getBuffer().rtrim().str() + "\n";
+        }
+        if (llvm::Error error = dd::writeLuaFiles(dd::luaFiles(extraction, settings), options.luaOut)) {
+            llvm::errs() << "docs-digger: " << llvm::toString(std::move(error)) << '\n';
+            return false;
+        }
         return true;
     }
 
@@ -258,7 +312,8 @@ namespace {
         if (failed != 0) {
             llvm::errs() << "docs-digger: " << failed << " of " << total << " translation units had errors\n";
         }
-        return writeOutput(options, extraction) && failed == 0 ? 0 : 1;
+        const bool written = writeOutput(options, extraction) && writeLua(options, extraction);
+        return written && failed == 0 ? 0 : 1;
     }
 
 } // namespace

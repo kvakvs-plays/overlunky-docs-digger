@@ -53,6 +53,8 @@ add_library(docs-digger-lib STATIC
   src/codec.hpp
   src/comments.cpp
   src/comments.hpp
+  src/emit_lua.cpp
+  src/emit_lua.hpp
   src/groups.cpp
   src/groups.hpp
   src/lua_names.cpp

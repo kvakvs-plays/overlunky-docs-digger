@@ -29,8 +29,12 @@ namespace dd {
             if (record == nullptr || function.getNumParams() == 0 || !record->hasDefinition()) {
                 return false;
             }
-            const clang::CXXRecordDecl* first =
-                function.getParamDecl(0)->getType().getNonReferenceType()->getAsCXXRecordDecl();
+            // sol2 passes the object to a reference or a pointer parameter.
+            clang::QualType type = function.getParamDecl(0)->getType().getNonReferenceType();
+            if (type->isPointerType()) {
+                type = type->getPointeeType();
+            }
+            const clang::CXXRecordDecl* first = type->getAsCXXRecordDecl();
             if (first == nullptr) {
                 return false;
             }
@@ -46,6 +50,65 @@ namespace dd {
             return takesObjectFirst(function, record) ? SelfKind::FirstParam : SelfKind::None;
         }
 
+        // True when function ends with `return <its first parameter>;`: it gives the object back.
+        bool returnsFirstParam(const clang::FunctionDecl& function) {
+            const auto* body = llvm::dyn_cast_or_null<clang::CompoundStmt>(function.getBody());
+            if (body == nullptr || body->body_empty() || function.getNumParams() == 0) {
+                return false;
+            }
+            const auto* returned = llvm::dyn_cast<clang::ReturnStmt>(body->body_back());
+            const clang::Expr* value = returned == nullptr ? nullptr : returned->getRetValue();
+            if (value == nullptr) {
+                return false;
+            }
+            value = value->IgnoreImplicit();
+            // `return obj;` of a class type copies or moves the parameter into the result.
+            if (const auto* copy = llvm::dyn_cast<clang::CXXConstructExpr>(value); copy && copy->getNumArgs() == 1) {
+                value = copy->getArg(0)->IgnoreImplicit();
+            }
+            const auto* ref = llvm::dyn_cast<clang::DeclRefExpr>(value);
+            return ref != nullptr && ref->getDecl() == function.getParamDecl(0);
+        }
+
+        // The member function a wrapper's class names as a template argument (`proFunc<Args, T, &T::offset>::func`).
+        const clang::CXXMethodDecl* wrappedMember(const clang::FunctionDecl& wrapper) {
+            const auto* method = llvm::dyn_cast<clang::CXXMethodDecl>(&wrapper);
+            const auto* specialization = method == nullptr
+                ? nullptr
+                : llvm::dyn_cast<clang::ClassTemplateSpecializationDecl>(method->getParent());
+            if (specialization == nullptr) {
+                return nullptr;
+            }
+            for (const clang::TemplateArgument& argument : specialization->getTemplateArgs().asArray()) {
+                if (argument.getKind() == clang::TemplateArgument::Declaration) {
+                    if (const auto* member = llvm::dyn_cast<clang::CXXMethodDecl>(argument.getAsDecl())) {
+                        return member;
+                    }
+                }
+            }
+            return nullptr;
+        }
+
+        // A wrapper that calls a member function, named by its class's template argument, on its first parameter
+        // (`self_return<&AABB::offset>()` binds `proFunc<...>::func(sol::object obj, Ts... args)`) is a method of
+        // the object: the parameter names come from the member function (the pack gives all of them one name), and a
+        // wrapper that returns its first parameter returns the object.
+        void adoptWrappedMember(FunctionSig& sig, const clang::FunctionDecl& wrapper,
+                                const clang::CXXRecordDecl* record, const clang::ASTContext& context) {
+            const clang::CXXMethodDecl* method = wrappedMember(wrapper);
+            if (method == nullptr || record == nullptr || sig.self != SelfKind::None ||
+                sig.params.size() != method->getNumParams() + 1) {
+                return;
+            }
+            sig.self = SelfKind::FirstParam;
+            for (unsigned i = 0; i < method->getNumParams(); ++i) {
+                sig.params[i + 1].name = method->getParamDecl(i)->getNameAsString();
+            }
+            if (returnsFirstParam(wrapper)) {
+                sig.returns = {classifyType(context.getCanonicalTagType(record), context)};
+            }
+        }
+
         // Signatures of the functions e binds, with their self kind.
         std::vector<FunctionSig> memberSignatures(const clang::Expr* e, const clang::CXXRecordDecl* record,
                                                   const SourceRoot& root, const clang::ASTContext& context) {
@@ -53,6 +116,7 @@ namespace dd {
             for (const BoundFunction& bound : boundFunctions(e)) {
                 FunctionSig sig = signatureOf(bound, root, context);
                 sig.self = selfOf(*bound.function, record);
+                adoptWrappedMember(sig, *bound.function, record, context);
                 sigs.push_back(std::move(sig));
             }
             return sigs;
@@ -164,11 +228,12 @@ namespace dd {
         void addConstructorList(Usertype& usertype, clang::QualType list, const clang::CXXRecordDecl* record,
                                 const SourceRoot& root, const clang::ASTContext& context);
 
-        // sol::initializers(f, ...) / sol::factories(f, ...): each function is a constructor.
-        void addInitializers(Usertype& usertype, const clang::CallExpr& call, const SourceRoot& root,
-                             const clang::ASTContext& context) {
+        // sol::initializers(f, ...) / sol::factories(f, ...): each function is a constructor. An initializer gets
+        // the object to fill as its first parameter (self `first_param`, not passed from Lua).
+        void addInitializers(Usertype& usertype, const clang::CallExpr& call, const clang::CXXRecordDecl* record,
+                             const SourceRoot& root, const clang::ASTContext& context) {
             for (const clang::Expr* function : call.arguments()) {
-                for (FunctionSig& sig : memberSignatures(function, nullptr, root, context)) {
+                for (FunctionSig& sig : memberSignatures(function, record, root, context)) {
                     usertype.constructors.push_back(std::move(sig));
                 }
             }
@@ -186,7 +251,7 @@ namespace dd {
             }
             if (type == "sol::constructor_wrapper" || type == "sol::factory_wrapper") {
                 if (const auto* call = llvm::dyn_cast<clang::CallExpr>(value)) {
-                    addInitializers(usertype, *call, root, context);
+                    addInitializers(usertype, *call, record, root, context);
                 }
                 return true;
             }

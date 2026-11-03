@@ -89,3 +89,24 @@ void register_functions(sol::state& lua)
     sol::environment env(lua, sol::create, lua.globals());
     env["on_level"] = sol::lua_nil;
 }
+
+// A value made by a factory that casts an offset to a pointer: its type is the pointer, not the offset.
+struct SaveData
+{
+    int deaths;
+};
+template <typename T>
+struct OnHeap
+{
+    std::size_t offset;
+    T* decode() const
+    {
+        return reinterpret_cast<T*>(offset + 16);
+    }
+};
+
+void register_save(sol::state& lua, const OnHeap<SaveData>& save)
+{
+    /// The save data.
+    lua["savegame"] = save.decode();
+}

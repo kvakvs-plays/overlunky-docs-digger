@@ -170,7 +170,9 @@ namespace dd {
         if (root.empty() && addEnumKey(key, value, doc, context)) {
             return;
         }
-        const clang::QualType type = definitionOf(value).expr->getType();
+        // The bound expression's own type: definitionOf strips casts and enters factories, so a
+        // `reinterpret_cast<T*>(offset + base)` would become the integer it casts.
+        const clang::QualType type = value->IgnoreImplicit()->getType();
         out_.values.emplace(key, Value{key.owner, key.luaName, root, key.loc, doc, classifyType(type, context)});
     }
 
