@@ -8,6 +8,7 @@ set -euo pipefail
 HOST=pupa
 DEST=/home/sp2docsdigger/www
 OWNER=sp2docsdigger
+URL=https://sp2.clau.se
 
 src=${1:?usage: deploy.sh <site dir> [--dry-run]}
 shift
@@ -23,5 +24,21 @@ rsync -rlt --checksum --delete-after --delay-updates \
     --chown="$OWNER:$OWNER" --chmod=D755,F644 \
     --itemize-changes --stats "$@" \
     "$src/" "$HOST:$DEST/"
+case " $* " in *" --dry-run "* | *" -n "*) exit 0 ;; esac
 # The directory itself, in case it was recreated by hand.
 ssh "$HOST" "sudo chown $OWNER:$OWNER $DEST && sudo chmod 755 $DEST"
+
+# Checks: a few pages answer, and nothing under the root is owned by anyone else.
+status=0
+for page in / /pagefind/pagefind.js /old-anchors.json /types/Entity/; do
+    code=$(curl -sS -o /dev/null -w '%{http_code}' "$URL$page") || code=000
+    echo "$code $URL$page"
+    [ "$code" = 200 ] || status=1
+done
+foreign=$(ssh "$HOST" "sudo find $DEST ! -user $OWNER | head -5")
+if [ -n "$foreign" ]; then
+    echo "deploy.sh: not owned by $OWNER:" >&2
+    echo "$foreign" >&2
+    status=1
+fi
+exit $status

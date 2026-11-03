@@ -14,12 +14,13 @@ The default build (`site.bat` alone) targets `/overlunky` of GitHub Pages and wo
 so always rebuild with the host's URL and base. In PowerShell from the repository root:
 
 ```powershell
-$env:DD_SITE_URL = 'https://sp2.clau.se'; $env:DD_SITE_BASE = '/'; cmd /c site.bat
+$env:DD_SITE_URL = 'https://sp2.clau.se'; $env:DD_SITE_BASE = '/'; cmd /c .\site.bat
 ```
 
+- Call the scripts as `.\site.bat` / `.\dig.bat`: `cmd` here does not run a bare name from the current directory.
 - Do not set `DD_SITE_BASE=/` from Git Bash: MSYS rewrites the `/` into a Windows path.
 - `site.bat` needs `build\api.json` (and `build\lua`, `build\lua-emmylua` for the downloads). If it is missing, or the
-  user asks for fresh output, run `cmd /c dig.bat` first (about 2.5 minutes).
+  user asks for fresh output, run `cmd /c .\dig.bat` first (about 2.5 minutes).
 - If the build or its checks fail, stop and report; never deploy a failed build.
 
 ## 2. Upload
@@ -36,8 +37,6 @@ everything is owned by `sp2docsdigger` with modes 755/644. The old site stays wh
 
 ## 3. Verify
 
-```powershell
-wsl -e bash -c "curl -sS -o /dev/null -w '%{http_code}\n' https://sp2.clau.se/ https://sp2.clau.se/pagefind/pagefind.js https://sp2.clau.se/old-anchors.json"
-```
-
-All should print `200`. Report the rsync stats (files transferred / deleted) and the URL to the user.
+After a real upload `deploy.sh` checks the result itself and exits non-zero on a problem: a few pages must answer
+`200` and nothing under the web root may be owned by anyone but `sp2docsdigger`. (Do not pass `curl` loops to
+`wsl -e bash -c` from PowerShell: the quoting breaks.) Report the rsync stats (files transferred / deleted) and the URL to the user.
