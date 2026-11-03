@@ -1,32 +1,24 @@
 #include "bindings.hpp"
-#include "callbacks.hpp"
+#include "cache.hpp"
 #include "merge.hpp"
 #include "model.hpp"
-#include "source_root.hpp"
+#include "runner.hpp"
 #include "usertypes.hpp"
 
-#include <clang/ASTMatchers/ASTMatchFinder.h>
-#include <clang/Tooling/ArgumentsAdjusters.h>
 #include <clang/Tooling/CompilationDatabase.h>
-#include <clang/Tooling/Tooling.h>
 #include <llvm/Support/CommandLine.h>
-#include <llvm/Support/Format.h>
+#include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/Regex.h>
+#include <llvm/Support/Threading.h>
 #include <llvm/Support/raw_ostream.h>
 
-#include <chrono>
-#include <condition_variable>
 #include <memory>
-#include <mutex>
 #include <string>
-#include <thread>
+#include <utility>
 #include <vector>
 
 namespace {
-
-    // Clang's builtin headers (stddef.h, intrinsics) for the same version as the linked libraries.
-    constexpr const char* ResourceDirFlag = "-resource-dir=" DOCS_DIGGER_RESOURCE_DIR;
 
     // Command line of the tool. Own options instead of clang::tooling::CommonOptionsParser: that one loads the -p
     // database only when source paths are given, and parsing the selected TUs of a database is the normal use here.
@@ -70,9 +62,21 @@ namespace {
             "runtime-enums", llvm::cl::desc("lua_enums.txt dump of the enum tables of a running game"),
             llvm::cl::value_desc("file"), llvm::cl::cat(category)};
 
-        // Per-TU parse times, to decide whether parallel execution is worth it.
-        llvm::cl::opt<bool> timings{"timings", llvm::cl::desc("Print the parse time of every translation unit"),
+        // The per-TU result cache (dig.bat passes build/digger-cache.sqlite); empty for none.
+        llvm::cl::opt<std::string> cache{"cache",
+                                         llvm::cl::desc("SQLite file that keeps each translation unit's result while "
+                                                        "the files it read are unchanged"),
+                                         llvm::cl::value_desc("file"), llvm::cl::cat(category)};
+
+        // Parses everything even when a cache is given (the new results are still stored).
+        llvm::cl::opt<bool> noCache{"no-cache", llvm::cl::desc("Do not take results from the cache"),
                                     llvm::cl::cat(category)};
+
+        // Parallel parsing; a sol2 translation unit takes up to 2 GB.
+        llvm::cl::opt<unsigned> jobs{
+            "jobs",
+            llvm::cl::desc("Translation units parsed at the same time (default: LLVM's thread count for heavy work)"),
+            llvm::cl::value_desc("n"), llvm::cl::init(0), llvm::cl::cat(category)};
     };
 
     // The `-- <flags>` database when given (tests), else the -p one; nullptr after printing why.
@@ -108,117 +112,6 @@ namespace {
             }
         }
         return sources;
-    }
-
-    // True for clang-cl precompiled-header flags: a configure-only database has no .pch files to use.
-    bool isPrecompiledHeaderArgument(llvm::StringRef argument) {
-        for (const llvm::StringRef prefix : {"/Yu", "-Yu", "/Yc", "-Yc", "/Fp", "-Fp"}) {
-            if (argument.starts_with(prefix)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // Drops precompiled-header flags; the /FI of the generated PCH header stays, so its includes are still seen.
-    clang::tooling::CommandLineArguments dropPrecompiledHeaders(const clang::tooling::CommandLineArguments& arguments,
-                                                                llvm::StringRef /*file*/) {
-        clang::tooling::CommandLineArguments result;
-        for (const std::string& argument : arguments) {
-            if (!isPrecompiledHeaderArgument(argument)) {
-                result.push_back(argument);
-            }
-        }
-        return result;
-    }
-
-    // How often a translation unit that is still being parsed is reported.
-    constexpr std::chrono::seconds HeartbeatInterval{10};
-
-    // Reports every HeartbeatInterval that a long translation unit (sol2 headers take up to 20 s) is still being
-    // parsed, so a run never stays silent; stops when destroyed.
-    class Heartbeat {
-    public:
-        // Starts reporting on source.
-        explicit Heartbeat(std::string source) : source_(std::move(source)), thread_([this] { report(); }) {}
-        Heartbeat(const Heartbeat&) = delete;
-        Heartbeat& operator=(const Heartbeat&) = delete;
-        Heartbeat(Heartbeat&&) = delete;
-        Heartbeat& operator=(Heartbeat&&) = delete;
-        ~Heartbeat() {
-            {
-                const std::lock_guard lock(mutex_);
-                done_ = true;
-            }
-            wake_.notify_one();
-            thread_.join();
-        }
-
-    private:
-        // Thread body: prints a line per interval until done_.
-        void report() {
-            std::unique_lock lock(mutex_);
-            for (auto elapsed = HeartbeatInterval; !wake_.wait_for(lock, HeartbeatInterval, [this] { return done_; });
-                 elapsed += HeartbeatInterval) {
-                llvm::errs() << "docs-digger:   still parsing " << source_ << " (" << elapsed.count() << " s)\n";
-            }
-        }
-
-        // The translation unit being parsed.
-        std::string source_;
-        // Guards done_.
-        std::mutex mutex_;
-        // Wakes the thread early when parsing ends.
-        std::condition_variable wake_;
-        // Set when parsing ended.
-        bool done_ = false;
-        // The reporting thread; declared last so the members it uses exist before it starts.
-        std::thread thread_;
-    };
-
-    // Parses one translation unit; returns whether Clang reported no errors.
-    bool runOne(const Options& options, const clang::tooling::CompilationDatabase& database, const std::string& source,
-                clang::tooling::FrontendActionFactory& factory) {
-        using clang::tooling::ArgumentInsertPosition;
-        clang::tooling::ClangTool tool(database, {source});
-        tool.appendArgumentsAdjuster(dropPrecompiledHeaders);
-        // -w: warnings in the parsed code are not ours to fix.
-        // overlunky is built with Clang 17; two of its dependencies fail with this newer Clang:
-        // - sol2 3.3.0 optional<T&>::emplace calls a member that does not exist: delayed template parsing only
-        //   parses template bodies that get instantiated, and this one never is;
-        // - fmt's FMT_STRING subtracts pointers into a string literal during constant evaluation, which the
-        //   classic evaluator now rejects (CWG2765); the new constant interpreter accepts it.
-        tool.appendArgumentsAdjuster(
-            clang::tooling::getInsertArgumentAdjuster({"-w", ResourceDirFlag, "-Xclang", "-fdelayed-template-parsing",
-                                                       "-Xclang", "-fexperimental-new-constant-interpreter"},
-                                                      ArgumentInsertPosition::BEGIN));
-        const clang::tooling::CommandLineArguments extra(options.extraArgs.begin(), options.extraArgs.end());
-        tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster(extra, ArgumentInsertPosition::END));
-        return tool.run(&factory) == 0;
-    }
-
-    // Parses every source; returns how many had errors. A progress line per translation unit (each takes a few
-    // seconds) shows that a run of several minutes is moving.
-    unsigned runAll(const Options& options, const clang::tooling::CompilationDatabase& database,
-                    const std::vector<std::string>& sources, clang::tooling::FrontendActionFactory& factory) {
-        unsigned failed = 0;
-        for (std::size_t i = 0; i < sources.size(); ++i) {
-            llvm::errs() << llvm::formatv("docs-digger: [{0}/{1}] {2}\n", i + 1, sources.size(), sources[i]);
-            const auto start = std::chrono::steady_clock::now();
-            bool parsed = false;
-            {
-                const Heartbeat heartbeat(sources[i]);
-                parsed = runOne(options, database, sources[i], factory);
-            }
-            if (!parsed) {
-                ++failed;
-            }
-            if (options.timings) {
-                const std::chrono::duration<double> elapsed = std::chrono::steady_clock::now() - start;
-                llvm::errs() << llvm::format("%8.2f s  ", elapsed.count()) << sources[i] << '\n';
-            }
-        }
-        return failed;
     }
 
     // Writes the extraction as indented JSON (keys sorted, so the output is stable).
@@ -261,30 +154,56 @@ namespace {
         return true;
     }
 
+    // The cache named by --cache, or nullptr (none given, or it cannot be opened: then everything is parsed).
+    std::unique_ptr<dd::ResultCache> openCache(const Options& options) {
+        if (options.cache.empty()) {
+            return nullptr;
+        }
+        std::string error;
+        std::unique_ptr<dd::ResultCache> cache = dd::ResultCache::open(options.cache, error);
+        if (cache == nullptr) {
+            llvm::errs() << "docs-digger: cannot open the cache " << options.cache << ": " << error << '\n';
+        }
+        return cache;
+    }
+
+    // What runAll needs from the options, without the cache.
+    dd::RunSettings runSettings(const Options& options, std::vector<std::string> sources, dd::FileHashes& hashes,
+                                const char* argv0) {
+        dd::RunSettings settings;
+        settings.sources = std::move(sources);
+        settings.extraArgs.assign(options.extraArgs.begin(), options.extraArgs.end());
+        settings.root = options.root;
+        settings.readCache = !options.noCache;
+        // The executable's own hash: a rebuilt digger never takes the results of an older one.
+        static int anchor = 0;
+        const std::string executable = llvm::sys::fs::getMainExecutable(argv0, &anchor);
+        settings.version = hashes.hash(executable).value_or(executable);
+        settings.jobs =
+            options.jobs != 0 ? options.jobs : llvm::heavyweight_hardware_concurrency().compute_thread_count();
+        return settings;
+    }
+
     // Parses the selected TUs of database and writes what the passes found; returns the process exit code.
-    int dig(const Options& options, const clang::tooling::CompilationDatabase& database) {
-        const std::vector<std::string> sources = selectSources(options, database);
+    int dig(const Options& options, const clang::tooling::CompilationDatabase& database, const char* argv0) {
+        std::vector<std::string> sources = selectSources(options, database);
         if (sources.empty()) {
             llvm::errs() << "docs-digger: no translation units selected\n";
             return 1;
         }
-        const dd::SourceRoot root(options.root);
+        dd::FileHashes hashes;
+        dd::RunSettings settings = runSettings(options, std::move(sources), hashes, argv0);
+        const std::unique_ptr<dd::ResultCache> cache = openCache(options);
+        settings.cache = cache.get();
         dd::Extraction extraction;
-        dd::TableAssignmentCollector collector(root, extraction);
-        dd::CallbackCollector callbacks(root, extraction.callbackFacts);
-        clang::ast_matchers::MatchFinder finder;
-        collector.registerMatchers(finder);
-        callbacks.registerMatchers(finder);
-        const std::unique_ptr<clang::tooling::FrontendActionFactory> factory =
-            clang::tooling::newFrontendActionFactory(&finder);
-
-        const unsigned failed = runAll(options, database, sources, *factory);
-        llvm::errs() << "docs-digger: merging the results of " << sources.size() << " translation units\n";
+        const unsigned failed = dd::runAll(settings, database, hashes, extraction);
+        const std::size_t total = settings.sources.size();
+        llvm::errs() << "docs-digger: merging the results of " << total << " translation units\n";
         if (!merge(options, extraction)) {
             return 1;
         }
         if (failed != 0) {
-            llvm::errs() << "docs-digger: " << failed << " of " << sources.size() << " translation units had errors\n";
+            llvm::errs() << "docs-digger: " << failed << " of " << total << " translation units had errors\n";
         }
         return writeOutput(options, extraction) && failed == 0 ? 0 : 1;
     }
@@ -303,5 +222,5 @@ int main(int argc, const char** argv) {
         return 1;
     }
     const std::unique_ptr<clang::tooling::CompilationDatabase> database = loadDatabase(options, std::move(fixed));
-    return database ? dig(options, *database) : 1;
+    return database ? dig(options, *database, argv[0]) : 1;
 }

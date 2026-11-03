@@ -34,6 +34,7 @@ message(STATUS "Using Clang from ${Clang_DIR}")
 if(WIN32 AND NOT TARGET ZLIB::ZLIB)
   include(cmake/Compression.cmake)
 endif()
+include(cmake/Sqlite.cmake)
 
 # overlunky checkout: tests use its sol2 headers; dig.bat configures it for the compile database.
 # DD_OVERLUNKY_ROOT (environment) is the one setting both read; the default is the Playlunky submodule next door.
@@ -47,9 +48,13 @@ set(OVERLUNKY_ROOT "${DD_DEFAULT_OVERLUNKY_ROOT}" CACHE PATH "overlunky source r
 add_executable(docs-digger
   src/bindings.cpp
   src/bindings.hpp
+  src/cache.cpp
+  src/cache.hpp
   src/callback_join.cpp
   src/callbacks.cpp
   src/callbacks.hpp
+  src/codec.cpp
+  src/codec.hpp
   src/comments.cpp
   src/comments.hpp
   src/main.cpp
@@ -59,6 +64,8 @@ add_executable(docs-digger
   src/model.hpp
   src/resolve.cpp
   src/resolve.hpp
+  src/runner.cpp
+  src/runner.hpp
   src/source_root.cpp
   src/source_root.hpp
   src/types.cpp
@@ -70,7 +77,7 @@ separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND "${LLVM_DEFINITIONS}")
 target_compile_definitions(docs-digger PRIVATE ${LLVM_DEFINITIONS_LIST}
   # Clang's builtin headers (stddef.h, intrinsics) for the same version as the linked libraries.
   "DOCS_DIGGER_RESOURCE_DIR=\"${LLVM_LIBRARY_DIR}/clang/${LLVM_VERSION_MAJOR}\"")
-target_link_libraries(docs-digger PRIVATE clangTooling clangASTMatchers clangFrontend clangAST clangBasic)
+target_link_libraries(docs-digger PRIVATE clangTooling clangASTMatchers clangFrontend clangAST clangBasic dd_sqlite)
 # Match the LLVM libraries: no RTTI (classes derive from LLVM's), static runtime in every configuration because
 # the package is Release-only (a Debug runtime or debug iterators would not link).
 set_target_properties(docs-digger PROPERTIES MSVC_RUNTIME_LIBRARY MultiThreaded)

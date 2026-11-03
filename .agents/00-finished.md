@@ -66,3 +66,14 @@ plan (sections 2, 3 and 7), where later steps read them.
   over as overlunky doc fixes (`set_on_damage`, `set_on_destroy`, `set_on_kill` x2, `set_post_render`,
   `set_vanilla_sound_callback`, `ON.PRE_GET_FEAT`, `ON.PRE_SET_FEAT`); two runs byte-identical. Fixtures:
   `callbacks`, `vtables`.
+- **DIG-4b. Per-TU result cache (SQLite) and parallel parsing**: each TU is parsed with its own passes into its own
+  `Extraction` (`src/runner.cpp`, `llvm::DefaultThreadPool`, `--jobs`, default all hardware threads: 32 here; a
+  sol2 TU peaks at about 2 GB) and merged in source order (`mergePartial`: first entity wins, usertype members and
+  enum values joined, repeated block docs once). Results are cached in `build/digger-cache.sqlite` (pinned SQLite
+  3.46.1 amalgamation; `--cache`, passed by `dig.bat`, `--no-cache`): one row per TU keyed by the digger
+  executable's hash, the root and the compile command, valid while every file the TU read keeps its content hash
+  (xxh3; not the git hash, decided with the user). `src/codec.cpp` writes partial extractions losslessly (generic
+  encoder, field list per struct); every golden test also runs through the cache twice. Overlunky: cold 30 s
+  instead of about 7 minutes, unchanged 3 s (101 cached, 20 MB), one changed header re-parses exactly the 2 TUs
+  that read it; cold, cached, parallel and `--jobs 1 --no-cache` outputs byte-identical to DIG-4's. Progress: a
+  line per finished TU (time or `cached`) and every 10 s the count and longest-running TUs; `--timings` removed.

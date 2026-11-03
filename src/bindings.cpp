@@ -7,6 +7,8 @@
 
 #include <clang/AST/ExprCXX.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
+#include <llvm/ADT/SmallString.h>
+#include <llvm/Support/FileSystem.h>
 
 #include <algorithm>
 #include <iterator>
@@ -128,6 +130,7 @@ namespace dd {
         }
         else if (result.Nodes.getNodeAs<clang::TranslationUnitDecl>(TranslationUnitNode) != nullptr) {
             addCommentedBindings(context);
+            addFiles(context.getSourceManager());
         }
     }
 
@@ -340,6 +343,17 @@ namespace dd {
         const std::optional<SourceLoc> start =
             file.isValid() ? root_.locate(sm, sm.getLocForStartOfFile(file)) : std::nullopt;
         return start && scannedFiles_.insert(start->file).second;
+    }
+
+    void TableAssignmentCollector::addFiles(const clang::SourceManager& sm) {
+        for (auto it = sm.fileinfo_begin(); it != sm.fileinfo_end(); ++it) {
+            const llvm::StringRef real = it->first.getFileEntry().tryGetRealPathName();
+            llvm::SmallString<256> path(real.empty() ? it->first.getName() : real);
+            const std::error_code error = llvm::sys::fs::make_absolute(path);
+            files_.push_back(error ? it->first.getName().str() : path.str().str());
+        }
+        std::ranges::sort(files_);
+        files_.erase(std::unique(files_.begin(), files_.end()), files_.end());
     }
 
     void TableAssignmentCollector::addCommentedBindings(const clang::ASTContext& context) {

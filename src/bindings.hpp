@@ -9,6 +9,7 @@
 
 #include <set>
 #include <string>
+#include <vector>
 
 namespace dd {
 
@@ -28,6 +29,9 @@ namespace dd {
 
         // Records one matched node, or scans a translation unit's files for commented-out bindings and block docs.
         void run(const clang::ast_matchers::MatchFinder::MatchResult& result) override;
+
+        // Every file the translation unit read (absolute paths): what its result depends on, for the cache.
+        const std::vector<std::string>& files() const { return files_; }
 
     private:
         // Turns one `root[...] = value` into a Function or a Value.
@@ -63,6 +67,8 @@ namespace dd {
         bool startScan(clang::FileID file, const clang::SourceManager& sm);
         // Adds one commented-out binding as a doc-only function (lambda text) or value (anything else).
         void addCommentedBinding(const CommentedBinding& binding, const SourceLoc& loc);
+        // Records the files of the translation unit.
+        void addFiles(const clang::SourceManager& sm);
 
         // Decides which files results may come from and how their paths are written.
         const SourceRoot& root_;
@@ -70,6 +76,8 @@ namespace dd {
         Extraction& out_;
         // Root-relative files already scanned for commented-out bindings (every TU sees the shared headers).
         std::set<std::string> scannedFiles_;
+        // Files the translation units read, sorted.
+        std::vector<std::string> files_;
     };
 
     // Copies the overloads of aliased functions into their aliases, once every translation unit is parsed (the

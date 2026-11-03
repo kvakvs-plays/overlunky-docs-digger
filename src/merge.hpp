@@ -7,6 +7,11 @@
 // Steps run once every translation unit is parsed, on the merged extraction (no Clang AST here).
 namespace dd {
 
+    // Adds one translation unit's partial extraction to merged, as if the units had been parsed into one extraction
+    // in order: an entity seen before keeps its first version; usertypes and enums also get the members and values
+    // later units add; block docs a unit repeats (shared headers) stay once.
+    void mergePartial(Extraction& merged, Extraction&& part);
+
     // Adds the tables and values of a `lua_enums.txt` dump of a running game (`NAME = {`, `  KEY = value,`, `}`)
     // that the sources do not have; false when the file cannot be read.
     bool addRuntimeEnums(Extraction& extraction, const std::string& path);

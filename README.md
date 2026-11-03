@@ -53,17 +53,22 @@ The scripts enter the Visual Studio environment themselves; run them from any sh
 - `test.bat [Debug|Release|All]`: builds and runs the CTest suite (golden-file tests).
 - `dig.bat [options]`: builds Release, configures overlunky into `build\overlunky` for its `compile_commands.json`
   (configure only) and runs the digger on `src/game_api/**` (the events are triggered outside `script/`),
-  adding the enum values of
-  `docs/game_data/lua_enums.txt` (`--runtime-enums`).
+  adding the enum values of `docs/game_data/lua_enums.txt` (`--runtime-enums`) and keeping each translation unit's
+  result in `build\digger-cache.sqlite` (`--cache`).
 - `quality.bat [changed|all]`: the clang-format, Lizard and clang-tidy gate.
 
-`dig.bat` passes its arguments to `docs-digger`, for example `dig.bat -o api.json --timings`. The output is
+`dig.bat` passes its arguments to `docs-digger`, for example `dig.bat -o api.json --jobs 8`. The output is
 JSON: `functions`, `values`, `usertypes`, `enums`, `aliases`, `libraries`, `script_callbacks`,
 `global_variables` and `events`, each with its source location, documentation and C++ types; parameters that
 receive a Lua function carry a `callback` signature (see `.agents/01-plan.md`, sections 4 and 5). Run
-`build\digger\Release\docs-digger.exe --help` for all options. A full run over the 101 `game_api` translation
-units takes about 7 minutes; the digger prints a line per translation unit and a heartbeat every 10 s while one
-is being parsed.
+`build\digger\Release\docs-digger.exe --help` for all options.
+
+The 101 `game_api` translation units are parsed in parallel (`--jobs`, default all hardware threads as LLVM counts
+them; a sol2 unit takes up to 2 GB): about 30 s on 32 threads, about 7 minutes with `--jobs 1`. A unit whose files
+(the source and everything it includes, compared by content) are unchanged since the last run comes from the cache,
+so a run without source changes takes a few seconds; a new digger build, another `--root` or another compile command
+parse again. `--no-cache` parses everything (and refreshes the cache); deleting `build\` only costs one full run.
+The digger prints a line per finished unit and, every 10 s, the units still being parsed.
 
 `python tools\parity.py <overlunky root> api.json` runs overlunky's old `docs/parse_source.py` and compares its
 results with the digger's. It lists accepted differences with their reasons and exits with 1 on anything

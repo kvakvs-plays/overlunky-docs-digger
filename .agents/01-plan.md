@@ -91,8 +91,12 @@ P16 is a presentation concern. The digger emits C++ types plus structured type f
 - Type facts: `QualType` + `PrintingPolicy` for spelling, `getCanonicalType()` for resolution, and
   `ClassTemplateSpecializationDecl::getTemplateArgs()` to unwrap `std::optional<T>`, containers,
   `std::function<Sig>` and so on.
-- Parallelism over translation units, if needed: `clang::tooling::AllTUsToolExecutor`
-  (`--executor=all-TUs --execute-concurrency=N`). Start with plain sequential `ClangTool`.
+- Parallelism over translation units (DIG-4b): one `ClangTool` per TU on an `llvm::DefaultThreadPool`, each with
+  its own passes and partial `Extraction`, merged in source order. `AllTUsToolExecutor` is not used: its results
+  are key/value strings, while each TU's partial extraction must also be cached on its own.
+- Result cache (DIG-4b): SQLite (pinned amalgamation; LLVM has no database), one row per TU with the content hash
+  of every file it read; `src/codec.cpp` writes the partial extraction losslessly with one generic encoder and a
+  field list per model struct.
 - Output: `llvm::json::OStream` / `llvm::json::Value`. No third-party JSON dependency.
 - Tests: golden-file comparison through CTest (`cmake -E compare_files`). No lit/FileCheck setup.
 
@@ -148,9 +152,12 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   build.bat, test.bat     build / build + CTest (clang-cl, Ninja Multi-Config, build/digger)
   dig.bat                 overlunky compile database (build/overlunky) + run the digger on it
   quality.bat             clang-format, Lizard, clang-tidy gate
-  cmake/                  downloads, zlib/zstd build, overlunky configure, quality checks
+  cmake/                  downloads, zlib/zstd/SQLite builds, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
-  src/main.cpp            CLI, ClangTool per TU (progress line per TU, 10 s heartbeat), register passes, merge, write output
+  src/main.cpp            CLI, merge steps, write output
+  src/runner.cpp          TUs in parallel, each into its own Extraction (or from the cache); progress, ordered merge
+  src/cache.cpp           SQLite result cache, content hashes of files
+  src/codec.cpp           lossless JSON of a partial Extraction (field lists per model struct)
   src/model.hpp/.cpp      plain structs for the data model + toJSON() overloads (llvm::json)
   src/source_root.cpp     --root: which files results may come from, root-relative paths
   src/types.cpp           QualType -> TypeInfo (section 4)
@@ -471,7 +478,7 @@ Members of usertypes and namespace tables are grouped by their owner.
 Work through the steps in order. Check items off (`[x]`) as they are finished. A step is finished
 when its own definition of done and the common one below are both met. A finished step moves to
 `00-finished.md` as one compact bullet; its discoveries stay in sections 2, 3 and 7. Finished so
-far: DIG-0, DIG-1, DIG-2, DIG-3, DIG-4.
+far: DIG-0, DIG-1, DIG-2, DIG-3, DIG-4, DIG-4b.
 
 **Definition of done for every step**
 
@@ -485,29 +492,6 @@ far: DIG-0, DIG-1, DIG-2, DIG-3, DIG-4.
 - [ ] Running the digger twice on the same input gives byte-identical output.
 - [ ] Discoveries that change the plan (new patterns, rejected approaches, timings) are written into
   this file.
-
-### DIG-4b. Per-TU result cache (SQLite) and parallel parsing
-
-A full run parses 101 TUs in about 7 minutes; repeated runs by a developer mostly see unchanged sources.
-
-- [ ] Each TU fills its own `Extraction`; the partial results are merged in source order (the first TU that
-  sees an entity wins, as today), so the output stays byte-identical. Needs a JSON reader for the model
-  (`llvm::json` `fromJSON`), including the internal callback facts.
-- [ ] Cache in SQLite (amalgamation pinned by URL + SHA256 in `thirdparty/`, like zlib/zstd; LLVM ships no
-  equivalent): key = TU path + compile command (with the digger's added flags) + digger version (hash of the
-  executable); value = the TU's dependency list (every file it included, with a content hash) and its partial
-  result. A hit needs every dependency hash to match; anything else re-parses and replaces the row. Keyed on
-  content, not on the git hash: local uncommitted edits (see section 7) must not serve stale results.
-- [ ] `--cache <file>` (default `build/digger-cache.sqlite`; decided with the user: content-hash key, cache under
-  `build/`, so deleting `build/` only costs one full parse), `--no-cache`; the progress line says `cached` or the
-  parse time.
-- [ ] Parse the missing TUs in parallel (`--jobs N`), measuring memory per sol2 TU first (section 7).
-
-Definition of done:
-
-- [ ] A second run with no source change parses nothing and gives byte-identical output.
-- [ ] Touching one header re-parses exactly the TUs that include it.
-- [ ] Cached, uncached and parallel runs give byte-identical output.
 
 ### DIG-5. Grouping, finalization, CI (P14)
 
@@ -551,7 +535,9 @@ out of scope here.
   today, stays an option. DIG-4 widened the selection to all 101 `src/game_api` TUs (events are triggered from
   `state.cpp`, `level_api.cpp`, `render_api.cpp`; all parse with 0 errors): about 7 minutes sequential, the 51
   non-script TUs adding about 140 s. The digger prints a line per TU and a heartbeat every 10 s (single TUs take
-  up to 22 s). Cache and parallel parsing: DIG-4b.
+  up to 22 s). DIG-4b: with 32 threads a cold run takes about 30 s (peak about 2 GB per sol2 TU, measured on
+  `entities_monsters_lua.cpp`); a run without source changes takes 3 s from the cache (20 MB); changing one
+  header re-parses only the TUs that read it.
 - **Callback dataflow heuristics (C3).** Unusual storage patterns will be missed. C7 fallback and
   the DIG-4 report make misses visible. Don't build general dataflow; add patterns only as the
   report demands.

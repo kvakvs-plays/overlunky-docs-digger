@@ -4,8 +4,10 @@
 #include <llvm/ADT/StringRef.h>
 #include <llvm/Support/MemoryBuffer.h>
 
+#include <algorithm>
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 
 namespace dd {
@@ -172,7 +174,83 @@ namespace dd {
             return names;
         }
 
+        // A usertype seen again: the header comes from the unit with the new_usertype call, members from all (the
+        // ones seen first win).
+        void mergeUsertype(Usertype& merged, Usertype&& part) {
+            if (!merged.luaName.empty() || part.luaName.empty()) {
+                merged.members.merge(part.members);
+                return;
+            }
+            std::map<MemberKey, Member> earlier = std::move(merged.members);
+            merged = std::move(part);
+            earlier.merge(merged.members);
+            merged.members = std::move(earlier);
+        }
+
+        // An enum seen again: the header comes from the unit that creates it, values from all (the ones seen first
+        // win).
+        void mergeEnum(Enum& merged, Enum&& part) {
+            const bool filled = merged.filledAtRuntime || part.filledAtRuntime;
+            if (!merged.loc.file.empty() || part.loc.file.empty()) {
+                merged.values.merge(part.values);
+            }
+            else {
+                std::map<MemberKey, EnumValue> earlier = std::move(merged.values);
+                merged = std::move(part);
+                earlier.merge(merged.values);
+                merged.values = std::move(earlier);
+            }
+            merged.filledAtRuntime = filled;
+        }
+
+        // Merges map entries with merge for entries already present, keeping the order of first appearance.
+        template <typename Map, typename MergeEntry>
+        void mergeEach(Map& merged, Map&& part, const MergeEntry& mergeEntry) {
+            for (auto& [key, entry] : part) {
+                const auto [it, inserted] = merged.try_emplace(key);
+                if (inserted) {
+                    it->second = std::move(entry);
+                }
+                else {
+                    mergeEntry(it->second, std::move(entry));
+                }
+            }
+        }
+
+        // Merges the callback facts of a unit (first fact per key wins, sets are joined).
+        void mergeFacts(CallbackFacts& merged, CallbackFacts& part) {
+            merged.flows.merge(part.flows);
+            merged.sites.merge(part.sites);
+            merged.edges.merge(part.edges);
+            merged.containerKeys.merge(part.containerKeys);
+            for (auto& [storage, selectors] : part.storageSelectors) {
+                merged.storageSelectors[storage].merge(selectors);
+            }
+            merged.vtableHooks.merge(part.vtableHooks);
+            merged.consumedBindings.merge(part.consumedBindings);
+        }
+
+        // True when two block docs are the same block (a header scanned by several units).
+        bool sameBlock(const BlockDoc& a, const BlockDoc& b) { return a.target == b.target && a.lines == b.lines; }
+
     } // namespace
+
+    void mergePartial(Extraction& merged, Extraction&& part) {
+        merged.functions.merge(part.functions);
+        merged.values.merge(part.values);
+        mergeEach(merged.usertypes, std::move(part.usertypes), mergeUsertype);
+        mergeEach(merged.enums, std::move(part.enums), mergeEnum);
+        merged.aliases.merge(part.aliases);
+        merged.libraries.merge(part.libraries);
+        merged.scriptCallbacks.merge(part.scriptCallbacks);
+        mergeFacts(merged.callbackFacts, part.callbackFacts);
+        for (BlockDoc& block : part.blockDocs) {
+            if (std::ranges::none_of(merged.blockDocs,
+                                     [&](const BlockDoc& known) { return sameBlock(known, block); })) {
+                merged.blockDocs.push_back(std::move(block));
+            }
+        }
+    }
 
     bool addRuntimeEnums(Extraction& extraction, const std::string& path) {
         llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> buffer = llvm::MemoryBuffer::getFile(path, true);
