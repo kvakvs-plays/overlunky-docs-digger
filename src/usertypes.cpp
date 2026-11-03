@@ -344,10 +344,10 @@ namespace dd {
             }
             Member member = describeMember(value, record, root, context);
             member.luaName = name.name;
+            member.doc = docBefore(key->getBeginLoc(), context);
             applyDocFallbacks(member, value->getBeginLoc(), record, context);
             member.meta = name.meta;
             member.loc = *loc;
-            member.doc = docBefore(key->getBeginLoc(), context);
             usertype.members.emplace(MemberKey{member.luaName, member.loc}, std::move(member));
         }
 
@@ -501,6 +501,8 @@ namespace dd {
         const clang::NamedDecl* hintedDecl = hinted ? findMember(record, *hinted, context) : nullptr;
         if (hintedDecl != nullptr) {
             member.declDoc = docOfDecl(*hintedDecl, context);
+            // The hint is the documented form of a binding hidden from the old parser (`/// NoDoc` on a wrapper).
+            member.doc.nodoc = false;
             return;
         }
         if (isDocumented(member)) {

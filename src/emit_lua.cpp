@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <map>
+#include <optional>
 #include <set>
 #include <utility>
 
@@ -41,6 +42,8 @@ namespace dd {
             std::map<std::string, std::string> classNames;
             // Globals and functions the prelude declares, which replace the generated ones.
             std::set<std::string> preludeNames;
+            // The extraction written, for the events of enum-selected callbacks.
+            const Extraction& extraction;
         };
 
         // The names a prelude declares at the start of a line: `name = ...` and `function name(...)`.
@@ -331,6 +334,103 @@ namespace dd {
             std::vector<FunctionSig> overloads;
         };
 
+        // The value of an event's key in its enum table as a LuaLS literal type (`12`); empty when it has no number.
+        std::string enumLiteral(const Extraction& extraction, const Event& event) {
+            const auto found = extraction.enums.find(event.table);
+            if (found == extraction.enums.end()) {
+                return {};
+            }
+            for (const auto& [valueKey, value] : found->second.values) {
+                if (value.luaName == event.luaName && value.number) {
+                    return std::to_string(*value.number);
+                }
+            }
+            return {};
+        }
+
+        // The parameter that receives a callback chosen by an enum value, and the one that takes the value.
+        struct EventParams {
+            // Index of the callback parameter among the visible ones.
+            std::size_t callback = 0;
+            // Index of the parameter typed with the selecting enum.
+            std::size_t selector = 0;
+            // The callback's facts (selector and storage).
+            const CallbackSig* sig = nullptr;
+        };
+
+        // Index of the parameter typed with the enum table named selector.
+        std::optional<std::size_t> selectorIndex(const std::vector<const Param*>& params, const std::string& selector) {
+            for (std::size_t i = 0; i < params.size(); ++i) {
+                if (typeName(params[i]->type) == selector) {
+                    return i;
+                }
+            }
+            return std::nullopt;
+        }
+
+        // The event parameters of a signature, if it has a callback chosen by an enum parameter.
+        std::optional<EventParams> eventParams(const std::vector<const Param*>& params) {
+            for (std::size_t i = 0; i < params.size(); ++i) {
+                const CallbackSig* callback = params[i]->callback.empty() ? nullptr : &params[i]->callback.front();
+                if (callback == nullptr || callback->selector.empty()) {
+                    continue;
+                }
+                if (const std::optional<std::size_t> selector = selectorIndex(params, callback->selector)) {
+                    return EventParams{i, *selector, callback};
+                }
+            }
+            return std::nullopt;
+        }
+
+        // The Lua types an event overload writes for the two event parameters.
+        struct EventTypes {
+            // The callback's `fun(...)` type for this event.
+            std::string callback;
+            // The event's value as a literal type.
+            std::string literal;
+        };
+
+        // `fun(cb: <the event's callback>, event: 12): R`, one overload of an event registration.
+        std::string eventOverload(const FunctionSig& sig, const std::vector<const Param*>& params,
+                                  const EventParams& event, const EventTypes& types, const std::string& selfType) {
+            std::vector<std::string> parts;
+            if (!selfType.empty() && sig.self != SelfKind::None) {
+                parts.push_back("self: " + selfType);
+            }
+            for (std::size_t i = 0; i < params.size(); ++i) {
+                const std::string type = i == event.callback ? types.callback
+                    : i == event.selector                    ? types.literal
+                                                             : paramType(*params[i]);
+                parts.push_back(paramName(*params[i], i) + ": " + type);
+            }
+            return "fun(" + llvm::join(parts, ", ") + ")" + funReturns(sig.returns);
+        }
+
+        // One `---@overload` per event of the storage the callback goes to: the callback typed for that event, the
+        // selecting parameter as the event's literal value, by which LuaLS tells `ON.FRAME` from `ON.LEVEL`. LuaLS
+        // only: classic EmmyLua has no literal types.
+        void appendEventOverloads(std::string& out, const FunctionSig& sig, const std::string& selfType,
+                                  const Context& context) {
+            const std::vector<const Param*> params = visibleParams(sig);
+            const std::optional<EventParams> found = eventParams(params);
+            if (isEmmy(context) || !found) {
+                return;
+            }
+            for (const auto& [key, event] : context.extraction.events) {
+                const bool matches = event.table == found->sig->selector && event.storedIn == found->sig->storedIn &&
+                    event.callback.origin != CallbackOrigin::Unresolved;
+                const std::string literal = matches ? enumLiteral(context.extraction, event) : std::string();
+                if (!literal.empty()) {
+                    // Without the callback's returns: LuaLS (3.19) selects an overload by a function argument only
+                    // when the `fun` type declares none; with one it falls back to the untyped signature.
+                    CallbackSig arguments = event.callback;
+                    arguments.returns.clear();
+                    out += "---@overload " +
+                        eventOverload(sig, params, *found, {callbackType(arguments), literal}, selfType) + "\n";
+                }
+            }
+        }
+
         // Appends one documented function statement.
         void appendFunction(std::string& out, const FunctionDecl& decl, const Context& context) {
             appendDoc(out, decl.doc, context);
@@ -344,6 +444,9 @@ namespace dd {
             appendSignature(out, decl.overloads.front(), context);
             for (const FunctionSig& other : llvm::drop_begin(decl.overloads)) {
                 out += "---@overload " + written(context, overloadType(other, decl.selfType)) + "\n";
+            }
+            for (const FunctionSig& sig : decl.overloads) {
+                appendEventOverloads(out, sig, decl.selfType, context);
             }
             out += "function " + decl.name + "(" + paramList(decl.overloads.front()) + ") end\n\n";
         }
@@ -825,7 +928,7 @@ namespace dd {
     } // namespace
 
     std::vector<LuaFile> luaFiles(const Extraction& extraction, const LuaFileSettings& settings) {
-        const Context context{settings, classNames(extraction), declaredNames(settings.prelude)};
+        const Context context{settings, classNames(extraction), declaredNames(settings.prelude), extraction};
         std::vector<LuaFile> files;
         pack(files, "spel2", globalChunks(extraction, context), settings.maxFileSize);
         pack(files, "spel2_types", usertypeChunks(extraction, context), settings.maxFileSize);

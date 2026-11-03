@@ -702,7 +702,6 @@
           },
           "kind": "property",
           "name": "paused",
-          "nodoc": true,
           "source": {
             "column": 5,
             "file": "usertypes.cpp",

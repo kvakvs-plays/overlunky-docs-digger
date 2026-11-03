@@ -161,7 +161,10 @@ namespace dd {
                                               const clang::ASTContext& context) {
         const std::string root = isLuaState(rootExpr.getType()) ? std::string() : sourceText(&rootExpr, context);
         const clang::Expr* value = assignment.getArg(1);
-        const Doc doc = bindingDoc(assignment, context);
+        Doc doc = bindingDoc(assignment, context);
+        if (doc.nodoc && commentedBindingAbove(assignment.getBeginLoc(), key.luaName, context)) {
+            doc.nodoc = false;
+        }
         Function function{key.owner, key.luaName, root, key.loc, doc, {}, false, false, {}, {}};
         if (describeFunction(function, value, context)) {
             out_.functions.emplace(std::move(key), std::move(function));
@@ -287,9 +290,9 @@ namespace dd {
         }
         Member member = describeMember(assignment.getArg(1), record, root_, context);
         member.luaName = path.keys.front();
+        member.doc = docBefore(assignment.getBeginLoc(), context);
         applyDocFallbacks(member, assignment.getBeginLoc(), record, context);
         member.loc = loc;
-        member.doc = docBefore(assignment.getBeginLoc(), context);
         usertype.members.emplace(MemberKey{member.luaName, loc}, std::move(member));
         return true;
     }

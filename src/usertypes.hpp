@@ -38,8 +38,9 @@ namespace dd {
                           const clang::ASTContext& context);
 
     // Documents member like the old parser: by the C++ member an autodoc hint above loc names (see autodocHint),
-    // always; otherwise, when no comment of the bound code documents it, by the C++ member of the same name (a
-    // lambda `"topmost"` that calls `entity.topmost()`). Names are looked up in record and its bases.
+    // always, which also lifts the `/// NoDoc` of member.doc (set it first); otherwise, when no comment of the bound
+    // code documents it, by the C++ member of the same name (a lambda `"topmost"` that calls `entity.topmost()`). Names
+    // are looked up in record and its bases.
     void applyDocFallbacks(Member& member, clang::SourceLocation loc, const clang::CXXRecordDecl* record,
                            const clang::ASTContext& context);
 

@@ -4,6 +4,57 @@
   "events": [],
   "functions": [
     {
+      "group": "docs",
+      "name": "convert_id",
+      "overloads": [
+        {
+          "cpp": "lambda at docs.cpp:54",
+          "params": [
+            {
+              "name": "id",
+              "type": {
+                "kind": "int",
+                "lua": "integer",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "lua": "integer",
+              "spelling": "int"
+            }
+          ]
+        },
+        {
+          "cpp": "lambda at docs.cpp:56",
+          "params": [
+            {
+              "name": "id",
+              "type": {
+                "kind": "float",
+                "lua": "number",
+                "spelling": "float"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "float",
+              "lua": "number",
+              "spelling": "float"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "docs.cpp",
+        "line": 54
+      }
+    },
+    {
       "doc": [
         "Documented on the binding.",
         "Default: `depth` is 1"

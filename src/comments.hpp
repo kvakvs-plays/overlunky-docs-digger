@@ -61,6 +61,11 @@ namespace dd {
     // `/// NoDoc` binding. Only the member name is returned: some hints name the wrong class after copy-paste.
     std::optional<std::string> autodocHint(clang::SourceLocation loc, const clang::ASTContext& context);
 
+    // True when a commented-out binding of the same key (`// lua["convert_sound_id"] = convert_sound_id;`) sits just
+    // above loc: an autodoc hint, written so that the old regex parser documents that line instead of the `/// NoDoc`
+    // binding below it, which is therefore documented.
+    bool commentedBindingAbove(clang::SourceLocation loc, llvm::StringRef key, const clang::ASTContext& context);
+
     // A callback signature written in a doc comment: `The callback signature is bool on_x(Entity self)` or
     // ``the function `nil do_spawn(float x, float y)` ``.
     struct ProseCallback {

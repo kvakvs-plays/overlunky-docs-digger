@@ -3,6 +3,7 @@
 
 ---@class Items
 ---@field leader integer Index of leader player in coop.
+---@field paused boolean Set while paused.
 Items = {}
 
 ---Number of items.
@@ -29,12 +30,4 @@ Particle = {}
 
 ---@return Particle
 function Particle.new() end
-
----@class Torch : Entity, Movable
----@field is_lit boolean
-Torch = {}
-
----@return Torch
----@overload fun(other: Torch): Torch
-function Torch.new() end
 

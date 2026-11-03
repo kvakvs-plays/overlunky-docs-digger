@@ -271,6 +271,26 @@ namespace dd {
         return std::nullopt;
     }
 
+    bool commentedBindingAbove(clang::SourceLocation loc, llvm::StringRef key, const clang::ASTContext& context) {
+        // Lines looked at above loc, as for autodocHint.
+        constexpr unsigned MaxLines = 6;
+        const std::string pattern = "[\"" + key.str() + "\"]";
+        const clang::SourceManager& sm = context.getSourceManager();
+        const clang::SourceLocation fileLoc = sm.getFileLoc(loc);
+        const clang::FileID file = sm.getFileID(fileLoc);
+        const unsigned line = lineOf(fileLoc, sm);
+        for (unsigned above = line - 1; above >= 1 && above + MaxLines >= line; --above) {
+            const llvm::StringRef text = lineText(file, above, sm).trim();
+            if (!text.starts_with("//")) {
+                return false;
+            }
+            if (!text.starts_with("///") && text.contains(pattern) && text.contains('=')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     std::vector<ProseCallback> proseCallbacks(const std::vector<std::string>& lines) {
         static const llvm::Regex prose(R"re((signature[^`]* is|function) `?([^ `]+) ([A-Za-z0-9_]*)\(([^)]*)\))re");
         std::vector<ProseCallback> found;

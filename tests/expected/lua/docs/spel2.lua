@@ -9,6 +9,11 @@ options = nil
 
 -- ## docs
 
+---@param id integer
+---@return integer
+---@overload fun(id: number): number
+function convert_id(id) end
+
 ---Documented on the binding.
 ---Default: `depth` is 1
 ---@param depth integer

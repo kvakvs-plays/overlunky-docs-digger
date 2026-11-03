@@ -54,8 +54,9 @@ The scripts enter the Visual Studio environment themselves (`tools\dev-env.cmd`)
   the runtime enum dump `docs/game_data/lua_enums.txt` (`--runtime-enums`), the function groups `config\groups.json`
   (`--groups`), the Lua type names `config\lua_types.json` (`--lua-types`) and the result cache
   `build\digger-cache.sqlite` (`--cache`), and writes the LuaLS definition files into `build\lua` (`--lua-out`, with
-  `config\lua_prelude.lua` and the links of the published docs). Its own arguments go to the digger, for example
-  `dig.bat -o F:\out\api.json --jobs 8`; give `-o` an absolute path.
+  `config\lua_prelude.lua` and the links of the published docs). When lua-language-server is on `PATH` or comes with
+  the VS Code Lua extension, it then checks those files and reports problems (the run does not fail on them). Its own
+  arguments go to the digger, for example `dig.bat -o F:\out\api.json --jobs 8`; give `-o` an absolute path.
 - `quality.bat [changed|all]`: the quality gate (below).
 
 `build\digger\Release\docs-digger.exe --help` lists all options. The 101 translation units are parsed in parallel
@@ -114,7 +115,10 @@ limited classic EmmyLua of older IDE plugins (`T|nil` instead of `T?` and `name?
 `---@vararg`, descriptions after `@`, no `---@operator` or index fields).
 
 Enums are written as plain tables with `---@alias NAME integer`, as the old file did: a `---@enum` parameter rejects
-plain numbers (computed entity ids), and the literal values let LuaLS tell `ON.FRAME` from `ON.LEVEL`.
+plain numbers (computed entity ids), and the literal values let LuaLS tell `ON.FRAME` from `ON.LEVEL`. Callbacks chosen
+by an enum value (`set_callback(cb, ON.X)`, `CustomTheme:override`) get one `---@overload` per event with that value
+as a literal type, so the callback's parameters are typed for the event passed. These overloads leave the callback's
+return type out: lua-language-server only selects an overload by a function argument when its `fun` type has none.
 
 ### Function groups
 
@@ -166,10 +170,11 @@ Register new fixtures with `dd_add_golden_test(<name>)` in `tests/CMakeLists.txt
 
 ## Parity with the old parser
 
-`python tools\parity.py <overlunky root> <output.json>` runs overlunky's old `docs/parse_source.py` and compares its
-results with the digger's: functions (presence, deprecation, parameter counts, docs), usertypes and members, enums,
-aliases, libraries, casts, events, global variables, vtable hooks, and the group of every function against
-`generate.py`'s `func_cats`. It prints which parity items (P1 to P16 of the plan) it covers, lists the accepted
+`python tools\parity.py <overlunky root> <output.json> [build\lua]` runs overlunky's old `docs/parse_source.py` and
+compares its results with the digger's: functions (presence, deprecation, parameter counts, docs), usertypes and
+members, enums, aliases, libraries, casts, events, global variables, vtable hooks, and the group of every function
+against `generate.py`'s `func_cats`. Given the Lua directory, it also checks that every function, class, member, enum
+value and alias of the old `docs/game_data/spel2.lua` is declared in the new files. It prints which parity items (P1 to P16 of the plan) it covers, lists the accepted
 differences with their reasons, and exits with 1 on anything unexplained or any unclassified type. Its callback report
 counts callback signatures per origin and lists the unresolved ones and the conflicts between the code and the
 `The callback signature is ...` / `Params:` docs: doc fixes for overlunky, not failures. Run it at the end of every

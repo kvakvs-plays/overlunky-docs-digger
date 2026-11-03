@@ -55,6 +55,7 @@ function Entity:move(dx, dy) end
 
 ---@class Items
 ---@field leader integer Index of leader player in coop.
+---@field paused boolean Set while paused.
 Items = {}
 
 ---Number of items.

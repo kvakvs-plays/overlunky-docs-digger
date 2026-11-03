@@ -23,6 +23,11 @@ function register_command(command) end
 ---@param cb function
 ---@param event ON
 ---@return CallbackId
+---@overload fun(cb: fun(), event: 0): CallbackId
+---@overload fun(cb: fun(screen: integer), event: 1): CallbackId
+---@overload fun(cb: fun(p1: string), event: 2): CallbackId
+---@overload fun(cb: fun(), event: 4): CallbackId
+---@overload fun(cb: fun(render_ctx: RenderContext), event: 3): CallbackId
 function set_callback(cb, event) end
 
 ---C3: stored, dispatched elsewhere; nil keeps the timer (value_or on a local).

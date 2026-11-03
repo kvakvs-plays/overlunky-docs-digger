@@ -1,6 +1,6 @@
 """Parity report: the digger's JSON against overlunky's old regex parser (docs/parse_source.py) as the oracle.
 
-Usage: python tools/parity.py <overlunky root> <docs-digger JSON>
+Usage: python tools/parity.py <overlunky root> <docs-digger JSON> [<directory of the digger's Lua files>]
 
 Checks every global function the old parser reports (ps.funcs, ps.deprecated_funcs):
   presence, deprecated flag, parameter counts and documentation text;
@@ -11,6 +11,7 @@ every alias, library and entity cast (ps.aliases, ps.lualibs, ps.known_casts) fo
 the events (ps.events), and the global variables against the old hardcoded not_functions list;
 the vtable hook members (P7: set_pre_<name> / set_post_<name> names and NoDoc flags);
 the group of every old function against generate.py's func_cats (P14);
+with a Lua directory, every function, class, member, enum value and alias of the old docs/game_data/spel2.lua (DIG-6);
 and lists every type the digger left unclassified. The callback report (DIG-4) counts callback parameters and events
 per origin and lists the unresolved ones and the conflicts (doc fixes for overlunky, not failures). Differences that are understood are listed in ACCEPTED and
 ACCEPTED_PATTERNS with their reason; anything else makes the script exit with 1.
@@ -51,6 +52,16 @@ ACCEPTED_PATTERNS = [
     (r'.*', 'event: right side of an alias',
      'the old event regex also matches `lua["b"];` at the end of `lua["a"] = lua["b"];`: b is a Lua function that '
      'the digger reports as the target of alias a'),
+    (r'CustomTheme\.\w+$', 'lua: member missing',
+     'level_lua.cpp binds these CustomTheme members inside a /* ... */ block comment, which the old text parser still '
+     'reads; they are not bound: the methods reach CustomTheme through its ThemeInfo base class, which the Lua files '
+     'declare with them, and base_theme is not visible from Lua at all'),
+    (r'pause$', 'lua: function missing',
+     'pause is a PauseAPI object that its metatable makes callable (`pause(true)`); the Lua files declare it as the '
+     'global variable `pause` of type PauseAPI'),
+    (r'(OnlinePlayerShort|SoundCallbackFunction|SpearDanglerAnimFrames)$', 'lua: alias missing',
+     'the old generator declared these by hand as `any` for type names its regexes left unresolved; the digger names '
+     'those types from the type facts, and no declaration refers to them'),
     (r'CustomTheme\.\w+$', 'member missing',
      'level_lua.cpp binds these CustomTheme members inside a /* ... */ block comment, which the old text parser still '
      'reads; they are not bound (Lua reaches them through the ThemeInfo base)'),
@@ -474,9 +485,89 @@ def callback_report(report, digger):
     return lines
 
 
+class LuaDeclarations:
+    """What a set of LuaLS/EmmyLua definition files declares: global functions (dotted for tables: `io.open_data`),
+    classes with their member names (fields, methods, constructors), enum tables with their keys, and aliases."""
+
+    def __init__(self, texts):
+        self.functions, self.classes, self.enums, self.aliases = set(), {}, {}, set()
+        dotted = []
+        for text in texts:
+            self._read(text, dotted)
+        for name in dotted:
+            owner, member = re.match(r'(.*)[.:](\w+)$', name).groups()
+            if owner in self.classes:
+                self.classes[owner].add(member)
+            else:
+                self.functions.add(name)
+
+    def _read(self, text, dotted):
+        """Reads one file; functions with a `.` or `:` are kept in dotted until all classes are known."""
+        current_class, current_enum = None, None
+        for line in text.splitlines():
+            stripped = line.strip()
+            if current_enum is not None:
+                current_enum = self._enum_line(stripped, current_enum)
+            elif m := re.match(r'---@class ([\w.]+)', stripped):
+                current_class = m.group(1)
+                self.classes.setdefault(current_class, set())
+            elif (m := re.match(r'---@field (\S+)', stripped)) and current_class:
+                self.classes[current_class].add(m.group(1))
+            elif m := re.match(r'---@alias (\w+)', stripped):
+                self.aliases.add(m.group(1))
+            elif m := re.match(r'(\w+) = \{$', line):
+                current_enum = m.group(1)
+                self.enums.setdefault(current_enum, set())
+            elif m := re.match(r'function ([\w.:]+)\(', stripped):
+                (dotted.append if re.search(r'[.:]', m.group(1)) else self.functions.add)(m.group(1))
+
+    def _enum_line(self, stripped, current_enum):
+        """Adds the key of one line of an enum table; returns the enum still open, or None at its end."""
+        if stripped == '}':
+            return None
+        if m := re.match(r'(\w+|\["[^"]*"\])\s*=', stripped):
+            self.enums[current_enum].add(m.group(1).strip('[]"'))
+        return current_enum
+
+
+def read_lua_files(paths):
+    """The contents of the definition files."""
+    texts = []
+    for path in paths:
+        with open(path, encoding='utf-8', errors='replace') as f:
+            texts.append(f.read())
+    return texts
+
+
+def check_lua_files(report, overlunky_root, lua_dir):
+    """DIG-6: every function, class, member, enum value and alias the old docs/game_data/spel2.lua declares is in the
+    digger's definition files. Returns the lines to print."""
+    old = LuaDeclarations(read_lua_files([os.path.join(overlunky_root, 'docs', 'game_data', 'spel2.lua')]))
+    new_paths = sorted(os.path.join(lua_dir, n) for n in os.listdir(lua_dir) if n.endswith('.lua'))
+    new = LuaDeclarations(read_lua_files(new_paths))
+    for name in sorted(old.functions - new.functions):
+        report.add(name, 'lua: function missing')
+    for cls, members in sorted(old.classes.items()):
+        if cls not in new.classes:
+            report.add(cls, 'lua: class missing')
+            continue
+        for member in sorted(members - new.classes[cls]):
+            report.add(f'{cls}.{member}', 'lua: member missing')
+    for enum, keys in sorted(old.enums.items()):
+        for key in sorted(keys - new.enums.get(enum, set())):
+            report.add(f'{enum}.{key}', 'lua: enum value missing')
+    declared = new.aliases | set(new.enums) | set(new.classes)
+    for alias in sorted(old.aliases - declared):
+        report.add(alias, 'lua: alias missing')
+    return [f'lua files: old {len(old.functions)} functions, {len(old.classes)} classes, {len(old.enums)} enums; '
+            f'digger {len(new.functions)} functions, {len(new.classes)} classes, {len(new.enums)} enums '
+            f'in {len(new_paths)} files']
+
+
 def main():
     """Runs both parsers' results through the checks and prints the report."""
     overlunky_root, digger_file = os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])
+    lua_dir = os.path.abspath(sys.argv[3]) if len(sys.argv) > 3 else None  # before the old parser changes directory
     with open(digger_file, encoding='utf-8') as f:
         digger = json.load(f)
     ps = load_old_parser(overlunky_root)
@@ -503,6 +594,7 @@ def main():
     groups = old_groups(overlunky_root, ps)
     check_groups(report, groups, globals_by_name)
     callbacks = callback_report(report, digger)
+    lua_lines = check_lua_files(report, overlunky_root, lua_dir) if lua_dir else []
 
     unknown = unknown_types(digger)
     doc_only = sorted(f['name'] for f in digger['functions'] + digger['values'] if f.get('doc_only'))
@@ -518,6 +610,8 @@ def main():
           f'{len(digger["aliases"])} aliases, {len(digger["script_callbacks"])} script callbacks')
     print(f'global variables: {digger["global_variables"]}')
     print(f'groups: {len(groups)} old functions in {len(set(groups.values()))} groups compared')
+    for line in lua_lines:
+        print(line)
     print(f'doc-only functions (text signatures, kinds not classified): {doc_only}')
     print()
     for line in callbacks:

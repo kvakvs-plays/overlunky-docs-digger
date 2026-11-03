@@ -621,10 +621,19 @@ definition of done).
     against the old single 574 KB file, which lacked the FMOD enums, callback types and more); luacheck
     reports nothing and `lua-language-server --check` finds no problems. LuaLS mangles paths containing
     `--` (`f--Projects` became `f--check_worker`), so check from a path without them.
-- [ ] Event callbacks (`set_callback(cb, ON.X)`, `CustomTheme:override`): decide in the step how to
+- [x] Event callbacks (`set_callback(cb, ON.X)`, `CustomTheme:override`): decide in the step how to
       type them so LuaLS shows the per-event signature. Try `---@overload` per event with a literal value
       type in VS Code; if LuaLS cannot tell enum values apart, keep the generic signature and list the
       per-event signatures in the doc text.
+      Done in DIG-6c: one `---@overload fun(cb: fun(<event args>), event: <value>)` per resolved event of
+      the callback's storage (94 `ON`, 49 per `CustomTheme` override/pre/post), on every overload that has
+      an enum-selected callback; LuaLS only. Found with probes (`lua-language-server --check`): LuaLS 3.19
+      picks an overload by a function argument only when the overload's `fun` type has **no return
+      type**; with any (`: boolean`, `: boolean?`, `: nil`) it falls back to the untyped signature. So the
+      event overloads leave the callback's returns out (they stay in the JSON and on the main `@param`).
+      Probe result on the real files: `ctx` of `ON.RENDER_POST_HUD` is a VanillaRenderContext, a
+      parameter given to an `ON.FRAME` callback is flagged, the arguments of a `THEME_OVERRIDE` callback
+      are checked. `dig.bat` runs the optional LuaLS check (PATH or the VS Code extension's server).
 - [x] Split: whole declarations go into files by kind (`spel2.lua` for globals, functions, aliases and
       libraries; `spel2_types.lua`; `spel2_enums.lua`). A file that would go over the limit
       (`--lua-max-file-size`, default 480,000 bytes, a margin under 500 KB) continues in `_2`, `_3`, cut at
@@ -639,15 +648,27 @@ definition of done).
       `luacheck` (`tests/RunLuacheck.cmake`) runs the LuaRocks script with its module path, from the
       config's directory (luacheck does not open a config given as an absolute Windows path); the
       config ignores 122 (overlunky replaces `os.date` and other standard functions), 131, 142 and 212.
-- [ ] `tools/parity.py`: every class, field, function and enum value declared in the old `spel2.lua`
+- [x] `tools/parity.py`: every class, field, function and enum value declared in the old `spel2.lua`
       is in the new files, or listed as an accepted difference.
+      Done in DIG-6c (`parity.py <overlunky> <json> <lua dir>`, aliases too): 0 unexplained. Accepted: 53
+      CustomTheme members bound inside a block comment (the methods come through ThemeInfo), `pause`
+      (a callable PauseAPI object, declared as a variable), three hand-written `any` aliases. Found on the
+      way: overlunky's autodoc hint convention, a commented-out binding (`// lua["convert_sound_id"] =
+      convert_sound_id;`, `// entity_type["abs_x"] = &Entity::abs_x;`) above a `/// NoDoc` binding of the
+      same key, means "document this": the NoDoc only hid the wrapper from the old regex parser. The
+      digger now lifts the NoDoc there (functions and members), so `convert_sound_id`, `Entity.abs_x/abs_y`
+      and `PauseAPI.pause` are documented again.
 
 Definition of done:
 
-- [ ] Every output file is under the limit, and luacheck reports nothing on the real overlunky output.
+- [x] Every output file is under the limit, and luacheck reports nothing on the real overlunky output.
+      126 KB, 349 KB and 169 KB; luacheck: 0 warnings; `lua-language-server --check`: no problems.
 - [ ] In VS Code with the Lua extension at default settings, all files load; hover shows docs and the
       params of a callback (`set_callback`, `set_pre_damage`) are typed.
-- [ ] The parity report for the Lua files has no unexplained gaps.
+      Checked with the extension's own server (lua-language-server 3.19.2 `--check`, all files under the
+      500 KB preload limit) and probe scripts: callback params of `set_callback` per event and of
+      `set_pre_damage` are typed, `AABB:offset` chains. Open until someone confirms hover in the editor.
+- [x] The parity report for the Lua files has no unexplained gaps.
 
 ### DIG-7. HTML reference with search
 

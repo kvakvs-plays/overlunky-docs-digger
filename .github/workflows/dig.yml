@@ -76,7 +76,7 @@ jobs:
         env:
           PYTHONIOENCODING: utf-8
         run: |
-          python digger/tools/parity.py overlunky docs-digger-api.json | Tee-Object parity-report.txt
+          python digger/tools/parity.py overlunky docs-digger-api.json digger/build/lua | Tee-Object parity-report.txt
           exit $LASTEXITCODE
 
       - name: Upload the API

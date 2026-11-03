@@ -23,4 +23,14 @@ if errorlevel 1 exit /b 1
     "--lua-out=%ROOT%build\lua" "--lua-prelude=%ROOT%config\lua_prelude.lua" ^
     "--lua-doc-url=https://spelunky-fyi.github.io/overlunky/" "--cache=%ROOT%build\digger-cache.sqlite" %*
 if errorlevel 1 exit /b 1
+
+rem Optional: lua-language-server (on PATH, or the VS Code Lua extension's) reports annotation problems in build\lua.
+rem It does not fail the run. Its paths must not contain "--", which it mangles.
+set "LUALS="
+for /f "delims=" %%i in ('where lua-language-server 2^>nul') do set "LUALS=%%i"
+if not defined LUALS for /d %%d in ("%USERPROFILE%\.vscode\extensions\sumneko.lua-*") do if exist "%%d\server\bin\lua-language-server.exe" set "LUALS=%%d\server\bin\lua-language-server.exe"
+if not defined LUALS goto done
+echo Checking the Lua definition files with %LUALS%
+"%LUALS%" "--check=%ROOT%build\lua" --checklevel=Warning "--logpath=%ROOT%build\luals-log" --check_format=pretty
+:done
 exit /b 0
