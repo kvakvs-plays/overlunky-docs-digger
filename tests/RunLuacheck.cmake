@@ -18,6 +18,9 @@ endif()
 get_filename_component(config_dir "${CONFIG}" DIRECTORY)
 get_filename_component(config_name "${CONFIG}" NAME)
 file(RELATIVE_PATH files "${config_dir}" "${FILES}")
+if(files STREQUAL "")
+  set(files .) # FILES is the config's own directory (examples/)
+endif()
 execute_process(
   COMMAND ${command} --config "${config_name}" --no-color "${files}"
   WORKING_DIRECTORY "${config_dir}"

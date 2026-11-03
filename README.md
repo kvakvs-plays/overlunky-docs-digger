@@ -174,11 +174,14 @@ another generator gets the same structure without its own rules.
 `site.bat [generator] [json]` builds the HTML reference from the digger JSON (default `build\api.json`) with a generator
 of `src/html/<generator>/` (default `starlight`: [Astro Starlight](https://starlight.astro.build) with Pagefind search),
 into `build\site\<generator>`. It takes the examples from overlunky's `docs/examples/` (`DD_OVERLUNKY_ROOT`, as
-`dig.bat`) and the Lua definition files of `build\lua` and `build\lua-emmylua`, which the home page offers to view, to
-download one by one or as a ZIP per dialect (`tools/make_zip.py`: the same bytes on every build). The pinned Node.js
-runs `npm ci` into `thirdparty\node-<generator>` when the lockfile changes, linked into the generator directory as
-`node_modules`. A build takes about 15 s plus the checks. The site is served under `DD_SITE_BASE` (default
-`/overlunky`) of `DD_SITE_URL` (default `https://spelunky-fyi.github.io`); source links go to `DD_SITE_SOURCE_URL`.
+`dig.bat`) and from docs-digger's own [`examples/`](examples/README.md) (`<kind>/<name>`, at most
+`<kind>/<owner>/<member>`: `types/Entity/destroy.lua`; checked by luacheck and by the build, which fails on a file
+that names no symbol), and the Lua definition files of `build\lua` and `build\lua-emmylua`, which the home page
+offers to view, to download one by one or as a ZIP per dialect (`tools/make_zip.py`: the same bytes on every build).
+The pinned Node.js runs `npm ci` into `thirdparty\node-<generator>` when the lockfile changes, linked into the
+generator directory as `node_modules`. A build takes about 15 s plus the checks. The site is served under
+`DD_SITE_BASE` (default `/overlunky`) of `DD_SITE_URL` (default `https://spelunky-fyi.github.io`); source links go to
+`DD_SITE_SOURCE_URL`.
 
 Pages: home (with the downloads), Lua libraries, global variables, STD containers, one page per function group (the
 groups of the JSON) and deprecated functions, one per usertype (bases, derived types, constructors, fields, methods),

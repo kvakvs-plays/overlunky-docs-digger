@@ -64,7 +64,7 @@ const link = (name) => (usertypes.has(name) ? url(`/types/${name}/`) : undefined
             </p>
         )
     }
-    <Example name={u.name} />
+    <Example kind="types" name={u.name} />
     <Doc lines={u.doc?.length ? u.doc : u.cpp_doc} />
     {
         sections.map(([slug, text, items]) => (

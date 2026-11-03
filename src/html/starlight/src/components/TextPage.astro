@@ -18,7 +18,7 @@ const {intro, sections} = textSections(Astro.props.text);
     sections.map((s) => (
         <>
             <h2 id={slug(s.title)}>{s.title}</h2>
-            <Example name={s.title} />
+            <Example kind="text" name={s.title} />
             <Doc lines={s.body} />
         </>
     ))

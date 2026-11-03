@@ -34,7 +34,7 @@ const setCallback = symbols.get('set_callback');
     {
         t.table === 'ON' && (
             <>
-                <Example name="set_callback" />
+                <Example kind="functions" name="set_callback" />
                 <p>
                     These events are used in {setCallback ? <a href={url(setCallback)}>set_callback</a> : 'set_callback'}{' '}
                     to call your callback function before or after something happens in the game. The named events
@@ -54,7 +54,7 @@ const setCallback = symbols.get('set_callback');
                     <span data-pagefind-weight="10">{`${t.table}.${k.name}`}</span>
                     <SearchKey name={k.name} weight={10} />
                 </h2>
-                <Example name={`${t.table}.${k.name}`} />
+                <Example kind="events" name={`${t.table}.${k.name}`} />
                 <Doc lines={k.storages.find((s) => s.doc?.length)?.doc} />
                 {[...k.storages].sort(byRegistrar).map((s) => (
                     <>

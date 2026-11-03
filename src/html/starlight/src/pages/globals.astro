@@ -25,7 +25,7 @@ const headings = globals.map((g) => ({depth: 2, slug: g.name, text: g.name}));
                         <a class="dd-source" href={sourceLink(g.value.source)}>source</a>
                     </p>
                 )}
-                <Example name={g.name} />
+                <Example kind="globals" name={g.name} />
                 <Doc lines={g.value?.doc} />
             </section>
         ))

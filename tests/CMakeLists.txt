@@ -70,3 +70,10 @@ add_test(NAME luacheck
     "-DCONFIG=${CMAKE_CURRENT_SOURCE_DIR}/.luacheckrc" "-DFILES=${CMAKE_CURRENT_SOURCE_DIR}/expected/lua"
     -P "${CMAKE_CURRENT_SOURCE_DIR}/RunLuacheck.cmake")
 set_tests_properties(luacheck PROPERTIES SKIP_REGULAR_EXPRESSION "luacheck not found")
+# The same over the examples of the HTML reference (examples/, settings in examples/.luacheckrc).
+add_test(NAME luacheck.examples
+  COMMAND "${CMAKE_COMMAND}"
+    "-DLUA=${DD_LUA}" "-DLUACHECK_EXE=${DD_LUACHECK_EXE}" "-DLUACHECK_SCRIPT=${DD_LUACHECK_SCRIPT}"
+    "-DCONFIG=${PROJECT_SOURCE_DIR}/examples/.luacheckrc" "-DFILES=${PROJECT_SOURCE_DIR}/examples"
+    -P "${CMAKE_CURRENT_SOURCE_DIR}/RunLuacheck.cmake")
+set_tests_properties(luacheck.examples PROPERTIES SKIP_REGULAR_EXPRESSION "luacheck not found")

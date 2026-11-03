@@ -29,7 +29,7 @@ const events = eventTables.some((t) => t.table === e.name);
             The callback of every value is on the <a href={url(`/events/${e.name}/`)}>{e.name} events</a> page.
         </p>
     )}
-    <Example name={e.name} />
+    <Example kind="enums" name={e.name} />
     <Doc lines={e.doc} />
     {hints.map((v) => <Doc lines={v.text.replace(/^\.\.\.|\.\.\.$/g, '')} />)}
     <table class="dd-values">

@@ -1,8 +1,9 @@
 @echo off
 rem Builds the HTML reference from the digger JSON with a generator of src\html\<generator> (default starlight).
 rem Usage: site.bat [generator] [digger json, default build\api.json]
-rem Inputs: the examples in overlunky's docs\examples (%DD_OVERLUNKY_ROOT%, as dig.bat), and the Lua definition files
-rem of build\lua and build\lua-emmylua, staged with a ZIP each in build\site-downloads for the download links.
+rem Inputs: the examples in overlunky's docs\examples (%DD_OVERLUNKY_ROOT%, as dig.bat) and in examples\, and the Lua
+rem definition files of build\lua and build\lua-emmylua, staged with a ZIP each in build\site-downloads for the
+rem download links.
 rem Output: build\site\<generator>, served under %DD_SITE_BASE% (default /overlunky) of %DD_SITE_URL%; then checked.
 rem Node.js is the pinned one of cmake\NodePackage.cmake (downloaded into thirdparty\).
 rem Packages: "npm ci" into thirdparty\node-<generator> when the lockfile changed, linked into the generator directory
@@ -62,6 +63,7 @@ if errorlevel 1 goto fail
 
 set "DD_SITE_JSON=%JSON%"
 set "DD_SITE_EXAMPLES=%DD_OVERLUNKY_ROOT%\docs\examples"
+set "DD_SITE_DIGGER_EXAMPLES=%ROOT%examples"
 set "DD_SITE_DOWNLOADS=%STAGE%"
 set "DD_SITE_OUT=%ROOT%build\site\%GEN%"
 set "DD_SITE_CACHE=%ROOT%build\site\cache-%GEN%"

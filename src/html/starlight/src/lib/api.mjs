@@ -15,8 +15,9 @@ export const site = process.env.DD_SITE_URL ?? 'https://spelunky-fyi.github.io';
 export const base = (process.env.DD_SITE_BASE ?? '/overlunky').replace(/\/$/, '');
 // Base of the source links: source paths in the JSON are relative to overlunky's src/game_api.
 export const sourceUrl = process.env.DD_SITE_SOURCE_URL ?? 'https://github.com/spelunky-fyi/overlunky/blob/main/src/game_api';
-// overlunky's docs/examples/ (optional) and the staged Lua downloads (optional).
+// overlunky's docs/examples/ and docs-digger's examples/ (both optional), and the staged Lua downloads (optional).
 const examplesDir = process.env.DD_SITE_EXAMPLES ?? '';
+const diggerExamplesDir = process.env.DD_SITE_DIGGER_EXAMPLES ?? '';
 export const downloadsDir = process.env.DD_SITE_DOWNLOADS ?? '';
 
 if (api.schema_version !== 3) {
@@ -162,23 +163,76 @@ export const casts = (usertypes.get('Entity')?.members ?? []).filter((m) => m.na
 
 // --- Examples ----------------------------------------------------------------------------------------------------
 
-// docs/examples/<name>.md (Markdown) and <name>.lua (a Lua block), by name.
-export const examples = (() => {
+// An example file as Markdown: a .md file as it is, a .lua file as a Lua block.
+const exampleText = (file) => {
+    const text = fs.readFileSync(file, 'utf-8').replace(/\r\n/g, '\n');
+    return path.extname(file) === '.md' ? text : '```lua\n' + text.trimEnd() + '\n```';
+};
+// Whether a file is an example (.md or .lua).
+const isExample = (file) => ['.md', '.lua'].includes(path.extname(file));
+
+// overlunky's docs/examples/<name>.md and <name>.lua, flat, by name.
+const overlunkyExamples = (() => {
     const map = new Map();
     if (!examplesDir || !fs.existsSync(examplesDir)) {
         return map;
     }
-    for (const file of fs.readdirSync(examplesDir).sort()) {
-        const ext = path.extname(file);
-        if (ext !== '.md' && ext !== '.lua') {
-            continue;
-        }
-        const name = path.basename(file, ext);
-        const text = fs.readFileSync(path.join(examplesDir, file), 'utf-8').replace(/\r\n/g, '\n');
-        map.set(name, [...(map.get(name) ?? []), ext === '.md' ? text : '```lua\n' + text.trimEnd() + '\n```']);
+    for (const file of fs.readdirSync(examplesDir).filter(isExample).sort()) {
+        const name = path.basename(file, path.extname(file));
+        map.set(name, [...(map.get(name) ?? []), exampleText(path.join(examplesDir, file))]);
     }
     return map;
 })();
+
+// Section titles of the hand-written texts (src/text/*.md), which the text kind of examples names.
+const textTitles = () => {
+    const dir = path.resolve('src/text');
+    return fs
+        .readdirSync(dir)
+        .filter((f) => f.endsWith('.md'))
+        .flatMap((f) => [...fs.readFileSync(path.join(dir, f), 'utf-8').matchAll(/^## (.+)$/gm)].map((m) => m[1].trim()));
+};
+// The names each kind of docs-digger example may have: what the pages show an example for.
+const exampleNames = () =>
+    new Map([
+        ['functions', [...qualifiedFirst.keys()]],
+        ['types', [...usertypes.values()].flatMap((u) => [u.name, ...membersOf(u).map((m) => `${u.name}.${m.name}`)])],
+        ['enums', [...enums.keys()]],
+        ['events', eventTables.flatMap((t) => t.keys.map((k) => `${t.table}.${k.name}`))],
+        ['globals', globals.map((g) => g.name)],
+        ['text', textTitles()],
+    ].map(([kind, names]) => [kind, new Set(names)]));
+// The files under dir, recursively, as paths relative to it with `/`.
+const filesUnder = (dir) =>
+    fs
+        .readdirSync(dir, {recursive: true})
+        .map((f) => f.split(path.sep).join('/'))
+        .filter((f) => fs.statSync(path.join(dir, f)).isFile())
+        .sort();
+// docs-digger's examples/<kind>/<name with `.` as `/`>.md|.lua (`types/Entity/destroy.lua` is `Entity.destroy`), by
+// `<kind>/<name>`. A file that names nothing on the pages fails the build, so a renamed symbol does not lose its
+// example silently.
+const localExamples = (() => {
+    const map = new Map();
+    const dir = diggerExamplesDir;
+    if (!dir || !fs.existsSync(dir)) {
+        return map;
+    }
+    const known = exampleNames();
+    for (const file of filesUnder(dir).filter((f) => isExample(f) && f.includes('/'))) {
+        const [kind, ...parts] = file.slice(0, -path.extname(file).length).split('/');
+        const name = parts.join('.');
+        if (!known.get(kind)?.has(name)) {
+            throw new Error(`examples/${file}: no ${kind} named ${name} on the pages (kinds: ${[...known.keys()].join(', ')})`);
+        }
+        const key = `${kind}/${name}`;
+        map.set(key, [...(map.get(key) ?? []), exampleText(path.join(dir, file))]);
+    }
+    return map;
+})();
+
+// The examples of a symbol: overlunky's by bare name first, then docs-digger's of that kind.
+export const examplesOf = (kind, name) => [...(overlunkyExamples.get(name) ?? []), ...(localExamples.get(`${kind}/${name}`) ?? [])];
 
 // --- Lua definition file downloads ------------------------------------------------------------------------------
 

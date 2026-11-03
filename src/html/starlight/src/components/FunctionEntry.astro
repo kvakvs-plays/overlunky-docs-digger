@@ -24,7 +24,7 @@ const doc = f.doc?.length ? f.doc : f.overloads.find((o) => o.doc?.length)?.doc;
         {f.alias_of && <span class="dd-tag">same as {f.alias_of.join('.')}</span>}
         <a class="dd-source" href={sourceLink(f.source)}>source</a>
     </p>
-    <Example name={name} />
+    <Example kind="functions" name={name} />
     {f.overloads.map((sig) => <Signature name={name} sig={sig} />)}
     <Doc lines={doc} />
 </section>

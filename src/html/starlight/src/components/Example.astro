@@ -1,13 +1,16 @@
 ---
-// The example of a symbol from overlunky's docs/examples/<name>.md or .lua, if there is one.
+// The examples of a symbol: overlunky's docs/examples/<name>.md|.lua, then docs-digger's examples/<kind>/<name>.
 import Doc from './Doc.astro';
-import {examples} from '../lib/api.mjs';
+import {examplesOf} from '../lib/api.mjs';
 
 interface Props {
-    // Symbol name as the example file is named (`spawn_entity`, `ON.LEVEL`, `CustomTheme`).
+    // Which page kind the symbol lives on, the top directory of docs-digger's examples/ (`functions`, `types`,
+    // `enums`, `events`, `globals`, `text`): names differ only in case across kinds (`Door` type, `door` function).
+    kind: string;
+    // Symbol name as the example file is named (`spawn_entity`, `ON.LEVEL`, `CustomTheme`, `Entity.destroy`).
     name: string;
 }
-const texts = examples.get(Astro.props.name) ?? [];
+const texts = examplesOf(Astro.props.kind, Astro.props.name);
 ---
 
 {

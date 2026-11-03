@@ -1,6 +1,7 @@
 ---
-// One usertype member: a field or property with its type, or a method with its signatures; doc and C++ doc.
+// One usertype member: a field or property with its type, or a method with its signatures; example, doc and C++ doc.
 import Doc from './Doc.astro';
+import Example from './Example.astro';
 import Signature from './Signature.astro';
 import {typeHtml} from '../lib/render.mjs';
 import {sourceLink} from '../lib/api.mjs';
@@ -34,6 +35,7 @@ const doc = m.doc?.length ? m.doc : m.cpp_doc;
     }
     {m.meta && <span class="dd-tag" title="Keyed by a sol::meta_function">metamethod</span>}
     {m.deprecated && <span class="dd-tag dd-warn">deprecated</span>}
+    <Example kind="types" name={`${owner}.${m.name}`} />
     <Doc lines={doc} />
     <a class="dd-source" href={sourceLink(m.source)}>source</a>
 </div>
