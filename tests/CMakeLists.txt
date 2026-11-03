@@ -52,6 +52,8 @@ dd_add_golden_test(functions)
 dd_add_golden_test(docs)
 dd_add_golden_test(usertypes)
 dd_add_golden_test(enums)
+# Bit flag tables, with the usage text of config/fragments/bit_flags.md.
+dd_add_golden_test(flags ARGS "--fragments=${PROJECT_SOURCE_DIR}/config/fragments")
 dd_add_golden_test(callbacks)
 dd_add_golden_test(vtables)
 dd_add_golden_test(groups)

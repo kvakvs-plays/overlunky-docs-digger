@@ -16,11 +16,18 @@ const values = [...new Map(e.values.filter((v) => v.name && !v.nodoc).reverse().
 const hints = e.values.filter((v) => !v.name);
 // Tables with an events page (ON) leave their keys' search to that page.
 const events = eventTables.some((t) => t.table === e.name);
+// Where a bit flag value goes: by its bits as an unsigned number (an overflowed `1 << 31` by its bit).
+const flagOrder = (v) => (v.bit !== undefined ? 2n ** BigInt(v.bit) : BigInt.asUintN(64, BigInt(v.value ?? 0)));
+// Bit flag tables list their values by bit, other tables by name.
+const rows = e.flags ? [...values].sort((a, b) => (flagOrder(a) < flagOrder(b) ? -1 : flagOrder(a) > flagOrder(b) ? 1 : 0)) : values;
+// A bit flag in hex (`0x4000`); zero and a negative number (an overflowed `1 << 31`) as they are.
+const shown = (v) => (e.flags && typeof v.value === 'number' && v.value > 0 ? `0x${v.value.toString(16).toUpperCase()}` : `${v.value ?? v.text}`);
 ---
 
 <StarlightPage frontmatter={{title: e.name, description: `The ${e.name} enum of the Overlunky/Playlunky Lua API`}}>
     <SearchSymbols names={events ? [e.name] : [e.name, ...values.flatMap((v) => [v.name, `${e.name}.${v.name}`])]} />
     <p class="dd-marks">
+        {e.flags && <span class="dd-tag">bit flags</span>}
         {e.filled_at_runtime && <span class="dd-tag">filled at runtime</span>}
         {e.source && <a class="dd-source" href={sourceLink(e.source)}>source</a>}
     </p>
@@ -32,21 +39,33 @@ const events = eventTables.some((t) => t.table === e.name);
     <Example kind="enums" name={e.name} />
     <Doc lines={e.doc} />
     {hints.map((v) => <Doc lines={v.text.replace(/^\.\.\.|\.\.\.$/g, '')} />)}
+    <Doc lines={e.usage} />
     <table class="dd-values">
         <thead>
-            <tr><th>Name</th><th>Value</th><th>Description</th></tr>
+            <tr><th>Name</th><th>Value</th>{e.flags && <th>Bits</th>}<th>Description</th></tr>
         </thead>
         <tbody>
             {
-                values.map((v) => (
+                rows.map((v) => (
                     <tr id={v.name}>
                         <td>
                             <code data-pagefind-weight="6">{`${e.name}.${v.name}`}</code>
                             <SearchKey name={v.name} weight={6} />
                         </td>
                         <td>
-                            <code>{v.value ?? v.text}</code>
+                            <code>{shown(v)}</code>
                         </td>
+                        {e.flags && (
+                            <td>
+                                {v.bit !== undefined && <code>{`1 << ${v.bit}`}</code>}
+                                {(v.combines ?? []).map((name, i) => (
+                                    <>
+                                        {i > 0 && ' | '}
+                                        <a href={`#${name}`}>{name}</a>
+                                    </>
+                                ))}
+                            </td>
+                        )}
                         <td>
                             <Doc lines={v.doc} />
                         </td>

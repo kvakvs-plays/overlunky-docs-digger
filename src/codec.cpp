@@ -128,13 +128,15 @@ namespace dd {
             static constexpr auto list = std::make_tuple(
                 field("luaName", &EnumValue::luaName), field("text", &EnumValue::text),
                 field("number", &EnumValue::number), field("string", &EnumValue::string), field("doc", &EnumValue::doc),
-                field("origin", &EnumValue::origin), field("loc", &EnumValue::loc));
+                field("origin", &EnumValue::origin), field("loc", &EnumValue::loc), field("shift", &EnumValue::shift),
+                field("bit", &EnumValue::bit), field("combines", &EnumValue::combines));
         };
         template <>
         struct Fields<Enum> {
             static constexpr auto list =
                 std::make_tuple(field("luaName", &Enum::luaName), field("loc", &Enum::loc), field("doc", &Enum::doc),
-                                field("values", &Enum::values), field("filledAtRuntime", &Enum::filledAtRuntime));
+                                field("values", &Enum::values), field("filledAtRuntime", &Enum::filledAtRuntime),
+                                field("flags", &Enum::flags), field("usage", &Enum::usage));
         };
         template <>
         struct Fields<Alias> {

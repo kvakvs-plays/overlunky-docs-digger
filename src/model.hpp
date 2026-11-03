@@ -17,7 +17,7 @@ namespace dd {
 
     // Version of the JSON output (schema/docs-digger.schema.json): raised with every change to its fields, so readers
     // can refuse output they do not know.
-    constexpr int SchemaVersion = 3;
+    constexpr int SchemaVersion = 4;
 
     // Where an extracted entity is written, so readers can jump to the binding and outputs stay comparable.
     struct SourceLoc {
@@ -340,6 +340,13 @@ namespace dd {
         EnumValueOrigin origin = EnumValueOrigin::Static;
         // The key in the code; empty for runtime values.
         SourceLoc loc;
+        // n of a value written as `1 << n`, directly or in the C++ enumerator it names: the author's bit even when
+        // the number overflowed (`1 << 31` in a signed enum is negative).
+        std::optional<int> shift;
+        // In a bit flag table: the value is the single bit `1 << bit`.
+        std::optional<int> bit;
+        // In a bit flag table: the single-bit keys whose union the value is (`LIQUID` = `WATER | LAVA`), by bit.
+        std::vector<std::string> combines;
     };
 
     // A Lua table of named constants: `create_named_table("NAME", "K", v, ...)` or `new_enum(...)` (plan B3).
@@ -354,6 +361,11 @@ namespace dd {
         std::map<MemberKey, EnumValue> values;
         // Keys are also added by code at runtime (`lua["ENT_TYPE"][name] = item.id` in a loop).
         bool filledAtRuntime = false;
+        // Bit flags (`MASK`, `PAUSE_SCREEN`): values are combined with `|`, so docs show them by bit.
+        bool flags = false;
+        // How to use a bit flag table: the `bit_flags` text fragment (--fragments) filled with its keys, as Markdown
+        // lines shown after the table docs.
+        std::vector<std::string> usage;
     };
 
     // A typedef or `using` name that Lua-visible types are written with (`CallbackId`, `ENT_TYPE`).

@@ -20,8 +20,8 @@ const examplesDir = process.env.DD_SITE_EXAMPLES ?? '';
 const diggerExamplesDir = process.env.DD_SITE_DIGGER_EXAMPLES ?? '';
 export const downloadsDir = process.env.DD_SITE_DOWNLOADS ?? '';
 
-if (api.schema_version !== 3) {
-    throw new Error(`${jsonPath}: schema_version ${api.schema_version}, this site needs 3`);
+if (api.schema_version !== 4) {
+    throw new Error(`${jsonPath}: schema_version ${api.schema_version}, this site needs 4`);
 }
 
 // A site path with the base in front (`/types/Entity/` → `/overlunky/types/Entity/`).

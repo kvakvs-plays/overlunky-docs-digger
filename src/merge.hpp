@@ -2,6 +2,8 @@
 
 #include "model.hpp"
 
+#include <llvm/ADT/StringRef.h>
+
 #include <string>
 
 // Steps run once every translation unit is parsed, on the merged extraction (no Clang AST here).
@@ -21,6 +23,14 @@ namespace dd {
 
     // Drops named tables without values (namespaces such as `lua.create_named_table("TYPE_MAP")`).
     void dropEmptyEnums(Extraction& extraction);
+
+    // Marks the bit flag tables (`MASK`, `PAUSE_SCREEN`): values written as `1 << n`, or enough powers of two, with
+    // zero and unions of those bits besides. Their values get their bit, or the single-bit keys of a union.
+    void markFlagEnums(Extraction& extraction);
+
+    // Gives every bit flag table its usage text: fragment (`bit_flags.md` of --fragments) with `{{enum}}`, `{{a}}`,
+    // `{{b}}`, `{{a_bit}}` and `{{a_number}}` filled from the table's two lowest bits. Nothing for an empty fragment.
+    void addFlagUsage(Extraction& extraction, llvm::StringRef fragment);
 
     // Keeps the aliases that some Lua-visible type is written with, directly or through another kept alias.
     void keepUsedAliases(Extraction& extraction);

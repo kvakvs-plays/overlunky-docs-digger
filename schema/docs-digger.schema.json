@@ -10,7 +10,7 @@
   "properties": {
     "schema_version": {
       "description": "Version of this schema. Raised with every change to the fields or their meaning.",
-      "const": 3
+      "const": 4
     },
     "functions": {
       "description": "Lua functions bound with `root[\"a\"][\"name\"] = <callable>` or documented by a commented-out binding, ordered by owner, name and source.",
@@ -240,6 +240,8 @@
         "doc": {"$ref": "#/$defs/Doc", "description": "From a `/* ENUM // KEY // doc */` block."},
         "nodoc": {"$ref": "#/$defs/NoDoc"},
         "deprecated": {"$ref": "#/$defs/Deprecated"},
+        "bit": {"description": "In a `flags` table: the value is the single bit `1 << bit` (0 to 63; the bit as written, also when the number overflowed: `1 << 31` in a signed enum).", "type": "integer"},
+        "combines": {"description": "In a `flags` table: the value is the union of these single-bit keys of the table (two or more), by bit (`LIQUID`: `WATER`, `LAVA`).", "type": "array", "items": {"type": "string"}},
         "origin": {
           "description": "Left out for a pair written in code. `doc_comment`: a commented-out pair inside the call, an example of values added at runtime. `runtime_file`: from --runtime-enums (`lua_enums.txt`).",
           "enum": ["doc_comment", "runtime_file"]
@@ -258,7 +260,9 @@
         "doc": {"$ref": "#/$defs/Doc", "description": "Comment above the creating call."},
         "nodoc": {"$ref": "#/$defs/NoDoc"},
         "deprecated": {"$ref": "#/$defs/Deprecated"},
-        "filled_at_runtime": {"description": "Code also adds keys at runtime (`lua[\"ENT_TYPE\"][name] = ...` in a loop).", "type": "boolean"}
+        "filled_at_runtime": {"description": "Code also adds keys at runtime (`lua[\"ENT_TYPE\"][name] = ...` in a loop).", "type": "boolean"},
+        "flags": {"description": "Bit flags, combined with `|`: some value is written as `1 << n` (directly or in its C++ enumerator), or at least three values are powers of two; every value is zero, a single bit or a union of the single bits (with unions, at least four bits and no more unions than half the bits, so counting enums such as `0, 1, 2, 3, 4` are not flags). Values then have `bit` or `combines`.", "const": true},
+        "usage": {"description": "Of a `flags` table, with --fragments: how to combine and test its values, the `bit_flags.md` fragment filled with the table's own keys; Markdown lines, shown after `doc`.", "type": "array", "items": {"type": "string"}}
       }
     },
     "Alias": {

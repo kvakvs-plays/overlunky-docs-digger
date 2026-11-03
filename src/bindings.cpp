@@ -32,10 +32,34 @@ namespace dd {
         constexpr const char* ReadNode = "read";
         constexpr const char* TranslationUnitNode = "translation-unit";
 
+        // n of an expression `1 << n` (parentheses and casts aside): a bit flag as its author wrote it.
+        std::optional<int> shiftOfOne(const clang::Expr* expr, const clang::ASTContext& context) {
+            const auto* shift = llvm::dyn_cast<clang::BinaryOperator>(expr->IgnoreParenCasts());
+            if (shift == nullptr || shift->getOpcode() != clang::BO_Shl || shift->isValueDependent()) {
+                return std::nullopt;
+            }
+            const std::optional<llvm::APSInt> one = shift->getLHS()->getIntegerConstantExpr(context);
+            const std::optional<llvm::APSInt> amount = shift->getRHS()->getIntegerConstantExpr(context);
+            if (!one || !amount || *one != 1 || amount->isNegative() || amount->uge(64)) {
+                return std::nullopt;
+            }
+            return static_cast<int>(amount->getZExtValue());
+        }
+
+        // n of a value written as `1 << n`, or naming a C++ enumerator initialized so (`PAUSE_SCREEN::EXIT`).
+        std::optional<int> writtenShift(const clang::Expr* value, const clang::ASTContext& context) {
+            const auto* reference = llvm::dyn_cast<clang::DeclRefExpr>(value->IgnoreParenCasts());
+            const auto* enumerator =
+                reference == nullptr ? nullptr : llvm::dyn_cast<clang::EnumConstantDecl>(reference->getDecl());
+            const clang::Expr* init = enumerator == nullptr ? nullptr : enumerator->getInitExpr();
+            return shiftOfOne(init == nullptr ? value : init, context);
+        }
+
         // An enum value: its text and, when the compiler knows it, its number or string.
         EnumValue enumValue(const clang::Expr* value, const clang::ASTContext& context) {
             EnumValue result;
             result.text = sourceText(value, context);
+            result.shift = writtenShift(value, context);
             const clang::Expr* e = value->IgnoreImplicit();
             clang::Expr::EvalResult evaluated;
             if (!e->isValueDependent() && e->EvaluateAsInt(evaluated, context) &&

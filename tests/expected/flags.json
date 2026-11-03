@@ -1,0 +1,540 @@
+{
+  "aliases": [],
+  "enums": [
+    {
+      "flags": true,
+      "name": "BUTTON",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 43
+      },
+      "usage": [
+        "Bit flags: each value is one bit (`BUTTON.JUMP` is `1 << 0`) or a union of bits, so combine values with `|` and",
+        "test them with `&`. The `*_mask` functions take these values; `test_mask` is true when any of the given bits is set.",
+        "The `*_flag` functions take a bit number counted from 1 instead (`BUTTON.JUMP` is bit 1). All of them return the",
+        "new number and leave their argument unchanged.",
+        "",
+        "```lua",
+        "local flags = set_mask(0, BUTTON.JUMP | BUTTON.WHIP) -- both on",
+        "flags = clr_mask(flags, BUTTON.WHIP) -- BUTTON.WHIP off",
+        "flags = flip_mask(flags, BUTTON.WHIP) -- BUTTON.WHIP on again",
+        "if test_mask(flags, BUTTON.JUMP) then",
+        "    flags = clr_flag(flags, 1) -- BUTTON.JUMP off, by bit number",
+        "end",
+        "flags = set_flag(flags, 1) -- BUTTON.JUMP on",
+        "flags = flip_flag(flags, 1) -- BUTTON.JUMP off",
+        "```"
+      ],
+      "values": [
+        {
+          "bit": 2,
+          "name": "BOMB",
+          "source": {
+            "column": 60,
+            "file": "flags.cpp",
+            "line": 43
+          },
+          "text": "4",
+          "value": 4
+        },
+        {
+          "bit": 0,
+          "name": "JUMP",
+          "source": {
+            "column": 38,
+            "file": "flags.cpp",
+            "line": 43
+          },
+          "text": "1",
+          "value": 1
+        },
+        {
+          "bit": 3,
+          "name": "ROPE",
+          "source": {
+            "column": 71,
+            "file": "flags.cpp",
+            "line": 43
+          },
+          "text": "8",
+          "value": 8
+        },
+        {
+          "bit": 1,
+          "name": "WHIP",
+          "source": {
+            "column": 49,
+            "file": "flags.cpp",
+            "line": 43
+          },
+          "text": "2",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "name": "COUNT",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 48
+      },
+      "values": [
+        {
+          "name": "FOUR",
+          "source": {
+            "column": 69,
+            "file": "flags.cpp",
+            "line": 48
+          },
+          "text": "4",
+          "value": 4
+        },
+        {
+          "name": "ONE",
+          "source": {
+            "column": 37,
+            "file": "flags.cpp",
+            "line": 48
+          },
+          "text": "1",
+          "value": 1
+        },
+        {
+          "name": "THREE",
+          "source": {
+            "column": 57,
+            "file": "flags.cpp",
+            "line": 48
+          },
+          "text": "3",
+          "value": 3
+        },
+        {
+          "name": "TWO",
+          "source": {
+            "column": 47,
+            "file": "flags.cpp",
+            "line": 48
+          },
+          "text": "2",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "flags": true,
+      "name": "HOTKEY_TYPE",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 36
+      },
+      "usage": [
+        "Bit flags: each value is one bit (`HOTKEY_TYPE.GLOBAL` is `1 << 0`) or a union of bits, so combine values with `|` and",
+        "test them with `&`. The `*_mask` functions take these values; `test_mask` is true when any of the given bits is set.",
+        "The `*_flag` functions take a bit number counted from 1 instead (`HOTKEY_TYPE.GLOBAL` is bit 1). All of them return the",
+        "new number and leave their argument unchanged.",
+        "",
+        "```lua",
+        "local flags = set_mask(0, HOTKEY_TYPE.GLOBAL | HOTKEY_TYPE.INPUT) -- both on",
+        "flags = clr_mask(flags, HOTKEY_TYPE.INPUT) -- HOTKEY_TYPE.INPUT off",
+        "flags = flip_mask(flags, HOTKEY_TYPE.INPUT) -- HOTKEY_TYPE.INPUT on again",
+        "if test_mask(flags, HOTKEY_TYPE.GLOBAL) then",
+        "    flags = clr_flag(flags, 1) -- HOTKEY_TYPE.GLOBAL off, by bit number",
+        "end",
+        "flags = set_flag(flags, 1) -- HOTKEY_TYPE.GLOBAL on",
+        "flags = flip_flag(flags, 1) -- HOTKEY_TYPE.GLOBAL off",
+        "```"
+      ],
+      "values": [
+        {
+          "bit": 0,
+          "name": "GLOBAL",
+          "source": {
+            "column": 74,
+            "file": "flags.cpp",
+            "line": 36
+          },
+          "text": "HOTKEY_TYPE::GLOBAL",
+          "value": 1
+        },
+        {
+          "bit": 1,
+          "name": "INPUT",
+          "source": {
+            "column": 105,
+            "file": "flags.cpp",
+            "line": 36
+          },
+          "text": "HOTKEY_TYPE::INPUT",
+          "value": 2
+        },
+        {
+          "name": "NORMAL",
+          "source": {
+            "column": 43,
+            "file": "flags.cpp",
+            "line": 36
+          },
+          "text": "HOTKEY_TYPE::NORMAL",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "flags": true,
+      "name": "MASK",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 38
+      },
+      "usage": [
+        "Bit flags: each value is one bit (`MASK.PLAYER` is `1 << 0`) or a union of bits, so combine values with `|` and",
+        "test them with `&`. The `*_mask` functions take these values; `test_mask` is true when any of the given bits is set.",
+        "The `*_flag` functions take a bit number counted from 1 instead (`MASK.PLAYER` is bit 1). All of them return the",
+        "new number and leave their argument unchanged.",
+        "",
+        "```lua",
+        "local flags = set_mask(0, MASK.PLAYER | MASK.MOUNT) -- both on",
+        "flags = clr_mask(flags, MASK.MOUNT) -- MASK.MOUNT off",
+        "flags = flip_mask(flags, MASK.MOUNT) -- MASK.MOUNT on again",
+        "if test_mask(flags, MASK.PLAYER) then",
+        "    flags = clr_flag(flags, 1) -- MASK.PLAYER off, by bit number",
+        "end",
+        "flags = set_flag(flags, 1) -- MASK.PLAYER on",
+        "flags = flip_flag(flags, 1) -- MASK.PLAYER off",
+        "```"
+      ],
+      "values": [
+        {
+          "name": "ANY",
+          "source": {
+            "column": 36,
+            "file": "flags.cpp",
+            "line": 38
+          },
+          "text": "0x0",
+          "value": 0
+        },
+        {
+          "bit": 14,
+          "name": "LAVA",
+          "source": {
+            "column": 110,
+            "file": "flags.cpp",
+            "line": 38
+          },
+          "text": "0x4000",
+          "value": 16384
+        },
+        {
+          "combines": [
+            "WATER",
+            "LAVA"
+          ],
+          "doc": [
+            "Water and lava."
+          ],
+          "name": "LIQUID",
+          "source": {
+            "column": 126,
+            "file": "flags.cpp",
+            "line": 38
+          },
+          "text": "0x6000",
+          "value": 24576
+        },
+        {
+          "bit": 2,
+          "name": "MONSTER",
+          "source": {
+            "column": 77,
+            "file": "flags.cpp",
+            "line": 38
+          },
+          "text": "0x4",
+          "value": 4
+        },
+        {
+          "bit": 1,
+          "name": "MOUNT",
+          "source": {
+            "column": 63,
+            "file": "flags.cpp",
+            "line": 38
+          },
+          "text": "0x2",
+          "value": 2
+        },
+        {
+          "bit": 0,
+          "name": "PLAYER",
+          "source": {
+            "column": 48,
+            "file": "flags.cpp",
+            "line": 38
+          },
+          "text": "0x1",
+          "value": 1
+        },
+        {
+          "bit": 13,
+          "name": "WATER",
+          "source": {
+            "column": 93,
+            "file": "flags.cpp",
+            "line": 38
+          },
+          "text": "0x2000",
+          "value": 8192
+        }
+      ]
+    },
+    {
+      "name": "PAIR",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 49
+      },
+      "values": [
+        {
+          "name": "LEFT",
+          "source": {
+            "column": 47,
+            "file": "flags.cpp",
+            "line": 49
+          },
+          "text": "1",
+          "value": 1
+        },
+        {
+          "name": "NONE",
+          "source": {
+            "column": 36,
+            "file": "flags.cpp",
+            "line": 49
+          },
+          "text": "0",
+          "value": 0
+        },
+        {
+          "name": "RIGHT",
+          "source": {
+            "column": 58,
+            "file": "flags.cpp",
+            "line": 49
+          },
+          "text": "2",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "doc": [
+        "Used in PauseAPI"
+      ],
+      "flags": true,
+      "name": "PAUSE_SCREEN",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 35
+      },
+      "usage": [
+        "Bit flags: each value is one bit (`PAUSE_SCREEN.LOGO` is `1 << 0`) or a union of bits, so combine values with `|` and",
+        "test them with `&`. The `*_mask` functions take these values; `test_mask` is true when any of the given bits is set.",
+        "The `*_flag` functions take a bit number counted from 1 instead (`PAUSE_SCREEN.LOGO` is bit 1). All of them return the",
+        "new number and leave their argument unchanged.",
+        "",
+        "```lua",
+        "local flags = set_mask(0, PAUSE_SCREEN.LOGO | PAUSE_SCREEN.INTRO) -- both on",
+        "flags = clr_mask(flags, PAUSE_SCREEN.INTRO) -- PAUSE_SCREEN.INTRO off",
+        "flags = flip_mask(flags, PAUSE_SCREEN.INTRO) -- PAUSE_SCREEN.INTRO on again",
+        "if test_mask(flags, PAUSE_SCREEN.LOGO) then",
+        "    flags = clr_flag(flags, 1) -- PAUSE_SCREEN.LOGO off, by bit number",
+        "end",
+        "flags = set_flag(flags, 1) -- PAUSE_SCREEN.LOGO on",
+        "flags = flip_flag(flags, 1) -- PAUSE_SCREEN.LOGO off",
+        "```"
+      ],
+      "values": [
+        {
+          "bit": 31,
+          "name": "EXIT",
+          "source": {
+            "column": 164,
+            "file": "flags.cpp",
+            "line": 35
+          },
+          "text": "PAUSE_SCREEN::EXIT",
+          "value": -2147483648
+        },
+        {
+          "bit": 1,
+          "name": "INTRO",
+          "source": {
+            "column": 100,
+            "file": "flags.cpp",
+            "line": 35
+          },
+          "text": "PAUSE_SCREEN::INTRO",
+          "value": 2
+        },
+        {
+          "bit": 30,
+          "name": "LOADING",
+          "source": {
+            "column": 130,
+            "file": "flags.cpp",
+            "line": 35
+          },
+          "text": "PAUSE_SCREEN::LOADING",
+          "value": 1073741824
+        },
+        {
+          "bit": 0,
+          "name": "LOGO",
+          "source": {
+            "column": 72,
+            "file": "flags.cpp",
+            "line": 35
+          },
+          "text": "PAUSE_SCREEN::LOGO",
+          "value": 1
+        },
+        {
+          "name": "NONE",
+          "source": {
+            "column": 44,
+            "file": "flags.cpp",
+            "line": 35
+          },
+          "text": "PAUSE_SCREEN::NONE",
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name": "PLAYBACK_STATE",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 47
+      },
+      "values": [
+        {
+          "name": "PLAYING",
+          "source": {
+            "column": 46,
+            "file": "flags.cpp",
+            "line": 47
+          },
+          "text": "PLAYBACK_STATE::PLAYING",
+          "value": 0
+        },
+        {
+          "name": "STARTING",
+          "source": {
+            "column": 160,
+            "file": "flags.cpp",
+            "line": 47
+          },
+          "text": "PLAYBACK_STATE::STARTING",
+          "value": 3
+        },
+        {
+          "name": "STOPPED",
+          "source": {
+            "column": 124,
+            "file": "flags.cpp",
+            "line": 47
+          },
+          "text": "PLAYBACK_STATE::STOPPED",
+          "value": 2
+        },
+        {
+          "name": "STOPPING",
+          "source": {
+            "column": 198,
+            "file": "flags.cpp",
+            "line": 47
+          },
+          "text": "PLAYBACK_STATE::STOPPING",
+          "value": 4
+        },
+        {
+          "name": "SUSTAINING",
+          "source": {
+            "column": 82,
+            "file": "flags.cpp",
+            "line": 47
+          },
+          "text": "PLAYBACK_STATE::SUSTAINING",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "flags": true,
+      "name": "SHIFTED",
+      "source": {
+        "column": 5,
+        "file": "flags.cpp",
+        "line": 44
+      },
+      "usage": [
+        "Bit flags: each value is one bit (`SHIFTED.A` is `1 << 3`) or a union of bits, so combine values with `|` and",
+        "test them with `&`. The `*_mask` functions take these values; `test_mask` is true when any of the given bits is set.",
+        "The `*_flag` functions take a bit number counted from 1 instead (`SHIFTED.A` is bit 4). All of them return the",
+        "new number and leave their argument unchanged.",
+        "",
+        "```lua",
+        "local flags = set_mask(0, SHIFTED.A | SHIFTED.B) -- both on",
+        "flags = clr_mask(flags, SHIFTED.B) -- SHIFTED.B off",
+        "flags = flip_mask(flags, SHIFTED.B) -- SHIFTED.B on again",
+        "if test_mask(flags, SHIFTED.A) then",
+        "    flags = clr_flag(flags, 4) -- SHIFTED.A off, by bit number",
+        "end",
+        "flags = set_flag(flags, 4) -- SHIFTED.A on",
+        "flags = flip_flag(flags, 4) -- SHIFTED.A off",
+        "```"
+      ],
+      "values": [
+        {
+          "bit": 3,
+          "name": "A",
+          "source": {
+            "column": 39,
+            "file": "flags.cpp",
+            "line": 44
+          },
+          "text": "1 << 3",
+          "value": 8
+        },
+        {
+          "bit": 5,
+          "name": "B",
+          "source": {
+            "column": 52,
+            "file": "flags.cpp",
+            "line": 44
+          },
+          "text": "1 << 5",
+          "value": 32
+        }
+      ]
+    }
+  ],
+  "events": [],
+  "functions": [],
+  "global_variables": [],
+  "libraries": [],
+  "schema_version": 4,
+  "script_callbacks": [],
+  "usertypes": [],
+  "values": []
+}

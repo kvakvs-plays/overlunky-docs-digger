@@ -54,7 +54,8 @@ The scripts enter the Visual Studio environment themselves (`tools\dev-env.cmd`)
 - `dig.bat [options]`: builds Release, configures overlunky into `build\overlunky` for its `compile_commands.json`
   (configure only, nothing of overlunky is built) and runs the digger on all `src/game_api` translation units. It passes
   the runtime enum dump `docs/game_data/lua_enums.txt` (`--runtime-enums`), the function groups `config\groups.json`
-  (`--groups`), the Lua type names `config\lua_types.json` (`--lua-types`) and the result cache
+  (`--groups`), the Lua type names `config\lua_types.json` (`--lua-types`), the text fragments `config\fragments`
+  (`--fragments`) and the result cache
   `build\digger-cache.sqlite` (`--cache`), and writes the LuaLS definition files into `build\lua` (`--lua-out`, with
   `config\lua_prelude.lua` and the links of the published docs) and the classic EmmyLua ones into `build\lua-emmylua`
   (`--emmylua-out`). When lua-language-server is on `PATH` or comes with
@@ -114,6 +115,12 @@ description. `/// NoDoc` items are left out; a NoDoc usertype that documented me
 members. `--lua-prelude <file>` adds hand-written declarations (`config/lua_prelude.lua`: `json`, `inspect`, the
 `Meta` class); a global or function it declares replaces the generated one. `--lua-doc-url <url>` makes the
 `(#anchor)` links in doc comments absolute.
+
+Enum tables of bit flags (values written as `1 << n`, or powers of two) are marked `flags` in the JSON, each value
+with its `bit` or the single-bit keys it `combines`; the Lua files and the site list them by bit, in hex. With
+`--fragments <dir>` (`config/fragments`), the Markdown fragment `bit_flags.md` becomes each flag table's `usage`
+text, its `{{enum}}`, `{{a}}`, `{{b}}`, `{{a_bit}}` and `{{a_number}}` filled from the table's two lowest bits: the
+Lua files write it after the table docs and the site shows it above the values.
 
 `--lua-style` picks the annotation dialect: `luals` (default) for lua-language-server, or `emmylua` for the more
 limited classic EmmyLua of older IDE plugins (`T|nil` instead of `T?` and `name?`, `table` instead of tuple types,

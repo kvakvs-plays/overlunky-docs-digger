@@ -267,6 +267,12 @@ namespace dd {
         else if (value.string) {
             object["value"] = *value.string;
         }
+        if (value.bit) {
+            object["bit"] = *value.bit;
+        }
+        if (!value.combines.empty()) {
+            object["combines"] = value.combines;
+        }
         addDoc(object, value.doc);
         if (value.origin != EnumValueOrigin::Static) {
             object["origin"] = OriginNames.at(static_cast<std::size_t>(value.origin));
@@ -288,6 +294,12 @@ namespace dd {
         addDoc(object, table.doc);
         if (table.filledAtRuntime) {
             object["filled_at_runtime"] = true;
+        }
+        if (table.flags) {
+            object["flags"] = true;
+        }
+        if (!table.usage.empty()) {
+            object["usage"] = table.usage;
         }
         return object;
     }

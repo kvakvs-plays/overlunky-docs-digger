@@ -234,7 +234,9 @@ vtable_hook | doc_comment | unresolved`), `stored_in` (`Record::field`, `in Cont
   pattern that stopped the search), `prose`, `conflicts[]` (between dispatch sites, or with the prose comment),
   `source` (the site it was read from).
 - **Enum**: `name`, `doc`, `values[] {name, text, value? (number or string), doc, origin (static |
-doc_comment | runtime_file)}`, `filled_at_runtime` (code adds keys in a loop); a table only the
+doc_comment | runtime_file), bit?, combines?}`, `filled_at_runtime` (code adds keys in a loop), `flags`
+  (bit flags: then each value has its `bit` or the single-bit keys it `combines`), `usage` (of a flag
+  table: `config/fragments/bit_flags.md` filled with its keys, via `--fragments`); a table only the
   runtime file knows has `origin: runtime_file` and no source.
 - **Event**: `table` (`ON`, `THEME_OVERRIDE`), `name`, `stored_in`, `callback: CallbackSig`, `generic` (the
   key has no site of its own; the generic dispatch's signature), `doc` (of the enum value) (DIG-4).
@@ -325,6 +327,14 @@ sol::initializers(...)`; listed signatures are matched with declared constructor
   with `origin=runtime_file`.
 - Aliases: `TypeAliasDecl` in `src/game_api`, keeping only those referenced by some Lua-visible
   type.
+
+- Bit flag tables (schema 4, `markFlagEnums` in `src/merge.cpp`): a value written as `1 << n`
+  (directly or in the C++ enumerator it names) marks the author's intent and keeps its bit even when
+  the number overflowed (`PAUSE_SCREEN.EXIT = 1 << 31` in an `int64_t` enum is -2147483648); without
+  one, three powers of two make a table flags, and with union values (`MASK.LIQUID`, `SPAWN_TYPE.ANY`)
+  four bits and at most one union per two bits, since counting enums (`0, 1, 2, 3, 4`) look like bits
+  plus unions. 18 overlunky tables qualify. The 1-based bit-number tables for `test_flag`
+  (`ENT_FLAG`, `QUEST_FLAG`) are counting enums by their values and are not detected.
 
 **B4. Libraries (P11).** Arguments of `open_libraries(...)`.
 

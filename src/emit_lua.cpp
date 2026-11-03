@@ -7,6 +7,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <algorithm>
+#include <cstdint>
 #include <map>
 #include <optional>
 #include <set>
@@ -787,20 +788,52 @@ namespace dd {
             return strings ? (numbers ? "integer|string" : "string") : "integer";
         }
 
-        // One `KEY = value,` line of an enum table, with the value's docs; a value known only as code text is nil
-        // with the text in a comment.
-        void appendEnumValue(std::string& out, const EnumValue& value, const Context& context) {
+        // `0x10, -- 1 << 4` or `0x6000, -- WATER | LAVA`: a bit flag in hex with its bits; decimal when negative (an
+        // overflowed `1 << 31`, which the hex form would hide).
+        std::string flagValueText(const EnumValue& value) {
+            const long long number = value.number.value_or(0);
+            std::string text =
+                number <= 0 ? std::to_string(number) : "0x" + llvm::utohexstr(static_cast<std::uint64_t>(number));
+            if (value.bit) {
+                return text + ", -- 1 << " + std::to_string(*value.bit);
+            }
+            return value.combines.empty() ? text + "," : text + ", -- " + llvm::join(value.combines, " | ");
+        }
+
+        // The `value,` part of an enum line; a value known only as code text is nil with the text in a comment.
+        std::string enumValueText(const EnumValue& value, bool flags) {
+            if (value.number) {
+                return flags ? flagValueText(value) : std::to_string(*value.number) + ",";
+            }
+            return value.string ? luaString(*value.string) + "," : "nil, -- " + value.text;
+        }
+
+        // One `KEY = value,` line of an enum table, with the value's docs.
+        void appendEnumValue(std::string& out, const EnumValue& value, bool flags, const Context& context) {
             appendDoc(out, value.doc.lines, context, "    ");
             const std::string key = isLuaName(value.luaName) ? value.luaName : "[" + luaString(value.luaName) + "]";
-            if (value.number) {
-                out += "    " + key + " = " + std::to_string(*value.number) + ",\n";
+            out += "    " + key + " = " + enumValueText(value, flags) + "\n";
+        }
+
+        // Where a value of a bit flag table goes: zero first, then by its bits as an unsigned number (a written
+        // `1 << 31` by its bit, though its number overflowed).
+        std::uint64_t flagOrder(const EnumValue& value) {
+            return value.bit ? std::uint64_t{1} << static_cast<unsigned>(*value.bit)
+                             : static_cast<std::uint64_t>(value.number.value_or(0));
+        }
+
+        // The values to write in order: by key, or by bit in a bit flag table.
+        std::vector<const EnumValue*> orderedValues(const Enum& table,
+                                                    const std::map<std::string, const EnumValue*>& values) {
+            std::vector<const EnumValue*> ordered;
+            ordered.reserve(values.size());
+            for (const auto& [name, value] : values) {
+                ordered.push_back(value);
             }
-            else if (value.string) {
-                out += "    " + key + " = " + luaString(*value.string) + ",\n";
+            if (table.flags) {
+                std::ranges::stable_sort(ordered, {}, [](const EnumValue* value) { return flagOrder(*value); });
             }
-            else {
-                out += "    " + key + " = nil, -- " + value.text + "\n";
-            }
+            return ordered;
         }
 
         // An enum table: `---@alias NAME integer` (scripts pass plain numbers too, which `---@enum` would reject)
@@ -809,9 +842,13 @@ namespace dd {
             const std::map<std::string, const EnumValue*> values = enumValues(table);
             std::string chunk;
             appendDoc(chunk, table.doc.lines, context);
+            if (!table.doc.lines.empty() && !table.usage.empty()) {
+                chunk += "---\n"; // a paragraph break: Markdown would join the docs and the usage text
+            }
+            appendDoc(chunk, table.usage, context);
             chunk += "---@alias " + table.luaName + " " + enumType(values) + "\n" + table.luaName + " = {\n";
-            for (const auto& [name, value] : values) {
-                appendEnumValue(chunk, *value, context);
+            for (const EnumValue* value : orderedValues(table, values)) {
+                appendEnumValue(chunk, *value, table.flags, context);
             }
             return chunk + "}\n\n";
         }

@@ -13,6 +13,7 @@
 #include <llvm/Support/FileSystem.h>
 #include <llvm/Support/FormatVariadic.h>
 #include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/Path.h>
 #include <llvm/Support/Regex.h>
 #include <llvm/Support/Threading.h>
 #include <llvm/Support/raw_ostream.h>
@@ -76,6 +77,11 @@ namespace {
         // Lua names for C++ types the type facts cannot name (config/lua_types.json).
         llvm::cl::opt<std::string> luaTypes{"lua-types", llvm::cl::desc("JSON names of C++ types in the Lua outputs"),
                                             llvm::cl::value_desc("file"), llvm::cl::cat(category)};
+
+        // Markdown text fragments that the outputs insert by name (config/fragments: `bit_flags.md`).
+        llvm::cl::opt<std::string> fragments{
+            "fragments", llvm::cl::desc("Directory of Markdown text fragments (<name>.md) inserted into the docs"),
+            llvm::cl::value_desc("dir"), llvm::cl::cat(category)};
 
         // Directory for the LuaLS definition files (spel2*.lua); none are written without it.
         llvm::cl::opt<std::string> luaOut{"lua-out", llvm::cl::desc("Write LuaLS definition files into <dir>"),
@@ -221,6 +227,8 @@ namespace {
         dd::GroupConfig groups;
         // --lua-types names.
         std::map<std::string, std::string> luaTypes;
+        // --fragments texts by name (file name without `.md`).
+        std::map<std::string, std::string> fragments;
     };
 
     // True when error holds none; otherwise prints it.
@@ -230,6 +238,22 @@ namespace {
         }
         llvm::errs() << "docs-digger: " << llvm::toString(std::move(error)) << '\n';
         return false;
+    }
+
+    // Adds the `<name>.md` files of directory to fragments by name; an error when it cannot be listed or a file read.
+    llvm::Error loadFragments(const std::string& directory, std::map<std::string, std::string>& fragments) {
+        std::error_code error;
+        for (llvm::sys::fs::directory_iterator it(directory, error), end; it != end && !error; it.increment(error)) {
+            if (llvm::sys::path::extension(it->path()) != ".md") {
+                continue;
+            }
+            llvm::ErrorOr<std::unique_ptr<llvm::MemoryBuffer>> buffer = llvm::MemoryBuffer::getFile(it->path());
+            if (!buffer) {
+                return llvm::createStringError(buffer.getError(), "cannot read " + it->path());
+            }
+            fragments.emplace(llvm::sys::path::stem(it->path()).str(), (*buffer)->getBuffer().str());
+        }
+        return error ? llvm::createStringError(error, "cannot list " + directory) : llvm::Error::success();
     }
 
     // Reads the configuration files; nullopt after printing why one cannot be used.
@@ -246,6 +270,9 @@ namespace {
         if (!options.luaTypes.empty() && !succeeded(dd::loadLuaTypes(options.luaTypes, configs.luaTypes))) {
             return std::nullopt;
         }
+        if (!options.fragments.empty() && !succeeded(loadFragments(options.fragments, configs.fragments))) {
+            return std::nullopt;
+        }
         return configs;
     }
 
@@ -260,6 +287,10 @@ namespace {
         }
         dd::attachBlockDocs(extraction);
         dd::dropEmptyEnums(extraction);
+        dd::markFlagEnums(extraction);
+        if (const auto fragment = configs.fragments.find("bit_flags"); fragment != configs.fragments.end()) {
+            dd::addFlagUsage(extraction, fragment->second);
+        }
         dd::attachCallbacks(extraction);
         dd::buildEvents(extraction);
         dd::checkProse(extraction);

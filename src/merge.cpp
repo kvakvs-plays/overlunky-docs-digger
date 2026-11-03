@@ -2,11 +2,17 @@
 
 #include <llvm/ADT/SmallVector.h>
 #include <llvm/ADT/StringRef.h>
+#include <llvm/Support/MathExtras.h>
 #include <llvm/Support/MemoryBuffer.h>
 
 #include <algorithm>
+#include <bit>
+#include <cstdint>
+#include <iterator>
 #include <map>
+#include <optional>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -233,6 +239,148 @@ namespace dd {
         // True when two block docs are the same block (a header scanned by several units).
         bool sameBlock(const BlockDoc& a, const BlockDoc& b) { return a.target == b.target && a.lines == b.lines; }
 
+        // What the values of a table say about it being bit flags.
+        struct FlagShape {
+            // The bits of the single-bit values.
+            std::uint64_t bits = 0;
+            // Values that are a union of several of those bits (`LIQUID` = `WATER | LAVA`).
+            int unions = 0;
+            // Some value is written as `1 << n`: the author meant bits.
+            bool written = false;
+            // Every value is zero, a single bit or a union of single bits.
+            bool consistent = true;
+        };
+
+        // Fewest single bits that make a table bit flags by its numbers alone.
+        constexpr int MinFlagBits = 3;
+        // Fewest single bits of a table that also has union values: `0, 1, 2, 3, 4` counts, it has no flags.
+        constexpr int MinFlagBitsWithUnions = 4;
+
+        // The single bit a value stands for: its written shift, or its number when that is a power of two.
+        std::optional<int> singleBit(const EnumValue& value) {
+            if (value.shift) {
+                return value.shift;
+            }
+            if (value.number && *value.number > 0 && llvm::isPowerOf2_64(static_cast<std::uint64_t>(*value.number))) {
+                return static_cast<int>(llvm::Log2_64(static_cast<std::uint64_t>(*value.number)));
+            }
+            return std::nullopt;
+        }
+
+        // The bits of the single-bit values of table.
+        std::uint64_t singleBits(const Enum& table) {
+            std::uint64_t bits = 0;
+            for (const auto& [key, value] : table.values) {
+                if (const std::optional<int> bit = singleBit(value); bit && !value.luaName.empty()) {
+                    bits |= std::uint64_t{1} << static_cast<unsigned>(*bit);
+                }
+            }
+            return bits;
+        }
+
+        // Adds one named value that is not a single bit to shape: zero, a union of its bits, or a misfit.
+        void addNonBit(FlagShape& shape, const EnumValue& value) {
+            if (!value.number || *value.number < 0) {
+                shape.consistent = false;
+            }
+            else if (*value.number != 0) {
+                const auto number = static_cast<std::uint64_t>(*value.number);
+                shape.consistent = shape.consistent && (number & ~shape.bits) == 0;
+                ++shape.unions;
+            }
+        }
+
+        // The flag shape of table's named values (hint lines have no name).
+        FlagShape flagShape(const Enum& table) {
+            FlagShape shape;
+            shape.bits = singleBits(table);
+            for (const auto& [key, value] : table.values) {
+                if (value.luaName.empty()) {
+                    continue;
+                }
+                shape.written = shape.written || value.shift.has_value();
+                if (!singleBit(value)) {
+                    addNonBit(shape, value);
+                }
+            }
+            return shape;
+        }
+
+        // True for bit flags: a written shift with two bits or more, or enough bits by the numbers alone (more when
+        // some values are unions, which counting enums also have).
+        bool isFlagTable(const Enum& table) {
+            const FlagShape shape = flagShape(table);
+            const int bits = std::popcount(shape.bits);
+            if (!shape.consistent || bits < 2) {
+                return false;
+            }
+            if (shape.written || shape.unions == 0) {
+                return shape.written || bits >= MinFlagBits;
+            }
+            return bits >= MinFlagBitsWithUnions && 2 * shape.unions <= bits;
+        }
+
+        // The single-bit keys of table among the bits of number, by bit (the first key in name order per bit).
+        std::map<int, std::string> keysByBit(const Enum& table, std::uint64_t number) {
+            std::map<int, std::string> byBit;
+            for (const auto& [key, value] : table.values) {
+                const std::optional<int> bit = singleBit(value);
+                if (bit && !value.luaName.empty() && ((number >> static_cast<unsigned>(*bit)) & 1U) != 0) {
+                    byBit.emplace(*bit, value.luaName);
+                }
+            }
+            return byBit;
+        }
+
+        // The single-bit keys of table whose union number is, by bit.
+        std::vector<std::string> combinedKeys(const Enum& table, std::uint64_t number) {
+            std::map<int, std::string> byBit = keysByBit(table, number);
+            std::vector<std::string> keys;
+            keys.reserve(byBit.size());
+            for (auto& [bit, name] : byBit) {
+                keys.push_back(std::move(name));
+            }
+            return keys;
+        }
+
+        // The placeholders of the `bit_flags` fragment for a flag table: its name, its two lowest single-bit keys
+        // (`{{a}}`, `{{b}}`, qualified) and the bit of the first, also counted from 1 as the `*_flag` functions do.
+        std::map<std::string, std::string> flagPlaceholders(const Enum& table) {
+            const std::map<int, std::string> byBit = keysByBit(table, ~std::uint64_t{0});
+            const auto first = byBit.begin();
+            const auto second = std::next(first);
+            return {{"enum", table.luaName},
+                    {"a", table.luaName + "." + first->second},
+                    {"b", table.luaName + "." + second->second},
+                    {"a_bit", std::to_string(first->first)},
+                    {"a_number", std::to_string(first->first + 1)}};
+        }
+
+        // text with every `{{name}}` replaced by its value.
+        std::string fillPlaceholders(llvm::StringRef text, const std::map<std::string, std::string>& values) {
+            std::string out = text.str();
+            for (const auto& [name, value] : values) {
+                const std::string token = "{{" + name + "}}";
+                for (std::size_t at = out.find(token); at != std::string::npos;
+                     at = out.find(token, at + value.size())) {
+                    out.replace(at, token.size(), value);
+                }
+            }
+            return out;
+        }
+
+        // The lines of a Markdown text, without line end characters and trailing empty lines.
+        std::vector<std::string> textLines(llvm::StringRef text) {
+            llvm::SmallVector<llvm::StringRef, 32> lines;
+            text.rtrim().split(lines, '\n');
+            std::vector<std::string> out;
+            out.reserve(lines.size());
+            for (const llvm::StringRef line : lines) {
+                out.push_back(line.rtrim('\r').str());
+            }
+            return out;
+        }
+
     } // namespace
 
     void mergePartial(Extraction& merged, Extraction&& part) {
@@ -297,6 +445,32 @@ namespace dd {
     void dropEmptyEnums(Extraction& extraction) {
         std::erase_if(extraction.enums,
                       [](const auto& entry) { return entry.second.values.empty() && !entry.second.filledAtRuntime; });
+    }
+
+    void markFlagEnums(Extraction& extraction) {
+        for (auto& [name, table] : extraction.enums) {
+            if (!isFlagTable(table)) {
+                continue;
+            }
+            table.flags = true;
+            for (auto& [key, value] : table.values) {
+                value.bit = singleBit(value);
+                if (const long long number = value.number.value_or(0); !value.bit && number > 0) {
+                    value.combines = combinedKeys(table, static_cast<std::uint64_t>(number));
+                }
+            }
+        }
+    }
+
+    void addFlagUsage(Extraction& extraction, llvm::StringRef fragment) {
+        if (fragment.trim().empty()) {
+            return;
+        }
+        for (auto& [name, table] : extraction.enums) {
+            if (table.flags) {
+                table.usage = textLines(fillPlaceholders(fragment, flagPlaceholders(table)));
+            }
+        }
     }
 
     void keepUsedAliases(Extraction& extraction) {
