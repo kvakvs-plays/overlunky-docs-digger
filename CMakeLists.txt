@@ -50,6 +50,8 @@ add_executable(docs-digger
   src/comments.cpp
   src/comments.hpp
   src/main.cpp
+  src/merge.cpp
+  src/merge.hpp
   src/model.cpp
   src/model.hpp
   src/resolve.cpp

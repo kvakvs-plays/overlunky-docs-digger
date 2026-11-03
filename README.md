@@ -52,17 +52,20 @@ The scripts enter the Visual Studio environment themselves; run them from any sh
 - `build.bat [Debug|Release|All]`: builds `docs-digger` with clang-cl and Ninja Multi-Config in `build\digger`.
 - `test.bat [Debug|Release|All]`: builds and runs the CTest suite (golden-file tests).
 - `dig.bat [options]`: builds Release, configures overlunky into `build\overlunky` for its `compile_commands.json`
-  (configure only) and runs the digger on `src/game_api/script/**`.
+  (configure only) and runs the digger on `src/game_api/script/**`, adding the enum values of
+  `docs/game_data/lua_enums.txt` (`--runtime-enums`).
 - `quality.bat [changed|all]`: the clang-format, Lizard and clang-tidy gate.
 
 `dig.bat` passes its arguments to `docs-digger`, for example `dig.bat -o api.json --timings`. The output is
-JSON: `functions` and `values`, each with its source location, documentation and C++ types (see
-`.agents/01-plan.md`, section 4). Run `build\digger\Release\docs-digger.exe --help` for all options. A full run
+JSON: `functions`, `values`, `usertypes`, `enums`, `aliases`, `libraries`, `script_callbacks` and
+`global_variables`, each with its source location, documentation and C++ types (see `.agents/01-plan.md`,
+section 4). Run `build\digger\Release\docs-digger.exe --help` for all options. A full run
 over the 50 script translation units takes about 2.5 minutes.
 
 `python tools\parity.py <overlunky root> api.json` runs overlunky's old `docs/parse_source.py` and compares its
 results with the digger's. It lists accepted differences with their reasons and exits with 1 on anything
 unexplained.
 
-Golden tests compare the output for each `tests/fixtures/<name>.cpp` with `tests/expected/<name>.txt`. After an
+Golden tests compare the output for each `tests/fixtures/<name>.cpp` with `tests/expected/<name>.json`; a
+`tests/fixtures/<name>.lua_enums.txt` next to a fixture is passed as `--runtime-enums`. After an
 intended output change, run `set DD_UPDATE_GOLDEN=1` and then `test.bat`, and review the diff of `tests/expected/`.

@@ -1,0 +1,675 @@
+{
+  "aliases": [
+    {
+      "name": "CallbackId",
+      "source": {
+        "column": 7,
+        "file": "enums.cpp",
+        "line": 9
+      },
+      "type": {
+        "canonical": "int",
+        "kind": "int",
+        "spelling": "int32_t"
+      }
+    },
+    {
+      "name": "ENT_TYPE",
+      "source": {
+        "column": 7,
+        "file": "enums.cpp",
+        "line": 10
+      },
+      "type": {
+        "canonical": "unsigned int",
+        "kind": "int",
+        "spelling": "uint32_t"
+      }
+    },
+    {
+      "name": "Ids",
+      "source": {
+        "column": 7,
+        "file": "enums.cpp",
+        "line": 13
+      },
+      "type": {
+        "canonical": "std::vector<unsigned int>",
+        "inner": [
+          {
+            "canonical": "unsigned int",
+            "kind": "int",
+            "spelling": "ENT_TYPE"
+          }
+        ],
+        "kind": "container",
+        "spelling": "std::vector<ENT_TYPE>"
+      }
+    },
+    {
+      "name": "SHORT_TILE_CODE",
+      "source": {
+        "column": 17,
+        "file": "enums.cpp",
+        "line": 14
+      },
+      "type": {
+        "canonical": "unsigned char",
+        "kind": "int",
+        "spelling": "uint8_t"
+      }
+    }
+  ],
+  "enums": [
+    {
+      "doc": [
+        "Some constants of the engine"
+      ],
+      "name": "CONST",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 69
+      },
+      "values": [
+        {
+          "doc": [
+            "Named twice: these docs win."
+          ],
+          "name": "ENGINE_FPS",
+          "source": {
+            "column": 37,
+            "file": "enums.cpp",
+            "line": 69
+          },
+          "text": "60",
+          "value": 60
+        },
+        {
+          "name": "MASK",
+          "source": {
+            "column": 119,
+            "file": "enums.cpp",
+            "line": 69
+          },
+          "text": "0x10",
+          "value": 16
+        },
+        {
+          "doc": [
+            "Just the max number of players"
+          ],
+          "name": "MAX_PLAYERS",
+          "source": {
+            "column": 55,
+            "file": "enums.cpp",
+            "line": 69
+          },
+          "text": "MaxPlayers * 1",
+          "value": 4
+        },
+        {
+          "name": "MAX_TILES_VERT",
+          "source": {
+            "column": 86,
+            "file": "enums.cpp",
+            "line": 69
+          },
+          "text": "g_level_max_y"
+        }
+      ]
+    },
+    {
+      "doc": [
+        "Entity types, filled from the game's database"
+      ],
+      "filled_at_runtime": true,
+      "name": "ENT_TYPE",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 83
+      },
+      "values": [
+        {
+          "name": "",
+          "origin": "doc_comment",
+          "source": {
+            "column": 28,
+            "file": "enums.cpp",
+            "line": 85
+          },
+          "text": "...check__[entities.txt]\\[game_data/entities.txt\\]..."
+        },
+        {
+          "name": "FLOOR_BORDERTILE",
+          "origin": "doc_comment",
+          "source": {
+            "column": 28,
+            "file": "enums.cpp",
+            "line": 84
+          },
+          "text": "1",
+          "value": 1
+        },
+        {
+          "name": "FLOOR_GENERIC",
+          "origin": "runtime_file",
+          "text": "2",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "name": "FEAT",
+      "origin": "runtime_file",
+      "values": [
+        {
+          "name": "1",
+          "origin": "runtime_file",
+          "text": "1",
+          "value": 1
+        },
+        {
+          "name": "JOURNAL",
+          "origin": "runtime_file",
+          "text": "2",
+          "value": 2
+        }
+      ]
+    },
+    {
+      "doc": [
+        "Stop modes for an event instance."
+      ],
+      "name": "FMOD_STOP_MODE",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 98
+      },
+      "values": [
+        {
+          "name": "ALLOW_FADE_OUT",
+          "source": {
+            "column": 36,
+            "file": "enums.cpp",
+            "line": 98
+          },
+          "text": "FMODStudio::StopMode::AllowFadeOut",
+          "value": 0
+        },
+        {
+          "name": "IMMEDIATE",
+          "source": {
+            "column": 90,
+            "file": "enums.cpp",
+            "line": 98
+          },
+          "text": "FMODStudio::StopMode::Immediate",
+          "value": 1
+        }
+      ]
+    },
+    {
+      "name": "KEY",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 92
+      },
+      "values": [
+        {
+          "name": "OL_MOD_CTRL",
+          "source": {
+            "column": 5,
+            "file": "enums.cpp",
+            "line": 93
+          },
+          "text": "0x100",
+          "value": 256
+        },
+        {
+          "doc": [
+            "Shift modifier"
+          ],
+          "name": "OL_MOD_SHIFT",
+          "source": {
+            "column": 5,
+            "file": "enums.cpp",
+            "line": 95
+          },
+          "text": "0x200",
+          "value": 512
+        }
+      ]
+    },
+    {
+      "doc": [
+        "Layers of the level."
+      ],
+      "name": "LAYER",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 66
+      },
+      "values": [
+        {
+          "name": "BACK",
+          "source": {
+            "column": 60,
+            "file": "enums.cpp",
+            "line": 66
+          },
+          "text": "LAYER::BACK",
+          "value": 1
+        },
+        {
+          "name": "BOTH",
+          "source": {
+            "column": 95,
+            "file": "enums.cpp",
+            "line": 66
+          },
+          "text": "-128",
+          "value": -128
+        },
+        {
+          "name": "FRONT",
+          "source": {
+            "column": 37,
+            "file": "enums.cpp",
+            "line": 66
+          },
+          "text": "LAYER::FRONT",
+          "value": 0
+        },
+        {
+          "name": "PLAYER",
+          "source": {
+            "column": 81,
+            "file": "enums.cpp",
+            "line": 66
+          },
+          "text": "-1",
+          "value": -1
+        }
+      ]
+    },
+    {
+      "name": "VANILLA_SOUND",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 80
+      },
+      "values": [
+        {
+          "name": "BGM_MENU",
+          "origin": "runtime_file",
+          "text": "\"BGM/BGM_menu\"",
+          "value": "BGM/BGM_menu"
+        },
+        {
+          "name": "BGM_TITLE",
+          "source": {
+            "column": 45,
+            "file": "enums.cpp",
+            "line": 80
+          },
+          "text": "\"BGM/BGM_title\"",
+          "value": "BGM/BGM_title"
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "level",
+      "overloads": [
+        {
+          "cpp": "lambda at enums.cpp:128",
+          "params": [
+            {
+              "name": "s",
+              "type": {
+                "canonical": "State",
+                "kind": "record",
+                "spelling": "State &"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 128
+      }
+    },
+    {
+      "name": "set_flag",
+      "overloads": [
+        {
+          "cpp": "lambda at enums.cpp:124",
+          "params": [
+            {
+              "name": "flags",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "name": "bit",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 124
+      }
+    },
+    {
+      "alias_of": [
+        "set_flag"
+      ],
+      "deprecated": true,
+      "name": "setflag",
+      "overloads": [
+        {
+          "cpp": "lambda at enums.cpp:124",
+          "params": [
+            {
+              "name": "flags",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            },
+            {
+              "name": "bit",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "int",
+              "spelling": "int"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 127
+      }
+    },
+    {
+      "name": "spawn",
+      "overloads": [
+        {
+          "cpp": "lambda at enums.cpp:105",
+          "params": [
+            {
+              "name": "type",
+              "type": {
+                "canonical": "unsigned int",
+                "kind": "int",
+                "spelling": "ENT_TYPE"
+              }
+            },
+            {
+              "name": "code",
+              "type": {
+                "canonical": "unsigned char",
+                "kind": "int",
+                "spelling": "SHORT_TILE_CODE"
+              }
+            },
+            {
+              "name": "ids",
+              "type": {
+                "canonical": "std::vector<unsigned int>",
+                "inner": [
+                  {
+                    "canonical": "unsigned int",
+                    "kind": "int",
+                    "spelling": "ENT_TYPE"
+                  }
+                ],
+                "kind": "container",
+                "spelling": "Ids"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "std::vector<int>",
+              "inner": [
+                {
+                  "kind": "int",
+                  "spelling": "int"
+                }
+              ],
+              "kind": "container",
+              "spelling": "Holder<int>"
+            }
+          ]
+        }
+      ],
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 105
+      }
+    },
+    {
+      "name": "twice",
+      "overloads": [
+        {
+          "cpp": "lambda at enums.cpp:102",
+          "params": [
+            {
+              "name": "x",
+              "type": {
+                "kind": "int",
+                "spelling": "int"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "canonical": "int",
+              "kind": "int",
+              "spelling": "CallbackId"
+            }
+          ]
+        }
+      ],
+      "owner": [
+        "Util"
+      ],
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 102
+      }
+    }
+  ],
+  "global_variables": [
+    "meta",
+    "state"
+  ],
+  "libraries": [
+    {
+      "function": "load_libraries",
+      "names": [
+        "math",
+        "base"
+      ],
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 55
+      }
+    },
+    {
+      "function": "load_unsafe_libraries",
+      "names": [
+        "io"
+      ],
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 60
+      }
+    }
+  ],
+  "script_callbacks": [
+    {
+      "doc": [
+        "Use `set_callback(function, ON.FRAME)` instead"
+      ],
+      "name": "on_frame",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 136
+      },
+      "type": {
+        "canonical": "sol::optional<sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>>",
+        "inner": [
+          {
+            "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
+            "kind": "function",
+            "spelling": "sol::function"
+          }
+        ],
+        "kind": "optional",
+        "nullable": true,
+        "spelling": "sol::optional<sol::function>"
+      }
+    }
+  ],
+  "usertypes": [],
+  "values": [
+    {
+      "name": "P",
+      "nodoc": true,
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 114
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int"
+      }
+    },
+    {
+      "name": "__script_id",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 115
+      },
+      "type": {
+        "canonical": "std::basic_string<char>",
+        "kind": "string",
+        "spelling": "std::string"
+      }
+    },
+    {
+      "name": "level_count",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 130
+      },
+      "type": {
+        "kind": "int",
+        "spelling": "int"
+      }
+    },
+    {
+      "doc": [
+        "Table of strings with the script's metadata."
+      ],
+      "name": "meta",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 119
+      },
+      "type": {
+        "canonical": "sol::basic_table_core<false, sol::basic_reference<false>>",
+        "kind": "lua_object",
+        "spelling": "sol::table"
+      }
+    },
+    {
+      "name": "players",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 122
+      },
+      "type": {
+        "inner": [
+          {
+            "kind": "record",
+            "spelling": "Player"
+          }
+        ],
+        "kind": "container",
+        "spelling": "std::vector<Player>"
+      }
+    },
+    {
+      "doc": [
+        "The game state"
+      ],
+      "name": "state",
+      "source": {
+        "column": 5,
+        "file": "enums.cpp",
+        "line": 112
+      },
+      "type": {
+        "inner": [
+          {
+            "kind": "record",
+            "spelling": "State"
+          }
+        ],
+        "kind": "pointer",
+        "nullable": true,
+        "spelling": "State *"
+      }
+    }
+  ]
+}

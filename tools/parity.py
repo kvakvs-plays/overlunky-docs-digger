@@ -6,6 +6,9 @@ Checks every global function the old parser reports (ps.funcs, ps.deprecated_fun
   presence, deprecated flag, parameter counts and documentation text;
 every usertype (ps.types, ps.constructors):
   presence, bases, type comment, constructors, and per member presence, kind (function or not) and docs;
+every enum (ps.enums): presence, comment, and per value presence, value and block docs;
+every alias, library and entity cast (ps.aliases, ps.lualibs, ps.known_casts) for presence;
+the events (ps.events), and the global variables against the old hardcoded not_functions list;
 and lists every type the digger left unclassified. Differences that are understood are listed in ACCEPTED and
 ACCEPTED_PATTERNS with their reason; anything else makes the script exit with 1.
 """
@@ -33,6 +36,20 @@ ACCEPTED_PATTERNS = [
     (r'(Triangle|Quad)\.(split|is_point_inside)$', 'doc differs',
      'math.hpp documents these in a `/* // just for the autodoc ... */` block of fake declarations, which the old text '
      'parser reads and Clang does not; overlunky should move the comments onto the real declarations'),
+    (r'GAME_MODE$', 'enum doc differs',
+     'the old parser keeps `///` lines across code lines, so the GAME_MODE table gets the comments of the Online '
+     'and OnlinePlayer usertypes registered above it; the table itself has no comment'),
+    (r'__get_script_envs$', 'event missing',
+     'an undocumented read in C++ (`auto get_script_envs = lua["__get_script_envs"];`), not a global that scripts '
+     'define'),
+    (r'pause$', 'global variable not in the old not_functions list',
+     'a PauseAPI object bound and documented as a global variable; the old hardcoded list misses it'),
+    (r'ENTITY_OVERRIDE\.TRIGGER_EXPLOSION$', 'value',
+     'two vtables name an entry trigger_explosion (Backpack 99, DummyPurchasableEntity 94); the old list keeps both, '
+     'the Lua table holds one key, and the running game reports 94'),
+    (r'.*', 'event: right side of an alias',
+     'the old event regex also matches `lua["b"];` at the end of `lua["a"] = lua["b"];`: b is a Lua function that '
+     'the digger reports as the target of alias a'),
     (r'CustomTheme\.\w+$', 'member missing',
      'level_lua.cpp binds these CustomTheme members inside a /* ... */ block comment, which the old text parser still '
      'reads; they are not bound (Lua reaches them through the ThemeInfo base)'),
@@ -40,7 +57,6 @@ ACCEPTED_PATTERNS = [
 
 # Usertype members the old parser generates for vtable hooks; checked with the callback passes (DIG-4).
 VTABLE_MEMBERS = ('set_pre_', 'set_post_', 'clear_virtual')
-
 
 def load_old_parser(overlunky_root):
     """Runs the old parser in overlunky's docs/ directory and returns the module with its results."""
@@ -97,6 +113,28 @@ def old_doc(lines):
     return doc_text(lines)
 
 
+def old_block_doc(text):
+    """Docs the old parser takes from a `/* NAME // KEY // doc */` block, joined with `<br/>`, as lines."""
+    return old_doc([line for line in (text or '').split('<br/>') if line.strip()])
+
+
+def old_enum_number(text):
+    """The old value text as a number when it is an integer literal, else None."""
+    try:
+        return int(text, 0)
+    except ValueError:
+        return None
+
+
+def digger_value_text(value):
+    """The digger's value text as the old parser writes it: spaces and quotes removed, and for commented-out
+    pairs the old markdown rewrites (`__` is a space, `\\[` and `\\]` are parentheses)."""
+    text = re.sub(r'\s+', '', value['text']).strip('"')
+    if value.get('origin') == 'doc_comment':
+        text = text.replace('__', ' ').replace('\\[', '(').replace('\\]', ')')
+    return text
+
+
 def walk_types(type_info, path, found):
     """Collects (path, spelling) of every unknown kind inside type_info."""
     if type_info['kind'] == 'unknown':
@@ -130,6 +168,8 @@ def unknown_types(digger):
                 walk_types(member['type'], path, found)
             for sig in member.get('overloads', []) + [member[s] for s in ('getter', 'setter') if s in member]:
                 walk_signature(sig, path, found)
+    for entry in digger['aliases'] + digger['script_callbacks']:
+        walk_types(entry['type'], entry['name'], found)
     return found
 
 
@@ -211,6 +251,9 @@ def check_members(report, old_type, usertype):
         old = old_doc(var.get('comment', []))
         if old and not any(old in member_doc_candidates(m) for m in found):
             report.add(name, f'doc differs:\n      old:    {old}\n      digger: {member_doc_candidates(found[0])[:2]}')
+        old_block = old_block_doc(var.get('docs'))
+        if old_block and not any(old_block in member_doc_candidates(m) for m in found):
+            report.add(name, f'block doc differs:\n      old:    {old_block}\n      digger: {found[0].get("doc", [])}')
 
 
 def check_constructors(report, ps, usertype):
@@ -241,6 +284,86 @@ def check_usertypes(report, ps, digger):
         check_members(report, old_type, usertype)
 
 
+def check_enum_value(report, enum_name, var, values):
+    """Compares one old enum value (name, value text, block docs) with the digger's values of that name."""
+    name = f'{enum_name}.{var["name"]}'
+    found = values.get(var['name'], [])
+    if not found:
+        report.add(name, 'enum value missing in the digger output')
+        return
+    number = old_enum_number(var['type'])
+    if number is not None and not any(v.get('value') == number for v in found):
+        report.add(name, f'value: old {var["type"]}, digger {[v.get("value", v["text"]) for v in found]}')
+    elif number is None and not any(digger_value_text(v) == var['type'] for v in found):
+        report.add(name, f'value text: old {var["type"]}, digger {[digger_value_text(v) for v in found]}')
+    old = old_block_doc(var.get('docs'))
+    if old and not any(doc_text(v.get('doc', [])) == old for v in found):
+        report.add(name, f'doc differs:\n      old:    {old}\n      digger: {found[0].get("doc", [])}')
+
+
+def check_enums(report, ps, digger):
+    """Compares every old enum table: presence, comment and values."""
+    by_name = {e['name']: e for e in digger['enums']}
+    for old_enum in ps.enums:
+        table = by_name.get(old_enum['name'])
+        if table is None:
+            report.add(old_enum['name'], 'enum missing in the digger output')
+            continue
+        old = old_doc(old_enum.get('comment', []))
+        if old and old != doc_text(table.get('doc', [])):
+            report.add(old_enum['name'], f'enum doc differs:\n      old:    {old}\n      digger: {table.get("doc", [])}')
+        values = {}
+        for value in table['values']:
+            values.setdefault(value['name'], []).append(value)
+        for var in old_enum['vars']:
+            check_enum_value(report, old_enum['name'], var, values)
+
+
+def check_lists(report, ps, digger):
+    """Aliases, libraries and entity casts: every old entry is present."""
+    aliases = {a['name']: a for a in digger['aliases']}
+    for alias in ps.aliases:
+        found = aliases.get(alias['name'])
+        if found is None:
+            report.add(alias['name'], 'alias missing in the digger output')
+        elif found['type']['spelling'] != alias['type'].rstrip(';'):
+            report.add(alias['name'], f'alias type: old {alias["type"]}, digger {found["type"]["spelling"]}')
+    libraries = {name for call in digger['libraries'] for name in call['names']}
+    for library in ps.lualibs:
+        if library not in libraries:
+            report.add(library, 'library missing in the digger output')
+    entity = next((u for u in digger['usertypes'] if u['name'] == 'Entity'), {'members': []})
+    casts = {m['name'] for m in entity['members']}
+    for cast in ps.known_casts:
+        if cast not in casts:
+            report.add(f'Entity.{cast}', 'cast missing in the digger output')
+
+
+def check_globals(report, ps, digger, values_in_digger):
+    """Events (documented reads of script globals), global variables against not_functions, and the old functions
+    that are values in the digger."""
+    callbacks = {c['name']: c for c in digger['script_callbacks']}
+    alias_targets = {f['alias_of'][-1] for f in digger['functions'] if len(f.get('alias_of', [])) == 1}
+    for event in ps.events:
+        found = callbacks.get(event['name'])
+        if found is not None:
+            if old_doc(event['comment']) != doc_text(found.get('doc', [])):
+                report.add(event['name'], f'event doc differs:\n      old:    {event["comment"]}\n'
+                                          f'      digger: {found.get("doc", [])}')
+        elif event['name'] in alias_targets:
+            report.add(event['name'], 'event: right side of an alias')
+        else:
+            report.add(event['name'], 'event missing in the digger output')
+    found_globals = set(digger['global_variables'])
+    for name in sorted(set(ps.not_functions) - found_globals):
+        report.add(name, 'global variable missing in the digger output')
+    for name in sorted(found_globals - set(ps.not_functions)):
+        report.add(name, 'global variable not in the old not_functions list')
+    for name in values_in_digger:
+        if name not in found_globals and name not in callbacks:
+            report.add(name, 'old function is a value in the digger, neither a global variable nor a callback')
+
+
 def main():
     """Runs both parsers' results through the checks and prints the report."""
     overlunky_root, digger_file = os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])
@@ -259,18 +382,24 @@ def main():
     values_in_digger = []
     for func, deprecated in old_functions:
         if func['name'] in value_names and func['name'] not in globals_by_name:
-            values_in_digger.append(func['name'])  # not callable: values are checked in DIG-3 (P13)
+            values_in_digger.append(func['name'])  # not callable: checked as a global variable or callback
             continue
         check_function(report, ps, func, deprecated, globals_by_name.get(func['name'], []))
     check_usertypes(report, ps, digger)
+    check_enums(report, ps, digger)
+    check_lists(report, ps, digger)
+    check_globals(report, ps, digger, values_in_digger)
 
     unknown = unknown_types(digger)
     doc_only = sorted(f['name'] for f in digger['functions'] + digger['values'] if f.get('doc_only'))
     print(f'old parser: {len(ps.funcs)} functions + {len(ps.deprecated_funcs)} deprecated')
     print(f'old parser usertypes: {len(ps.types)}, with {sum(len(t["vars"]) for t in ps.types)} members')
+    print(f'old parser: {len(ps.enums)} enums, {len(ps.aliases)} aliases, {len(ps.lualibs)} libraries, '
+          f'{len(ps.known_casts)} casts, {len(ps.events)} events')
     print(f'digger: {len(digger["functions"])} functions ({len(globals_by_name)} global names), '
-          f'{len(digger["values"])} values, {len(digger["usertypes"])} usertypes')
-    print(f'old functions that are values in the digger (checked in DIG-3): {sorted(values_in_digger)}')
+          f'{len(digger["values"])} values, {len(digger["usertypes"])} usertypes, {len(digger["enums"])} enums, '
+          f'{len(digger["aliases"])} aliases, {len(digger["script_callbacks"])} script callbacks')
+    print(f'global variables: {digger["global_variables"]}')
     print(f'doc-only functions (text signatures, kinds not classified): {doc_only}')
     print(f'\nunclassified types: {len(unknown)}')
     for path, spelling in unknown:

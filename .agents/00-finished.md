@@ -21,7 +21,7 @@ plan (sections 2, 3 and 7), where later steps read them.
   `create_fmod_guid_map`, where the old parser merges a neighbouring comment), 0 unclassified types. Two runs give
   byte-identical output (50 TUs, 158 s). Fixtures: `functions`, `docs`, `key_paths`. `sol::property` /
   `sol::readonly` / `sol::var` moved to DIG-2 (usertype-only in overlunky).
-- **DIG-2. Usertypes (B2; P5, P6)**: `usertypes` in the JSON output (`src/usertypes.cpp`, shared AST helpers
+- **DIG-2. Usertypes (B2; P5, P6)** (`797461c`): `usertypes` in the JSON output (`src/usertypes.cpp`, shared AST helpers
   moved to `src/resolve.cpp`). `new_usertype<T>(...)` argument pairs and later `ut["k"] = v` (routed by the
   `sol::usertype<T>` root type) become members of kind field, readonly, property (getter/setter), method (with
   overloads and `self` kind) or value; `lua["Name"]["k"] = v` is moved into the usertype after all TUs.
@@ -34,3 +34,17 @@ plan (sections 2, 3 and 7), where later steps read them.
   lists that include unexposed C++ constructors, block-commented code), 0 unclassified types. 529 usertypes with
   3486 members, two runs byte-identical. `ut.set`, `sol::call_constructor` and `readonly_property` are unused in
   overlunky and not handled. Fixture: `usertypes`.
+- **DIG-3. Enums, aliases, libraries, global variables, casts, events (B3, B4; P8–P13)**: new output
+  sections `enums`, `aliases`, `libraries`, `script_callbacks`, `global_variables`; steps after all TUs
+  in `src/merge.cpp` (no AST). Enums from `create_named_table` and `new_enum` (FMOD_* tables, missed by
+  the old parser), values with source text and constant number or string, later `lua["E"]["K"] = v`
+  keys, commented-out example pairs (`doc_comment`), `filled_at_runtime` for computed keys, docs from
+  the ported `/* NAME // KEY // doc */` blocks (also for usertype members), and `--runtime-enums`
+  (`lua_enums.txt`, passed by `dig.bat`): 92 enums, 4625 values. Aliases are typedefs under the root
+  that some binding type names (43). Libraries per `open_libraries` call with its function. Global
+  variables are the documented values on the state, no hardcoded list: the old `not_functions` plus
+  `pause`. P8: the old "events" are documented reads of script globals (`on_frame`, 9 callbacks).
+  `docBefore()` now takes only `///` comments. `tools/parity.py` checks `ps.enums` (values and docs),
+  `ps.aliases`, `ps.lualibs`, `ps.known_casts`, `ps.events` and `not_functions`: 0 unexplained,
+  88 accepted, 0 unclassified types; two runs byte-identical. Fixture: `enums` (with
+  `enums.lua_enums.txt`).

@@ -1,4 +1,20 @@
 {
+  "aliases": [
+    {
+      "name": "ENT_TYPE",
+      "source": {
+        "column": 7,
+        "file": "functions.cpp",
+        "line": 18
+      },
+      "type": {
+        "canonical": "unsigned int",
+        "kind": "int",
+        "spelling": "uint32_t"
+      }
+    }
+  ],
+  "enums": [],
   "functions": [
     {
       "name": "callbacks",
@@ -799,6 +815,9 @@
       }
     }
   ],
+  "global_variables": [],
+  "libraries": [],
+  "script_callbacks": [],
   "usertypes": [],
   "values": [
     {

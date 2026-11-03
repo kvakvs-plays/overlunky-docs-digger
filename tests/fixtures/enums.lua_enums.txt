@@ -1,0 +1,17 @@
+ENT_TYPE = {
+  FLOOR_BORDERTILE = 1,
+  FLOOR_GENERIC = 2
+}
+F = {}
+FEAT = {
+  ["1"] = 1,
+  JOURNAL = 2
+}
+LAYER = {
+  BACK = 1,
+  FRONT = 0
+}
+VANILLA_SOUND = {
+  BGM_TITLE = "BGM/BGM_title",
+  BGM_MENU = "BGM/BGM_menu"
+}

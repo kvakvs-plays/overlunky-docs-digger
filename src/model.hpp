@@ -5,6 +5,7 @@
 #include <compare>
 #include <cstdint>
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -222,6 +223,92 @@ namespace dd {
         std::map<MemberKey, Member> members;
     };
 
+    // Where an enum value is known from.
+    enum class EnumValueOrigin : std::uint8_t {
+        // A key and value pair written in the code.
+        Static,
+        // A commented-out pair inside the call (`create_named_table("ENT_TYPE" //, "FLOOR_BORDERTILE", 1`): an
+        // example of the values the code adds at runtime.
+        DocComment,
+        // Reported by a running game (`docs/game_data/lua_enums.txt`).
+        RuntimeFile,
+    };
+
+    // One key of a Lua enum table.
+    struct EnumValue {
+        // Key in Lua; empty for a commented-out hint such as `"", ...check [entities.txt]...`.
+        std::string luaName;
+        // The value as written (`ON::LOGO`, `0x1`, `g_level_max_y`), or as the runtime file has it.
+        std::string text;
+        // The value when it is an integer known at compile time (or in the runtime file).
+        std::optional<long long> number;
+        // The value when it is a string.
+        std::optional<std::string> string;
+        // From a `/* ENUM // KEY // doc */` block.
+        Doc doc;
+        // Where the value is known from.
+        EnumValueOrigin origin = EnumValueOrigin::Static;
+        // The key in the code; empty for runtime values.
+        SourceLoc loc;
+    };
+
+    // A Lua table of named constants: `create_named_table("NAME", "K", v, ...)` or `new_enum(...)` (plan B3).
+    struct Enum {
+        // Name of the table in Lua.
+        std::string luaName;
+        // The creating call; empty for tables only the runtime file knows.
+        SourceLoc loc;
+        // Comment above the creating call.
+        Doc doc;
+        // Values by key and location (a key may repeat with another origin).
+        std::map<MemberKey, EnumValue> values;
+        // Keys are also added by code at runtime (`lua["ENT_TYPE"][name] = item.id` in a loop).
+        bool filledAtRuntime = false;
+    };
+
+    // A typedef or `using` name that Lua-visible types are written with (`CallbackId`, `ENT_TYPE`).
+    struct Alias {
+        // Unqualified name.
+        std::string name;
+        // The aliased type.
+        TypeInfo type;
+        // The declaration.
+        SourceLoc loc;
+        // Comment of the declaration.
+        Doc doc;
+    };
+
+    // The Lua standard libraries one `open_libraries(...)` call opens.
+    struct LibraryCall {
+        // Library names (`math`, `io`).
+        std::vector<std::string> names;
+        // Function the call is in (`load_unsafe_libraries` opens the unsafe ones).
+        std::string function;
+        // The call.
+        SourceLoc loc;
+    };
+
+    // A documented global that the script defines and the C++ side reads (`on_frame`, P8).
+    struct ScriptCallback {
+        // Name of the global.
+        std::string luaName;
+        // C++ type the value is read as (`sol::optional<sol::function>`).
+        TypeInfo type;
+        // The reading declaration.
+        SourceLoc loc;
+        // Comment above the read.
+        Doc doc;
+    };
+
+    // A `/* NAME // KEY // doc lines */` block comment: docs for the values of enum NAME or the members of
+    // usertype NAME, matched by key once every translation unit is parsed.
+    struct BlockDoc {
+        // Enum or usertype name (the block's first word).
+        std::string target;
+        // Lines after the first one, without their `//` markers; a line naming a key starts that key's docs.
+        std::vector<std::string> lines;
+    };
+
     // Identity of a binding: bindings repeat across translation units (headers, templates) and must stay once.
     struct BindingKey {
         // Table keys before the name.
@@ -242,6 +329,18 @@ namespace dd {
         std::map<BindingKey, Value> values;
         // Usertypes by canonical C++ type: members bound through `ut["k"]` only know the C++ type.
         std::map<std::string, Usertype> usertypes;
+        // Enum tables by Lua name.
+        std::map<std::string, Enum> enums;
+        // Typedef names under the root by name; only those some Lua-visible type uses are written.
+        std::map<std::string, Alias> aliases;
+        // `open_libraries(...)` calls by location.
+        std::map<SourceLoc, LibraryCall> libraries;
+        // Documented reads of script-defined globals, by name and location.
+        std::map<MemberKey, ScriptCallback> scriptCallbacks;
+        // Names of documented values on the state: the API's global variables (`state`, `players`).
+        std::vector<std::string> globalVariables;
+        // Block comments waiting to be matched with enum values and members (not written).
+        std::vector<BlockDoc> blockDocs;
     };
 
     // JSON writers; empty and default fields are left out to keep the output small and diffable.
@@ -254,6 +353,11 @@ namespace dd {
     llvm::json::Value toJSON(const Value& value);
     llvm::json::Value toJSON(const Member& member);
     llvm::json::Value toJSON(const Usertype& usertype);
+    llvm::json::Value toJSON(const EnumValue& value);
+    llvm::json::Value toJSON(const Enum& table);
+    llvm::json::Value toJSON(const Alias& alias);
+    llvm::json::Value toJSON(const LibraryCall& call);
+    llvm::json::Value toJSON(const ScriptCallback& callback);
     llvm::json::Value toJSON(const Extraction& extraction);
 
 } // namespace dd

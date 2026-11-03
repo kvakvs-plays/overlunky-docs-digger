@@ -26,11 +26,25 @@ namespace dd {
         constexpr std::array<const char*, 3> SelfKindNames = {"none", "implicit", "first_param"};
         static_assert(SelfKindNames.size() == static_cast<std::size_t>(SelfKind::FirstParam) + 1);
 
+        // Enum value origins, in EnumValueOrigin order (Static is not written).
+        constexpr std::array<const char*, 3> OriginNames = {"static", "doc_comment", "runtime_file"};
+        static_assert(OriginNames.size() == static_cast<std::size_t>(EnumValueOrigin::RuntimeFile) + 1);
+
         // A JSON array of the toJSON() of every element.
         template <typename T>
         llvm::json::Array arrayOf(const std::vector<T>& items) {
             llvm::json::Array array;
             for (const T& item : items) {
+                array.push_back(toJSON(item));
+            }
+            return array;
+        }
+
+        // A JSON array of the toJSON() of every mapped value, in key order.
+        template <typename Map>
+        llvm::json::Array arrayOfValues(const Map& items) {
+            llvm::json::Array array;
+            for (const auto& [key, item] : items) {
                 array.push_back(toJSON(item));
             }
             return array;
@@ -178,23 +192,62 @@ namespace dd {
         if (usertype.noConstructor) {
             object["no_constructor"] = true;
         }
-        llvm::json::Array members;
-        for (const auto& [key, member] : usertype.members) {
-            members.push_back(toJSON(member));
+        object["members"] = arrayOfValues(usertype.members);
+        return object;
+    }
+
+    llvm::json::Value toJSON(const EnumValue& value) {
+        llvm::json::Object object{{"name", value.luaName}, {"text", value.text}};
+        if (value.number) {
+            object["value"] = *value.number;
         }
-        object["members"] = std::move(members);
+        else if (value.string) {
+            object["value"] = *value.string;
+        }
+        addDoc(object, value.doc);
+        if (value.origin != EnumValueOrigin::Static) {
+            object["origin"] = OriginNames.at(static_cast<std::size_t>(value.origin));
+        }
+        if (!value.loc.file.empty()) {
+            object["source"] = toJSON(value.loc);
+        }
+        return object;
+    }
+
+    llvm::json::Value toJSON(const Enum& table) {
+        llvm::json::Object object{{"name", table.luaName}, {"values", arrayOfValues(table.values)}};
+        if (table.loc.file.empty()) {
+            object["origin"] = OriginNames.at(static_cast<std::size_t>(EnumValueOrigin::RuntimeFile));
+        }
+        else {
+            object["source"] = toJSON(table.loc);
+        }
+        addDoc(object, table.doc);
+        if (table.filledAtRuntime) {
+            object["filled_at_runtime"] = true;
+        }
+        return object;
+    }
+
+    llvm::json::Value toJSON(const Alias& alias) {
+        llvm::json::Object object{{"name", alias.name}, {"type", toJSON(alias.type)}, {"source", toJSON(alias.loc)}};
+        addDoc(object, alias.doc);
+        return object;
+    }
+
+    llvm::json::Value toJSON(const LibraryCall& call) {
+        return llvm::json::Object{
+            {"names", llvm::json::Array(call.names)}, {"function", call.function}, {"source", toJSON(call.loc)}};
+    }
+
+    llvm::json::Value toJSON(const ScriptCallback& callback) {
+        llvm::json::Object object{
+            {"name", callback.luaName}, {"type", toJSON(callback.type)}, {"source", toJSON(callback.loc)}};
+        addDoc(object, callback.doc);
         return object;
     }
 
     llvm::json::Value toJSON(const Extraction& extraction) {
-        llvm::json::Array functions;
-        for (const auto& [key, function] : extraction.functions) {
-            functions.push_back(toJSON(function));
-        }
-        llvm::json::Array values;
-        for (const auto& [key, value] : extraction.values) {
-            values.push_back(toJSON(value));
-        }
         // Ordered by Lua name for readers; the map is keyed by C++ type for member lookup.
         std::vector<const Usertype*> usertypes;
         usertypes.reserve(extraction.usertypes.size());
@@ -208,9 +261,14 @@ namespace dd {
         for (const Usertype* usertype : usertypes) {
             usertypeArray.push_back(toJSON(*usertype));
         }
-        return llvm::json::Object{{"functions", std::move(functions)},
-                                  {"values", std::move(values)},
-                                  {"usertypes", std::move(usertypeArray)}};
+        return llvm::json::Object{{"functions", arrayOfValues(extraction.functions)},
+                                  {"values", arrayOfValues(extraction.values)},
+                                  {"usertypes", std::move(usertypeArray)},
+                                  {"enums", arrayOfValues(extraction.enums)},
+                                  {"aliases", arrayOfValues(extraction.aliases)},
+                                  {"libraries", arrayOfValues(extraction.libraries)},
+                                  {"script_callbacks", arrayOfValues(extraction.scriptCallbacks)},
+                                  {"global_variables", llvm::json::Array(extraction.globalVariables)}};
     }
 
 } // namespace dd

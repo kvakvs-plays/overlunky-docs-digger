@@ -1,4 +1,6 @@
 {
+  "aliases": [],
+  "enums": [],
   "functions": [
     {
       "name": "add",
@@ -95,6 +97,9 @@
       }
     }
   ],
+  "global_variables": [],
+  "libraries": [],
+  "script_callbacks": [],
   "usertypes": [],
   "values": [
     {

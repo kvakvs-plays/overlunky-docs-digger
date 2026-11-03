@@ -1,4 +1,5 @@
 #include "bindings.hpp"
+#include "merge.hpp"
 #include "model.hpp"
 #include "source_root.hpp"
 #include "usertypes.hpp"
@@ -59,6 +60,12 @@ namespace {
         llvm::cl::list<std::string> extraArgs{"extra-arg",
                                               llvm::cl::desc("Argument to append to every compile command"),
                                               llvm::cl::value_desc("arg"), llvm::cl::cat(category)};
+
+        // Enum values a running game reports (overlunky's docs/game_data/lua_enums.txt), for the tables the code
+        // fills at runtime.
+        llvm::cl::opt<std::string> runtimeEnums{
+            "runtime-enums", llvm::cl::desc("lua_enums.txt dump of the enum tables of a running game"),
+            llvm::cl::value_desc("file"), llvm::cl::cat(category)};
 
         // Per-TU parse times, to decide whether parallel execution is worth it.
         llvm::cl::opt<bool> timings{"timings", llvm::cl::desc("Print the parse time of every translation unit"),
@@ -181,6 +188,21 @@ namespace {
         return true;
     }
 
+    // Runs the steps that need every translation unit; false when the runtime enum file cannot be read.
+    bool merge(const Options& options, dd::Extraction& extraction) {
+        dd::resolveAliases(extraction);
+        dd::attachOwnedBindings(extraction);
+        if (!options.runtimeEnums.empty() && !dd::addRuntimeEnums(extraction, options.runtimeEnums)) {
+            llvm::errs() << "docs-digger: cannot read " << options.runtimeEnums << '\n';
+            return false;
+        }
+        dd::attachBlockDocs(extraction);
+        dd::dropEmptyEnums(extraction);
+        dd::keepUsedAliases(extraction);
+        dd::collectGlobalVariables(extraction);
+        return true;
+    }
+
     // Parses the selected TUs of database and writes what the passes found; returns the process exit code.
     int dig(const Options& options, const clang::tooling::CompilationDatabase& database) {
         const std::vector<std::string> sources = selectSources(options, database);
@@ -197,8 +219,9 @@ namespace {
             clang::tooling::newFrontendActionFactory(&finder);
 
         const unsigned failed = runAll(options, database, sources, *factory);
-        dd::resolveAliases(extraction);
-        dd::attachOwnedBindings(extraction);
+        if (!merge(options, extraction)) {
+            return 1;
+        }
         if (failed != 0) {
             llvm::errs() << "docs-digger: " << failed << " of " << sources.size() << " translation units had errors\n";
         }

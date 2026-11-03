@@ -163,4 +163,10 @@ void register_usertypes(sol::state& lua)
     { return static_cast<Movable*>(&e); };
     /// Brightest channel value.
     color_type["max_channel"] = sol::var(1.0f);
+    /* Color
+    // r
+    // Red channel, documented by a block.
+    // g
+    // Green channel, read only.
+    */
 }

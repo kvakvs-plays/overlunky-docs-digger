@@ -278,15 +278,11 @@ namespace dd {
 
         // Reads a key argument of new_usertype.
         UsertypeKey keyOf(const clang::Expr* arg) {
-            const clang::Expr* key = arg->IgnoreImplicit()->IgnoreParenCasts();
-            if (const auto* literal = llvm::dyn_cast<clang::StringLiteral>(key)) {
-                return {literal->getString().str(), false};
+            if (std::optional<std::string> name = stringValue(arg)) {
+                return {std::move(*name), false};
             }
-            const auto* reference = llvm::dyn_cast<clang::DeclRefExpr>(key);
-            const auto* enumerator =
-                reference == nullptr ? nullptr : llvm::dyn_cast<clang::EnumConstantDecl>(reference->getDecl());
-            if (enumerator != nullptr) {
-                return {enumerator->getNameAsString(), true};
+            if (std::optional<std::string> name = enumeratorName(arg)) {
+                return {std::move(*name), true};
             }
             return {};
         }

@@ -200,6 +200,37 @@ namespace dd {
         return callee == nullptr ? std::string() : callee->getQualifiedNameAsString();
     }
 
+    std::optional<std::string> stringValue(const clang::Expr* e) {
+        // withoutConversions: a `string_view` parameter (new_enum's name) constructs from the literal.
+        const auto* literal = llvm::dyn_cast<clang::StringLiteral>(stripped(withoutConversions(e)));
+        return literal == nullptr ? std::nullopt : std::optional<std::string>(literal->getString().str());
+    }
+
+    std::optional<std::string> enumeratorName(const clang::Expr* e) {
+        const auto* reference = llvm::dyn_cast<clang::DeclRefExpr>(stripped(e));
+        const auto* enumerator =
+            reference == nullptr ? nullptr : llvm::dyn_cast<clang::EnumConstantDecl>(reference->getDecl());
+        return enumerator == nullptr ? std::nullopt : std::optional<std::string>(enumerator->getNameAsString());
+    }
+
+    const clang::Expr* withoutConversions(const clang::Expr* e) {
+        for (int step = 0; step < MaxDefinitionSteps && e != nullptr; ++step) {
+            e = e->IgnoreImplicit();
+            if (const auto* construct = llvm::dyn_cast<clang::CXXConstructExpr>(e);
+                construct != nullptr && construct->getNumArgs() == 1) {
+                e = construct->getArg(0);
+            }
+            else if (const auto* call = llvm::dyn_cast<clang::CXXMemberCallExpr>(e);
+                     call != nullptr && llvm::isa_and_present<clang::CXXConversionDecl>(call->getMethodDecl())) {
+                e = call->getImplicitObjectArgument();
+            }
+            else {
+                return e;
+            }
+        }
+        return e;
+    }
+
     Definition definitionOf(const clang::Expr* e) {
         Definition definition{stripped(e), nullptr};
         for (int step = 0; step < MaxDefinitionSteps; ++step) {

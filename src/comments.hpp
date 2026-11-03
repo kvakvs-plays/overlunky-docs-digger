@@ -12,8 +12,8 @@
 
 namespace dd {
 
-    // The `///` block whose last line is directly above loc's line (a blank line in between detaches it, as in
-    // the old parser); empty when there is none.
+    // The `///` block whose last line is directly above loc's line (a blank line or any other comment in between
+    // detaches it, as in the old parser); empty when there is none.
     Doc docBefore(clang::SourceLocation loc, const clang::ASTContext& context);
 
     // The `///` comment of decl or of any of its redeclarations (headers document functions, .cpp files define
@@ -38,6 +38,22 @@ namespace dd {
 
     // All commented-out bindings directly below a `///` block in file.
     std::vector<CommentedBinding> commentedBindings(clang::FileID file, const clang::ASTContext& context);
+
+    // A key and value pair commented out inside an enum call: `//, "FLOOR_BORDERTILE", 1`.
+    struct CommentedPair {
+        // The key without quotes; empty for hints such as `"", ...check [entities.txt]...`.
+        std::string luaName;
+        // The value text.
+        std::string text;
+        // Start of the pair's comment.
+        clang::SourceLocation loc;
+    };
+
+    // The commented-out pairs on the lines of range (the call that creates an enum).
+    std::vector<CommentedPair> commentedPairs(clang::SourceRange range, const clang::ASTContext& context);
+
+    // The `/* NAME // KEY // doc */` blocks in file: a block comment starting a line whose first line is one name.
+    std::vector<BlockDoc> blockDocs(clang::FileID file, const clang::SourceManager& sm);
 
     // The member named by a commented-out member reference just above loc, written for the old regex parser:
     // `// &Vec2::split); // for the autodoc` above a value, or `// ut["pause"] = &PauseAPI::pause;` above a

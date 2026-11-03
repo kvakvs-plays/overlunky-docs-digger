@@ -3,9 +3,15 @@
 get_filename_component(actual_dir "${ACTUAL}" DIRECTORY)
 file(MAKE_DIRECTORY "${actual_dir}")
 
+# A fixture may come with a runtime enum dump, <name>.lua_enums.txt, like overlunky's docs/game_data/lua_enums.txt.
+set(runtime_enums "")
+if(EXISTS "${FIXTURE_DIR}/${NAME}.lua_enums.txt")
+  set(runtime_enums "--runtime-enums=${FIXTURE_DIR}/${NAME}.lua_enums.txt")
+endif()
+
 # Same language mode and sol2 settings as overlunky's game_api target.
 execute_process(
-  COMMAND "${DIGGER}" "--root=${FIXTURE_DIR}" "-o" "${ACTUAL}" "${FIXTURE_DIR}/${NAME}.cpp" --
+  COMMAND "${DIGGER}" "--root=${FIXTURE_DIR}" "-o" "${ACTUAL}" ${runtime_enums} "${FIXTURE_DIR}/${NAME}.cpp" --
     -std=c++20 "-I${SOL2_INCLUDE_DIR}" "-I${LUA_INCLUDE_DIR}" -DSOL_ALL_SAFETIES_ON=1 -DSOL_PRINT_ERRORS=0
   RESULT_VARIABLE digger_result)
 if(NOT digger_result STREQUAL "0")

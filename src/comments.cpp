@@ -60,6 +60,38 @@ namespace dd {
             return parts;
         }
 
+        // True when only spaces and tabs are between the start of pos's line and pos.
+        bool startsLine(llvm::StringRef text, size_t pos) {
+            const size_t lineStart = text.find_last_of('\n', pos == 0 ? 0 : pos - 1);
+            const size_t from = lineStart == llvm::StringRef::npos ? 0 : lineStart + 1;
+            return text.slice(from, pos).trim(" \t").empty();
+        }
+
+        // True for a C identifier: the first line of a block that documents an enum or usertype.
+        bool isIdentifier(llvm::StringRef text) {
+            return !text.empty() &&
+                text.find_first_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                                       "0123456789_") == llvm::StringRef::npos;
+        }
+
+        // The block doc in the text between `/*` and `*/`, when its first line is one name.
+        std::optional<BlockDoc> blockDocOf(llvm::StringRef body) {
+            llvm::SmallVector<llvm::StringRef, 16> lines;
+            body.split(lines, '\n');
+            BlockDoc block{lines.front().trim().str(), {}};
+            if (!isIdentifier(block.target)) {
+                return std::nullopt;
+            }
+            for (llvm::StringRef line : llvm::ArrayRef(lines).drop_front()) {
+                line = line.trim();
+                line.consume_front("//");
+                if (!line.trim().empty()) {
+                    block.lines.push_back(line.trim().str());
+                }
+            }
+            return block;
+        }
+
         // `optional<int> depth` → name `depth`, type `optional<int>`; a lone type keeps an empty name.
         Param paramFromText(llvm::StringRef text) {
             const size_t nameStart =
@@ -107,7 +139,9 @@ namespace dd {
             return {};
         }
         const clang::RawComment& comment = *std::prev(it)->second;
-        if (lineOf(comment.getEndLoc(), sm) + 1 != lineOf(sm.getFileLoc(loc), sm)) {
+        // Only `///` documents, as in the old parser: a `/**/` ending the line above is not a comment on loc.
+        if (lineOf(comment.getEndLoc(), sm) + 1 != lineOf(sm.getFileLoc(loc), sm) ||
+            !comment.getRawText(sm).starts_with("///")) {
             return {};
         }
         return parseDoc(commentLines(comment, context));
@@ -134,6 +168,44 @@ namespace dd {
                 found.push_back({groups[1].str(), groups[2].rtrim(" \t;").str(), sm.translateLineCol(file, line, 1),
                                  parseDoc(commentLines(*comment, context))});
             }
+        }
+        return found;
+    }
+
+    std::vector<CommentedPair> commentedPairs(clang::SourceRange range, const clang::ASTContext& context) {
+        const clang::SourceManager& sm = context.getSourceManager();
+        const clang::SourceLocation begin = sm.getFileLoc(range.getBegin());
+        const clang::FileID file = sm.getFileID(begin);
+        const unsigned last = lineOf(sm.getFileLoc(range.getEnd()), sm);
+        std::vector<CommentedPair> found;
+        for (unsigned line = lineOf(begin, sm); line <= last; ++line) {
+            const llvm::StringRef text = lineText(file, line, sm);
+            const size_t marker = text.find("//,");
+            const std::vector<std::string> parts =
+                marker == llvm::StringRef::npos ? std::vector<std::string>() : splitTopLevel(text.substr(marker + 3));
+            if (parts.size() == 2) {
+                found.push_back({llvm::StringRef(parts[0]).trim('"').str(), parts[1],
+                                 sm.translateLineCol(file, line, static_cast<unsigned>(marker) + 1)});
+            }
+        }
+        return found;
+    }
+
+    std::vector<BlockDoc> blockDocs(clang::FileID file, const clang::SourceManager& sm) {
+        const llvm::StringRef text = sm.getBufferData(file);
+        std::vector<BlockDoc> found;
+        size_t pos = text.find("/*");
+        while (pos != llvm::StringRef::npos) {
+            const size_t end = text.find("*/", pos + 2);
+            if (end == llvm::StringRef::npos) {
+                break;
+            }
+            std::optional<BlockDoc> block =
+                startsLine(text, pos) ? blockDocOf(text.slice(pos + 2, end)) : std::optional<BlockDoc>();
+            if (block) {
+                found.push_back(std::move(*block));
+            }
+            pos = text.find("/*", end + 2);
         }
         return found;
     }

@@ -7,6 +7,7 @@
 #include <clang/AST/Decl.h>
 #include <clang/AST/Expr.h>
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -45,6 +46,16 @@ namespace dd {
 
     // Qualified name of the function a call goes to, or empty.
     std::string calleeName(const clang::CallExpr& call);
+
+    // The text of a string literal argument, or nothing for other expressions.
+    std::optional<std::string> stringValue(const clang::Expr* e);
+
+    // The name of the enumerator e refers to (`sol::lib::math` → `math`), or nothing.
+    std::optional<std::string> enumeratorName(const clang::Expr* e);
+
+    // e without the implicit conversions sol2 proxies go through when a declaration reads them
+    // (`sol::optional<sol::function> f = lua["f"];` constructs from a conversion operator call).
+    const clang::Expr* withoutConversions(const clang::Expr* e);
 
     // The expression that defines a bound value, after following what only passes it on.
     struct Definition {

@@ -1,4 +1,6 @@
 {
+  "aliases": [],
+  "enums": [],
   "functions": [
     {
       "doc": [
@@ -204,6 +206,11 @@
       }
     }
   ],
+  "global_variables": [
+    "options"
+  ],
+  "libraries": [],
+  "script_callbacks": [],
   "usertypes": [],
   "values": [
     {

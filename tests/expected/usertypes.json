@@ -1,5 +1,10 @@
 {
+  "aliases": [],
+  "enums": [],
   "functions": [],
+  "global_variables": [],
+  "libraries": [],
+  "script_callbacks": [],
   "usertypes": [
     {
       "constructors": [
@@ -133,6 +138,9 @@
           }
         },
         {
+          "doc": [
+            "Green channel, read only."
+          ],
           "kind": "readonly",
           "name": "g",
           "source": {
@@ -162,6 +170,9 @@
           }
         },
         {
+          "doc": [
+            "Red channel, documented by a block."
+          ],
           "kind": "field",
           "name": "r",
           "source": {

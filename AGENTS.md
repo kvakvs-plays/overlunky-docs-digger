@@ -99,3 +99,6 @@ These rules hold at all times, not only before a release.
 - Use RAII and values; avoid raw owning pointers.
 - The code is built without RTTI, like the LLVM libraries it links: no `dynamic_cast` or `typeid`; use
   `llvm::dyn_cast` / `llvm::isa` on Clang AST nodes.
+- **PREFERENCE** Slow processing is acceptable, this is documentation parser. Becoming faster is of course 
+  preferred but can be done in a later plan step. Parallel processing is preferred.
+- When committing do not add "Co-Authored By" line.
