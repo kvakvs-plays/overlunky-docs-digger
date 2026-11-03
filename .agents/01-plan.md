@@ -25,8 +25,6 @@ generator has, plus the new ones. DIG-6 and DIG-7 turn it into the two outputs t
 - Commit with message prefix "[plan]" and have full plan title in the message
 - Move finished plan steps into 00-finished.md and compact them add as a bullet point
 
-
-
 ## 1. What the current generator extracts (parity checklist)
 
 Taken from `docs/parse_source.py` and `docs/generate.py`. Every item must be present in the new
@@ -65,8 +63,6 @@ data.
 
 P16 is a presentation concern. The digger emits C++ types plus structured type facts (see section
 4), and the Lua naming is applied at the output stage, reusing the existing `replace_table` rules.
-
-
 
 ## 2. Technology choice
 
@@ -146,8 +142,6 @@ P16 is a presentation concern. The digger emits C++ types plus structured type f
   checks the schema and uploads the artifacts `docs-digger-api` and `parity-report` (informative,
   `continue-on-error`). The Slate job takes the JSON with `gh run download` (README).
 
-
-
 ## 3. Project layout
 
 ```
@@ -158,8 +152,9 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   build.bat, test.bat     build / build + CTest (clang-cl, Ninja Multi-Config, build/digger)
   dig.bat                 overlunky compile database (build/overlunky) + run the digger on it
   quality.bat             clang-format, Lizard, clang-tidy gate
-  cmake/                  downloads (LLVM pin in LLVMPackage.cmake), zlib/zstd/SQLite builds, overlunky configure, quality checks
+  cmake/                  downloads (LLVM pin in LLVMPackage.cmake), zlib/zstd/SQLite/GoogleTest builds, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
+  config/lua_types.json   Lua names for C++ types the type facts cannot name (P16, DIG-6a)
   schema/                 docs-digger.schema.json: the frozen output format, every field described (DIG-5)
   .github/workflows/      dig.yml: Windows CI that builds, tests, digs overlunky and uploads the JSON (DIG-5)
   src/main.cpp            CLI, merge steps, write output
@@ -184,14 +179,13 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   tests/fixtures/*.cpp    small sources using the real sol2 headers from <overlunky>/src/sol2
   tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
   tests/RunGolden.cmake   runs one fixture and compares; DD_UPDATE_GOLDEN=1 rewrites the golden file
+  tests/unit/*.cpp        GoogleTest unit tests of pure helpers (Lua names), linking docs-digger-lib
   tools/parity.py         loads <overlunky>/docs/parse_source.py results, diffs them with digger JSON (reuses the old parser as the oracle)
   tools/check_schema.py   checks outputs against the schema (standard library only; CTest schema.<name>, CI)
 ```
 
 Expected size: about 1,500 to 2,000 lines of C++ in total. Most of it goes to sol2 pattern
 resolution and callback discovery.
-
-
 
 ## 4. Data model (content, not the final format)
 
@@ -232,12 +226,12 @@ Default, Group, ...}}`.
 - **CallbackSig**: `params[]` (with front/back binder params marked), `returns`, `nil_allowed`,
   `nil_meaning` (for example "treated as false", "original call proceeds"), `origin`
   (`std_function | make_safe_cb | handle_function | direct_call | stored_handle_function | event_dispatch |
-  vtable_hook | doc_comment | unresolved`), `stored_in` (`Record::field`, `in Container` when known),
+vtable_hook | doc_comment | unresolved`), `stored_in` (`Record::field`, `in Container` when known),
   `selector` (enum whose value selects the signature; then the signatures are in `events`), `unresolved` (the
   pattern that stopped the search), `prose`, `conflicts[]` (between dispatch sites, or with the prose comment),
   `source` (the site it was read from).
 - **Enum**: `name`, `doc`, `values[] {name, text, value? (number or string), doc, origin (static |
-  doc_comment | runtime_file)}`, `filled_at_runtime` (code adds keys in a loop); a table only the
+doc_comment | runtime_file)}`, `filled_at_runtime` (code adds keys in a loop); a table only the
   runtime file knows has `origin: runtime_file` and no source.
 - **Event**: `table` (`ON`, `THEME_OVERRIDE`), `name`, `stored_in`, `callback: CallbackSig`, `generic` (the
   key has no site of its own; the generic dispatch's signature), `doc` (of the enum value) (DIG-4).
@@ -245,8 +239,6 @@ Default, Group, ...}}`.
   `name`, `type`, `doc`.
 - **Alias** (`name`, `type`, `doc`), **LibraryCall** (`names[]`, enclosing `function`),
   `global_variables` (names of the documented values on the state; their types are in `values`).
-
-
 
 ## 5. Extraction passes
 
@@ -306,7 +298,7 @@ Found in DIG-2 and handled there (`src/usertypes.cpp`, shared helpers in `src/re
   `MakeParticleMemberAccess<&P::x>()` and `self_return<&T::f>()` without special cases; the
   factory's member template argument documents the result;
 - constructors come either first (`sol::constructors<...>{}`, `sol::no_constructor`) or as `"new",
-  sol::initializers(...)`; listed signatures are matched with declared constructors for names and
+sol::initializers(...)`; listed signatures are matched with declared constructors for names and
   comments;
 - `sol::bases` is an alias of `sol::base_list`, and `sol::base_classes` is a `base_list<>` value;
 - docs the old parser finds by text, rebuilt from the AST: the field a property getter reads
@@ -456,14 +448,14 @@ Found in DIG-4 and handled there (`src/callbacks.cpp` reads the AST, the join ru
   under `if (cb.screen == ON::LOAD)`). Unkeyed sites on a keyed storage are the generic dispatch (screen
   events) and serve the keys without a site of their own (`events[].generic`);
 - events are the keys of a storage whose binding also takes an enum param of the key's type (`set_callback(cb,
-  ON event)`, `CustomTheme:override(THEME_OVERRIDE, function)`): every value of the Lua table of that name gets
+ON event)`, `CustomTheme:override(THEME_OVERRIDE, function)`): every value of the Lua table of that name gets
   an entry (`events`), with the signature of its sites, the generic one, or none (unresolved);
 - the triggering TUs are outside `script/` (`state.cpp`, `level_api.cpp`, `render_api.cpp`): the default
   `--select` now covers all of `src/game_api/` (101 TUs);
 - event prose (C7) is checked only for tables whose docs use the `Params:` convention (`ON`); `THEME_OVERRIDE`
   has none;
 - vtable hooks (C5) come from the `HookableVTable<Self, Cb, Entries...>` variables (`static EntityVTable
-  vt(lua, lua["Entity"], "ENTITY_OVERRIDE")`): the usertype is the key path of the second argument, entries
+vt(lua, lua["Entity"], "ENTITY_OVERRIDE")`): the usertype is the key path of the second argument, entries
   and their `/// NoDoc` come from the written alias, signatures from the registration lambdas in the
   `register_hooks` instantiations (keys joined from the `LiteralString` template arguments). The generic B1
   records of those lambdas (root `lua_type`) are replaced by the usertype members.
@@ -499,8 +491,6 @@ Found in DIG-5 and handled there (`src/groups.cpp`, a step after all TUs):
   executed on `ps.funcs`, since the rest of `generate.py` writes the Markdown files): all 353 old
   functions get the same group (23 groups).
 
-
-
 ## 6. Steps
 
 Work through the steps in order. Check items off (`[x]`) as they are finished. A step is finished
@@ -512,38 +502,38 @@ far: DIG-0, DIG-1, DIG-2, DIG-3, DIG-4, DIG-4b.
 
 - [ ] Builds on Windows (Debug and Release) without warnings.
 - [ ] `ctest` passes. Every pattern newly covered in the step has a fixture in `tests/fixtures/` and
-  a golden file in `tests/expected/`.
+      a golden file in `tests/expected/`.
 - [ ] `quality.bat all` passes (clang-format, Lizard, clang-tidy), with no new suppressions or
-  raised thresholds.
+      raised thresholds.
 - [ ] From DIG-1 on: the `tools/parity.py` report is updated. Nothing the old parser finds is
-  missing, unless it is listed in the report as an accepted difference with a reason.
+      missing, unless it is listed in the report as an accepted difference with a reason.
 - [ ] Running the digger twice on the same input gives byte-identical output.
 - [ ] Discoveries that change the plan (new patterns, rejected approaches, timings) are written into
-  this file.
+      this file.
 
 ### DIG-5. Grouping, finalization, CI (P14)
 
 - [x] `config/groups.json` ported from `generate.py` `func_cats`.
 - [x] Group selection order: `/// Group:` directive, then `config/groups.json`, then the source-file
-  fallback; members grouped by their owner.
+      fallback; members grouped by their owner.
 - [x] `tools/parity.py`: group of every function against `generate.py`.
 - [x] Freeze the JSON schema: document every field (schema file or section in `README.md`) and add a
-  `schema_version`. `schema/docs-digger.schema.json` (JSON Schema 2020-12, every property described,
-  `additionalProperties: false`), `schema_version: 1`; `tools/check_schema.py` checks the golden files
-  (CTest `schema.<name>`) and the CI output.
+      `schema_version`. `schema/docs-digger.schema.json` (JSON Schema 2020-12, every property described,
+      `additionalProperties: false`), `schema_version: 1`; `tools/check_schema.py` checks the golden files
+      (CTest `schema.<name>`) and the CI output.
 - [ ] Windows CI job (`windows-latest`) that configures overlunky, builds and runs the digger and
-  uploads the JSON as an artifact for the existing Slate job. Decide where the job lives
-  (overlunky's `build-docs.yml` or this repository). Written (`.github/workflows/dig.yml`, this
-  repository; see section 2) and its build with the package's clang-cl verified locally; open until
-  the first run on GitHub passes.
+      uploads the JSON as an artifact for the existing Slate job. Decide where the job lives
+      (overlunky's `build-docs.yml` or this repository). Written (`.github/workflows/dig.yml`, this
+      repository; see section 2) and its build with the package's clang-cl verified locally; open until
+      the first run on GitHub passes.
 - [x] `README.md` complete for a new contributor: setup, run, tests, quality gate, schema.
 
 Definition of done:
 
 - [x] Every function gets the same group as in `generate.py`, or the difference is listed with a
-  reason.
+      reason.
 - [x] The parity report covers P1–P15 and has no unexplained gaps. It prints the items it covers
-  (P16 is the output stage's).
+      (P16 is the output stage's).
 - [ ] The CI job passes on a real overlunky checkout and its artifact can be downloaded.
 - [x] The schema document is committed and matches the output.
 
@@ -554,12 +544,39 @@ functions take about 445 KB, enums about 130 KB (ENT_TYPE alone 32 KB). It is ov
 of LuaLS `Lua.workspace.preloadFileSize`, so the VS Code Lua extension skips it unless the user raises
 the setting.
 
-- [ ] Lua naming (P16) as a step after all TUs: port the `replace_table` rules to
-  `config/lua_types.json` and add a `lua` spelling to every TypeInfo in the JSON, so DIG-7 uses the same
-  names. Built from the type facts, not by string replacement: integers to `integer`, floats to
-  `number`, nullable to `T?`, containers to `T[]` / `table<K, V>`, tuples to several returns,
-  `std::function` and CallbackSig to `fun(a: A, ...): R`, `sol::object` to `any`, variadic to `...`;
-  hidden params are dropped. Pure mapping logic gets GoogleTest unit tests.
+Substeps (one commit each): **DIG-6a** Lua names in the JSON (first bullet; schema version 2,
+GoogleTest); **DIG-6b** the emitter, the split, golden `.lua` files and luacheck (bullets 2, 4, 5);
+**DIG-6c** event callback typing, the LuaLS check and the Lua parity report (bullets 3, 6 and the
+definition of done).
+
+- [x] Lua naming (P16) as a step after all TUs: port the `replace_table` rules to
+      `config/lua_types.json` and add a `lua` spelling to every TypeInfo in the JSON, so DIG-7 uses the same
+      names. Built from the type facts, not by string replacement: integers to `integer`, floats to
+      `number`, nullable to `T?`, containers to `T[]` / `table<K, V>`, tuples to several returns,
+      `std::function` and CallbackSig to `fun(a: A, ...): R`, `sol::object` to `any`, variadic to `...`;
+      hidden params are dropped. Pure mapping logic gets GoogleTest unit tests.
+      Done in DIG-6a (`src/lua_names.cpp`, `--lua-types`, schema version 2); found there:
+  - most `replace_table` rules are not needed any more: integer typedefs, strings, containers and
+    `std::`/`sol::` prefixes come from the facts. A record is its usertype's Lua name (looked up by
+    canonical C++ type); a C++ enum, or an integer typedef (`ENT_TYPE`), whose name is a Lua enum table
+    or a kept alias keeps that name, else `integer`. `config/lua_types.json` keeps 14 names the facts
+    can't give (`ImVec2` → `Vec2`, `ENTITY_MASK` → `MASK`, `ZeroIndexArray<T>` instances, a
+    `std::variant`); the only remaining `any` are sol2 results, varargs and doc-only values;
+  - tuples are only split into several values in return lists (DIG-1 already does that); inside a
+    container a tuple is a LuaLS tuple `[A, B]`. `std::function` parameters have no names in the type:
+    `fun(p1: A, p2: B): R`. Text-only types of doc-only entries are converted word by word (C++
+    builtin words in code, overlunky names from the config);
+  - type facts fixed on the way: `std::unique_ptr`, `std::shared_ptr` and `std::reference_wrapper`
+    are classified as what they hold (sol2 pushes the object), and `lua_State*` parameters are hidden
+    (sol2 passes the calling state, like `sol::this_state`); doc-only parameter text drops its default
+    value and becomes omittable (`string version = ""`);
+  - B2 gap found on the way: `ut[sol::base_classes] = sol::bases<...>()` and `ut["new"] =
+    sol::constructors<...>{}` were recorded as members; they now add bases and constructors like the
+    `new_usertype` arguments (CookFire, TextureRenderingInfo; the CookFire accepted difference is gone);
+  - GoogleTest 1.18.0 is pinned with `dd_fetch_archive` (`cmake/GoogleTest.cmake`), not FetchContent:
+    FetchContent keeps its download stamp in `build/`, so deleting `build/` would download again. The
+    digger's sources became the static library `docs-digger-lib`, which the executable and the unit
+    tests (`tests/unit/`, CTest `unit`) link.
 - [ ] `src/emit_lua.cpp` (`--lua-out <dir>`) writes `---@meta` files with LuaLS annotations:
   - globals and global variables as `---@type`;
   - functions with `---@param name type? doc`, `---@return type doc` (nil meaning in the text),
@@ -571,26 +588,26 @@ the setting.
   - enums as `---@enum NAME` tables with their values; aliases as `---@alias`; libraries;
   - `/// NoDoc` items left out.
 - [ ] Event callbacks (`set_callback(cb, ON.X)`, `CustomTheme:override`): decide in the step how to
-  type them so LuaLS shows the per-event signature. Try `---@overload` per event with a literal value
-  type in VS Code; if LuaLS cannot tell enum values apart, keep the generic signature and list the
-  per-event signatures in the doc text.
+      type them so LuaLS shows the per-event signature. Try `---@overload` per event with a literal value
+      type in VS Code; if LuaLS cannot tell enum values apart, keep the generic signature and list the
+      per-event signatures in the doc text.
 - [ ] Split: whole declarations go into files by kind (`spel2.lua` for globals, functions, aliases and
-  libraries; `spel2_types.lua`; `spel2_enums.lua`). A file that would go over the limit
-  (`--lua-max-file-size`, default 480,000 bytes, a margin under 500 KB) continues in `_2`, `_3`, cut at
-  group (types: name) boundaries in a stable order. Each file stands on its own (`---@meta`, no
-  `require`). Expected: 3 to 4 files.
+      libraries; `spel2_types.lua`; `spel2_enums.lua`). A file that would go over the limit
+      (`--lua-max-file-size`, default 480,000 bytes, a margin under 500 KB) continues in `_2`, `_3`, cut at
+      group (types: name) boundaries in a stable order. Each file stands on its own (`---@meta`, no
+      `require`). Expected: 3 to 4 files.
 - [ ] Tests: a golden `.lua` output for the existing fixtures plus one that crosses a small size
-  limit; a CTest that runs `luacheck` (config `tests/.luacheckrc` for definition files) over the golden
-  outputs, skipped with a message when luacheck is not found. If `lua-language-server` is installed,
-  `--check` on the real output in `dig.bat` reports annotation errors (optional, not a CTest).
+      limit; a CTest that runs `luacheck` (config `tests/.luacheckrc` for definition files) over the golden
+      outputs, skipped with a message when luacheck is not found. If `lua-language-server` is installed,
+      `--check` on the real output in `dig.bat` reports annotation errors (optional, not a CTest).
 - [ ] `tools/parity.py`: every class, field, function and enum value declared in the old `spel2.lua`
-  is in the new files, or listed as an accepted difference.
+      is in the new files, or listed as an accepted difference.
 
 Definition of done:
 
 - [ ] Every output file is under the limit, and luacheck reports nothing on the real overlunky output.
 - [ ] In VS Code with the Lua extension at default settings, all files load; hover shows docs and the
-  params of a callback (`set_callback`, `set_pre_damage`) are typed.
+      params of a callback (`set_callback`, `set_pre_damage`) are typed.
 - [ ] The parity report for the Lua files has no unexplained gaps.
 
 ### DIG-7. HTML reference with search
@@ -620,43 +637,43 @@ Steps:
 
 - [ ] Confirm the choice with the overlunky maintainers, since the site replaces the published docs.
 - [ ] Isolation: the whole Starlight project (`package.json`, lockfile, config, components, styles,
-  the redirect script) lives in `src/html/starlight/`, so the generator can later be swapped or made
-  switchable (`src/html/<name>/`). Its only inputs are the digger JSON and `docs/examples/`; nothing
-  outside the directory includes or depends on it, and the C++ build doesn't touch it. Anything a
-  second generator would need too (page grouping, the old-anchor map, the sample symbol list for
-  the checks) is written by the digger or kept as plain data outside the directory, not in Astro code.
+      the redirect script) lives in `src/html/starlight/`, so the generator can later be swapped or made
+      switchable (`src/html/<name>/`). Its only inputs are the digger JSON and `docs/examples/`; nothing
+      outside the directory includes or depends on it, and the C++ build doesn't touch it. Anything a
+      second generator would need too (page grouping, the old-anchor map, the sample symbol list for
+      the checks) is written by the digger or kept as plain data outside the directory, not in Astro code.
 - [ ] `src/html/starlight/` with pinned versions and a lockfile; `site.bat [generator] <json>` (default
-  `starlight`) runs that generator's build (`npm ci` and `astro build`), output under
-  `build/site/<generator>`. Node is a host requirement in `README.md`. Downloads stay under
-  `thirdparty/` as for every other tool: `site.bat` installs the packages into
-  `thirdparty/node-<generator>/` and links `node_modules` there (directory junction, git-ignored). The clang-format, Lizard and
-  clang-tidy gate covers C++ only; `quality.bat` must skip this directory.
+      `starlight`) runs that generator's build (`npm ci` and `astro build`), output under
+      `build/site/<generator>`. Node is a host requirement in `README.md`. Downloads stay under
+      `thirdparty/` as for every other tool: `site.bat` installs the packages into
+      `thirdparty/node-<generator>/` and links `node_modules` there (directory junction, git-ignored). The clang-format, Lizard and
+      clang-tidy gate covers C++ only; `quality.bat` must skip this directory.
 - [ ] Pages: home (ported text of `_home.md`), global variables, one page per function group, one per
-  usertype (grouped in the sidebar the way `generate.py` groups types), enums, events (`ON`,
-  `THEME_OVERRIDE`, each with its callback signature), casting, aliases. A function shows its Lua
-  signature (DIG-6 names), params with type, optional and callback signature, returns with the nil
-  meaning, deprecated and doc-only marks, a link to the source line on GitHub, and its example from
-  `docs/examples/`.
+      usertype (grouped in the sidebar the way `generate.py` groups types), enums, events (`ON`,
+      `THEME_OVERRIDE`, each with its callback signature), casting, aliases. A function shows its Lua
+      signature (DIG-6 names), params with type, optional and callback signature, returns with the nil
+      meaning, deprecated and doc-only marks, a link to the source line on GitHub, and its example from
+      `docs/examples/`.
 - [ ] Search: symbol names weigh more than prose (`data-pagefind-weight` / meta), so typing a function,
-  type or enum value name finds it first; enum values (thousands in ENT_TYPE) are searchable.
+      type or enum value name finds it first; enum values (thousands in ENT_TYPE) are searchable.
 - [ ] Links: every type name in a signature links to its page; usertypes show base classes and derived
-  types.
+      types.
 - [ ] Old links: the old single-page anchors (`index.html#spawn_entity`) still work through a small
-  redirect script that maps anchor ids to the new pages.
+      redirect script that maps anchor ids to the new pages.
 - [ ] CI: a site job takes the JSON artifact of the DIG-5 Windows job, builds the site and deploys it
-  (GitHub Pages). Replacing the Slate job is decided together with the maintainers.
+      (GitHub Pages). Replacing the Slate job is decided together with the maintainers.
 - [ ] `tools/parity.py`: every anchor of the old `index.html` maps to a page of the new site, or is
-  listed as an accepted difference.
+      listed as an accepted difference.
+- [ ] keep the grouping of functions used in the old doc generator, and everything reasonably should be placed in
+      those categories, or add missing catch-all category if necessary
 
 Definition of done:
 
 - [ ] The site builds without warnings, and a link check finds no broken internal links.
 - [ ] For a sample list of symbols (functions, members, enum values, events), search shows the symbol
-  as the first result.
+      as the first result.
 - [ ] Old anchor links from the sample list land on the right item.
 - [ ] Building twice from the same JSON gives the same pages.
-
-
 
 ## 7. Risks and open questions
 

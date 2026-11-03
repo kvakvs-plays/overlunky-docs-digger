@@ -92,11 +92,16 @@ namespace dd {
             return block;
         }
 
-        // `optional<int> depth` → name `depth`, type `optional<int>`; a lone type keeps an empty name.
+        // `optional<int> depth` → name `depth`, type `optional<int>`; a lone type keeps an empty name. A default
+        // value (`string version = ""`) is dropped and makes the parameter omittable.
         Param paramFromText(llvm::StringRef text) {
+            Param param;
+            if (const size_t equals = text.find('='); equals != llvm::StringRef::npos) {
+                text = text.take_front(equals).trim();
+                param.omittable = true;
+            }
             const size_t nameStart =
                 text.find_last_not_of("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_");
-            Param param;
             if (nameStart == llvm::StringRef::npos || nameStart + 1 == text.size()) {
                 param.type.spelling = text.str();
                 return param;

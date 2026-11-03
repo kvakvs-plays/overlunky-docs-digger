@@ -1,0 +1,18 @@
+{
+  "names": {
+    "BucketItem": "any",
+    "EmittedParticlesInfo": "Particle[]",
+    "ENTITY_MASK": "MASK",
+    "ImVec2": "Vec2",
+    "in_port_t": "integer",
+    "sol::protected_function_result": "any",
+    "std::variant<bool, long long, float, std::basic_string<char>>": "boolean|integer|number|string",
+    "UdpServer_lua": "UdpServer",
+    "ZeroIndexArray<bool>": "boolean[]",
+    "ZeroIndexArray<ControllerButton>": "ControllerButton[]",
+    "ZeroIndexArray<ControllerInput>": "ControllerInput[]",
+    "ZeroIndexArray<float>": "number[]",
+    "ZeroIndexArray<KeyboardKey>": "KeyboardKey[]",
+    "ZeroIndexArray<unsigned int>": "integer[]"
+  }
+}

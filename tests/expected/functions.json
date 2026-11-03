@@ -10,6 +10,7 @@
       "type": {
         "canonical": "unsigned int",
         "kind": "int",
+        "lua": "integer",
         "spelling": "uint32_t"
       }
     }
@@ -33,6 +34,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             },
@@ -46,6 +48,7 @@
                     "name": "",
                     "type": {
                       "kind": "int",
+                      "lua": "integer",
                       "spelling": "int"
                     }
                   },
@@ -54,6 +57,7 @@
                     "type": {
                       "canonical": "std::basic_string<char>",
                       "kind": "string",
+                      "lua": "string",
                       "spelling": "std::string"
                     }
                   }
@@ -61,6 +65,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ]
@@ -71,18 +76,22 @@
                 "inner": [
                   {
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "int"
                   },
                   {
                     "canonical": "std::basic_string<char>",
                     "kind": "string",
+                    "lua": "string",
                     "spelling": "std::string"
                   }
                 ],
                 "kind": "function",
+                "lua": "fun(p1: integer, p2: string): boolean",
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -94,6 +103,7 @@
             {
               "canonical": "sol::basic_object<sol::basic_reference<false>>",
               "kind": "lua_object",
+              "lua": "any",
               "nullable": true,
               "spelling": "sol::object"
             }
@@ -121,6 +131,7 @@
                   {
                     "canonical": "std::basic_string<char>",
                     "kind": "string",
+                    "lua": "string",
                     "spelling": "std::string"
                   },
                   {
@@ -129,14 +140,17 @@
                       {
                         "canonical": "unsigned int",
                         "kind": "int",
+                        "lua": "ENT_TYPE",
                         "spelling": "ENT_TYPE"
                       }
                     ],
                     "kind": "container",
+                    "lua": "ENT_TYPE[]",
                     "spelling": "std::vector<ENT_TYPE>"
                   }
                 ],
                 "kind": "container",
+                "lua": "table<string, ENT_TYPE[]>",
                 "spelling": "std::map<std::string, std::vector<ENT_TYPE>>"
               }
             }
@@ -148,10 +162,12 @@
                 {
                   "canonical": "std::basic_string<char>",
                   "kind": "string",
+                  "lua": "string",
                   "spelling": "std::string"
                 }
               ],
               "kind": "container",
+              "lua": "string[]",
               "spelling": "std::vector<std::string>"
             }
           ]
@@ -174,6 +190,7 @@
               "name": "a",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -181,6 +198,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -204,6 +222,7 @@
               "type": {
                 "canonical": "unsigned int",
                 "kind": "int",
+                "lua": "ENT_TYPE",
                 "spelling": "ENT_TYPE"
               }
             },
@@ -211,6 +230,7 @@
               "name": "layer",
               "type": {
                 "kind": "enum",
+                "lua": "integer",
                 "spelling": "LAYER"
               }
             }
@@ -222,10 +242,12 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "uint32_t"
                 }
               ],
               "kind": "container",
+              "lua": "integer[]",
               "spelling": "std::vector<uint32_t>"
             }
           ]
@@ -241,10 +263,12 @@
                   {
                     "canonical": "unsigned int",
                     "kind": "int",
+                    "lua": "ENT_TYPE",
                     "spelling": "ENT_TYPE"
                   }
                 ],
                 "kind": "container",
+                "lua": "ENT_TYPE[]",
                 "spelling": "std::vector<ENT_TYPE>"
               }
             },
@@ -252,6 +276,7 @@
               "name": "layer",
               "type": {
                 "kind": "enum",
+                "lua": "integer",
                 "spelling": "LAYER"
               }
             }
@@ -263,10 +288,12 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "uint32_t"
                 }
               ],
               "kind": "container",
+              "lua": "integer[]",
               "spelling": "std::vector<uint32_t>"
             }
           ]
@@ -290,6 +317,7 @@
               "type": {
                 "hidden": true,
                 "kind": "lua_object",
+                "lua": "any",
                 "spelling": "sol::this_state"
               }
             },
@@ -297,6 +325,7 @@
               "name": "uid",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -307,10 +336,12 @@
                 "inner": [
                   {
                     "kind": "record",
+                    "lua": "Entity",
                     "spelling": "Entity"
                   }
                 ],
                 "kind": "pointer",
+                "lua": "Entity?",
                 "nullable": true,
                 "spelling": "Entity *"
               }
@@ -319,6 +350,7 @@
           "returns": [
             {
               "kind": "bool",
+              "lua": "boolean",
               "spelling": "bool"
             }
           ]
@@ -341,6 +373,7 @@
               "name": "uid",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -351,10 +384,12 @@
                 "inner": [
                   {
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "int"
                   }
                 ],
                 "kind": "optional",
+                "lua": "integer?",
                 "nullable": true,
                 "spelling": "std::optional<int>"
               }
@@ -368,10 +403,12 @@
                   {
                     "canonical": "std::basic_string<char>",
                     "kind": "string",
+                    "lua": "string",
                     "spelling": "std::string"
                   }
                 ],
                 "kind": "optional",
+                "lua": "string?",
                 "nullable": true,
                 "spelling": "sol::optional<std::string>"
               }
@@ -397,6 +434,7 @@
               "name": "uid",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -408,15 +446,18 @@
                   "inner": [
                     {
                       "kind": "record",
+                      "lua": "Entity",
                       "spelling": "Entity"
                     }
                   ],
                   "kind": "pointer",
+                  "lua": "Entity?",
                   "nullable": true,
                   "spelling": "Entity *"
                 }
               ],
               "kind": "optional",
+              "lua": "Entity?",
               "nullable": true,
               "spelling": "std::optional<Entity *>"
             }
@@ -439,10 +480,12 @@
           "returns": [
             {
               "kind": "bool",
+              "lua": "boolean",
               "spelling": "bool"
             },
             {
               "kind": "enum",
+              "lua": "integer",
               "spelling": "LAYER"
             }
           ]
@@ -467,10 +510,12 @@
                 "inner": [
                   {
                     "kind": "record",
+                    "lua": "Entity",
                     "spelling": "Entity"
                   }
                 ],
                 "kind": "pointer",
+                "lua": "Entity?",
                 "nullable": true,
                 "spelling": "Entity *"
               }
@@ -480,6 +525,7 @@
               "type": {
                 "canonical": "unsigned int",
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "uint32_t"
               }
             }
@@ -487,6 +533,7 @@
           "returns": [
             {
               "kind": "bool",
+              "lua": "boolean",
               "spelling": "bool"
             }
           ]
@@ -520,6 +567,7 @@
               "name": "uid",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -527,6 +575,7 @@
               "name": "value",
               "type": {
                 "kind": "bool",
+                "lua": "boolean",
                 "spelling": "bool"
               }
             }
@@ -534,6 +583,7 @@
           "returns": [
             {
               "kind": "bool",
+              "lua": "boolean",
               "spelling": "bool"
             }
           ]
@@ -546,6 +596,7 @@
               "type": {
                 "canonical": "std::basic_string<char>",
                 "kind": "string",
+                "lua": "string",
                 "spelling": "std::string"
               }
             }
@@ -553,6 +604,7 @@
           "returns": [
             {
               "kind": "bool",
+              "lua": "boolean",
               "spelling": "bool"
             }
           ]
@@ -576,6 +628,7 @@
               "type": {
                 "canonical": "unsigned int",
                 "kind": "int",
+                "lua": "ENT_TYPE",
                 "spelling": "ENT_TYPE"
               }
             },
@@ -583,6 +636,7 @@
               "name": "x",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -590,6 +644,7 @@
               "name": "y",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -597,6 +652,7 @@
               "name": "layer",
               "type": {
                 "kind": "enum",
+                "lua": "integer",
                 "spelling": "LAYER"
               }
             }
@@ -604,6 +660,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -627,6 +684,7 @@
               "type": {
                 "canonical": "unsigned int",
                 "kind": "int",
+                "lua": "ENT_TYPE",
                 "spelling": "ENT_TYPE"
               }
             },
@@ -634,6 +692,7 @@
               "name": "x",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -641,6 +700,7 @@
               "name": "y",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -648,6 +708,7 @@
               "name": "layer",
               "type": {
                 "kind": "enum",
+                "lua": "integer",
                 "spelling": "LAYER"
               }
             }
@@ -655,6 +716,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -681,6 +743,7 @@
               "type": {
                 "canonical": "unsigned int",
                 "kind": "int",
+                "lua": "ENT_TYPE",
                 "spelling": "ENT_TYPE"
               }
             },
@@ -688,6 +751,7 @@
               "name": "x",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -695,6 +759,7 @@
               "name": "y",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -702,6 +767,7 @@
               "name": "layer",
               "type": {
                 "kind": "enum",
+                "lua": "integer",
                 "spelling": "LAYER"
               }
             }
@@ -709,6 +775,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -731,6 +798,7 @@
               "name": "a",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -738,6 +806,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -749,6 +818,7 @@
               "name": "a",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -756,6 +826,7 @@
               "name": "b",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -763,6 +834,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -784,15 +856,18 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             },
             {
               "kind": "float",
+              "lua": "number",
               "spelling": "float"
             },
             {
               "canonical": "std::basic_string<char>",
               "kind": "string",
+              "lua": "string",
               "spelling": "std::string"
             }
           ]
@@ -815,6 +890,7 @@
               "name": "args",
               "type": {
                 "kind": "variadic",
+                "lua": "any",
                 "spelling": "sol::variadic_args"
               }
             }
@@ -822,6 +898,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -844,6 +921,7 @@
               "name": "value",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             }
@@ -851,6 +929,7 @@
           "returns": [
             {
               "kind": "float",
+              "lua": "number",
               "spelling": "float"
             }
           ]
@@ -868,7 +947,7 @@
   ],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 1,
+  "schema_version": 2,
   "script_callbacks": [],
   "usertypes": [],
   "values": [
@@ -882,6 +961,7 @@
       "type": {
         "canonical": "sol::basic_table_core<false, sol::basic_reference<false>>",
         "kind": "lua_object",
+        "lua": "table",
         "spelling": "table"
       }
     },
@@ -895,6 +975,7 @@
       "type": {
         "canonical": "char[18]",
         "kind": "string",
+        "lua": "string",
         "spelling": "const char[18]"
       }
     },
@@ -907,6 +988,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int"
       }
     },
@@ -920,6 +1002,7 @@
       "type": {
         "canonical": "sol::lua_nil_t",
         "kind": "nil",
+        "lua": "nil",
         "nullable": true,
         "spelling": "const lua_nil_t"
       }
@@ -934,6 +1017,7 @@
       "type": {
         "canonical": "sol::lua_nil_t",
         "kind": "nil",
+        "lua": "nil",
         "nullable": true,
         "spelling": "const lua_nil_t"
       }
@@ -948,6 +1032,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int Entity::*"
       }
     }

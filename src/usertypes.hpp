@@ -19,6 +19,20 @@ namespace dd {
     // The key Extraction::usertypes uses for the C++ type T.
     std::string usertypeKey(clang::QualType type);
 
+    // A key and the value bound to it: a new_usertype argument pair, or `ut[key] = value`.
+    struct BoundPair {
+        // The key expression; null when it is not known.
+        const clang::Expr* key = nullptr;
+        // The value expression.
+        const clang::Expr* value = nullptr;
+    };
+
+    // Handles a `key, value` pair that is no member: `sol::base_classes, sol::bases<...>()` adds bases, a constructor
+    // list, sol::initializers or sol::no_constructor adds constructors. Returns false for anything else. Used for
+    // new_usertype arguments and for `ut[key] = value`.
+    bool addBasesOrConstructors(Usertype& usertype, const BoundPair& pair, const clang::CXXRecordDecl* record,
+                                const SourceRoot& root, const clang::ASTContext& context);
+
     // Describes the member value binds; record (T, may be null) tells which first parameters are the object.
     Member describeMember(const clang::Expr* value, const clang::CXXRecordDecl* record, const SourceRoot& root,
                           const clang::ASTContext& context);

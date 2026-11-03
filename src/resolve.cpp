@@ -159,6 +159,9 @@ namespace dd {
         const clang::Expr* object = target;
         while (const clang::CXXOperatorCallExpr* subscript = asSubscript(object)) {
             path.keys.push_back(keyText(subscript->getArg(1), context));
+            if (path.lastKey == nullptr) {
+                path.lastKey = subscript->getArg(1);
+            }
             object = subscript->getArg(0)->IgnoreImplicit();
         }
         std::ranges::reverse(path.keys);

@@ -5,7 +5,7 @@
   "functions": [],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 1,
+  "schema_version": 2,
   "script_callbacks": [],
   "usertypes": [
     {
@@ -24,10 +24,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -37,6 +39,7 @@
                   "type": {
                     "canonical": "unsigned int",
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "std::uint32_t"
                   }
                 }
@@ -64,10 +67,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -84,10 +89,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -104,6 +111,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -112,6 +120,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -140,10 +149,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -160,10 +171,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -172,6 +185,7 @@
                         "name": "destroy_corpse",
                         "type": {
                           "kind": "bool",
+                          "lua": "boolean",
                           "spelling": "bool"
                         }
                       },
@@ -181,10 +195,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -201,6 +217,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -209,6 +226,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -238,10 +256,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -258,10 +278,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -278,6 +300,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -286,6 +309,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -311,10 +335,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -331,10 +357,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -343,6 +371,7 @@
                         "name": "",
                         "type": {
                           "kind": "float",
+                          "lua": "number",
                           "spelling": "float"
                         }
                       },
@@ -351,6 +380,7 @@
                         "name": "",
                         "type": {
                           "kind": "record",
+                          "lua": "RenderContext",
                           "spelling": "RenderContext"
                         }
                       }
@@ -366,6 +396,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -374,6 +405,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -399,10 +431,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -419,10 +453,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -431,6 +467,7 @@
                     "returns": [
                       {
                         "kind": "bool",
+                        "lua": "boolean",
                         "spelling": "bool"
                       }
                     ],
@@ -444,6 +481,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -452,6 +490,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -480,10 +519,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -500,10 +541,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -512,6 +555,7 @@
                         "name": "destroy_corpse",
                         "type": {
                           "kind": "bool",
+                          "lua": "boolean",
                           "spelling": "bool"
                         }
                       },
@@ -521,10 +565,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -533,6 +579,7 @@
                     "returns": [
                       {
                         "kind": "bool",
+                        "lua": "boolean",
                         "spelling": "bool"
                       }
                     ],
@@ -546,6 +593,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -554,6 +602,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -583,10 +632,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -603,10 +654,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -617,10 +670,12 @@
                         "inner": [
                           {
                             "kind": "bool",
+                            "lua": "boolean",
                             "spelling": "bool"
                           }
                         ],
                         "kind": "optional",
+                        "lua": "boolean?",
                         "nullable": true,
                         "spelling": "std::optional<bool>"
                       }
@@ -635,6 +690,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -643,6 +699,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -668,10 +725,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -688,10 +747,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -700,6 +761,7 @@
                         "name": "",
                         "type": {
                           "kind": "float",
+                          "lua": "number",
                           "spelling": "float"
                         }
                       },
@@ -708,6 +770,7 @@
                         "name": "",
                         "type": {
                           "kind": "record",
+                          "lua": "RenderContext",
                           "spelling": "RenderContext"
                         }
                       }
@@ -715,6 +778,7 @@
                     "returns": [
                       {
                         "kind": "bool",
+                        "lua": "boolean",
                         "spelling": "bool"
                       }
                     ],
@@ -728,6 +792,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -736,6 +801,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -758,6 +824,7 @@
           },
           "type": {
             "kind": "int",
+            "lua": "integer",
             "spelling": "int"
           }
         }
@@ -788,10 +855,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -801,6 +870,7 @@
                   "type": {
                     "canonical": "unsigned int",
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "std::uint32_t"
                   }
                 }
@@ -831,10 +901,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -851,10 +923,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -871,6 +945,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -879,6 +954,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],
@@ -907,10 +983,12 @@
                     "inner": [
                       {
                         "kind": "record",
+                        "lua": "Entity",
                         "spelling": "Entity"
                       }
                     ],
                     "kind": "pointer",
+                    "lua": "Entity?",
                     "nullable": true,
                     "spelling": "Entity *"
                   }
@@ -927,10 +1005,12 @@
                           "inner": [
                             {
                               "kind": "record",
+                              "lua": "Entity",
                               "spelling": "Entity"
                             }
                           ],
                           "kind": "pointer",
+                          "lua": "Entity?",
                           "nullable": true,
                           "spelling": "Entity *"
                         }
@@ -941,10 +1021,12 @@
                         "inner": [
                           {
                             "kind": "int",
+                            "lua": "integer",
                             "spelling": "unsigned char"
                           }
                         ],
                         "kind": "optional",
+                        "lua": "integer?",
                         "nullable": true,
                         "spelling": "std::optional<unsigned char>"
                       }
@@ -959,6 +1041,7 @@
                   "type": {
                     "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                     "kind": "function",
+                    "lua": "function",
                     "spelling": "sol::function"
                   }
                 }
@@ -967,6 +1050,7 @@
                 {
                   "canonical": "unsigned int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "std::uint32_t"
                 }
               ],

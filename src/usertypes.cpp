@@ -269,14 +269,7 @@ namespace dd {
         // Adds one `key, value` argument pair of new_usertype: bases, constructors, or a member.
         void addPair(Usertype& usertype, const clang::Expr* key, const clang::Expr* value,
                      const clang::CXXRecordDecl* record, const SourceRoot& root, const clang::ASTContext& context) {
-            // sol::base_classes is a `bases<>` value (an alias of sol::base_list); the value after it lists the bases.
-            if (templateName(key->getType()) == "sol::base_list" && templateTypeArguments(key->getType()).empty()) {
-                for (const clang::QualType base : templateTypeArguments(definitionOf(value).expr->getType())) {
-                    usertype.bases.push_back(typeName(base, context));
-                }
-                return;
-            }
-            if (addConstructors(usertype, value, record, root, context)) {
+            if (addBasesOrConstructors(usertype, {key, value}, record, root, context)) {
                 return;
             }
             const UsertypeKey name = keyOf(key);
@@ -396,6 +389,20 @@ namespace dd {
         policy.SuppressTagKeyword = true;
         policy.Bool = true;
         return type.getNonReferenceType().getCanonicalType().getUnqualifiedType().getAsString(policy);
+    }
+
+    bool addBasesOrConstructors(Usertype& usertype, const BoundPair& pair, const clang::CXXRecordDecl* record,
+                                const SourceRoot& root, const clang::ASTContext& context) {
+        const auto [key, value] = pair;
+        // sol::base_classes is a `bases<>` value (an alias of sol::base_list); the value after it lists the bases.
+        if (key != nullptr && templateName(key->getType()) == "sol::base_list" &&
+            templateTypeArguments(key->getType()).empty()) {
+            for (const clang::QualType base : templateTypeArguments(definitionOf(value).expr->getType())) {
+                usertype.bases.push_back(typeName(base, context));
+            }
+            return true;
+        }
+        return addConstructors(usertype, value, record, root, context);
     }
 
     Member describeMember(const clang::Expr* value, const clang::CXXRecordDecl* record, const SourceRoot& root,

@@ -40,7 +40,8 @@ endif()
 set(OVERLUNKY_ROOT "${DD_DEFAULT_OVERLUNKY_ROOT}" CACHE PATH "overlunky source root")
 
 # --- docs-digger ------------------------------------------------------------------------------------------------
-add_executable(docs-digger
+# Everything but main(): the executable and the unit tests link it.
+add_library(docs-digger-lib STATIC
   src/bindings.cpp
   src/bindings.hpp
   src/cache.cpp
@@ -54,7 +55,8 @@ add_executable(docs-digger
   src/comments.hpp
   src/groups.cpp
   src/groups.hpp
-  src/main.cpp
+  src/lua_names.cpp
+  src/lua_names.hpp
   src/merge.cpp
   src/merge.hpp
   src/model.cpp
@@ -69,21 +71,33 @@ add_executable(docs-digger
   src/types.hpp
   src/usertypes.cpp
   src/usertypes.hpp)
-target_include_directories(docs-digger SYSTEM PRIVATE ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+target_include_directories(docs-digger-lib SYSTEM PUBLIC ${LLVM_INCLUDE_DIRS} ${CLANG_INCLUDE_DIRS})
+target_include_directories(docs-digger-lib PUBLIC src)
 separate_arguments(LLVM_DEFINITIONS_LIST NATIVE_COMMAND "${LLVM_DEFINITIONS}")
-target_compile_definitions(docs-digger PRIVATE ${LLVM_DEFINITIONS_LIST}
+target_compile_definitions(docs-digger-lib PUBLIC ${LLVM_DEFINITIONS_LIST} PRIVATE
   # Clang's builtin headers (stddef.h, intrinsics) for the same version as the linked libraries.
   "DOCS_DIGGER_RESOURCE_DIR=\"${LLVM_LIBRARY_DIR}/clang/${LLVM_VERSION_MAJOR}\"")
-target_link_libraries(docs-digger PRIVATE clangTooling clangASTMatchers clangFrontend clangAST clangBasic dd_sqlite)
-# Match the LLVM libraries: no RTTI (classes derive from LLVM's), static runtime in every configuration because
-# the package is Release-only (a Debug runtime or debug iterators would not link).
-set_target_properties(docs-digger PROPERTIES MSVC_RUNTIME_LIBRARY MultiThreaded)
+target_link_libraries(docs-digger-lib PUBLIC clangTooling clangASTMatchers clangFrontend clangAST clangBasic dd_sqlite)
+
+add_executable(docs-digger src/main.cpp)
+target_link_libraries(docs-digger PRIVATE docs-digger-lib)
+
+# Compiler settings of everything linked with the LLVM libraries (also the unit tests).
+function(dd_llvm_target_settings target)
+  # Match the LLVM libraries: no RTTI (classes derive from LLVM's), static runtime in every configuration because
+  # the package is Release-only (a Debug runtime or debug iterators would not link).
+  set_target_properties(${target} PROPERTIES MSVC_RUNTIME_LIBRARY MultiThreaded)
+  if(MSVC)
+    target_compile_options(${target} PRIVATE /GR- /W4 /WX)
+  else()
+    target_compile_options(${target} PRIVATE -fno-rtti -Wall -Wextra -Werror)
+  endif()
+endfunction()
+dd_llvm_target_settings(docs-digger-lib)
+dd_llvm_target_settings(docs-digger)
 if(MSVC)
-  target_compile_options(docs-digger PRIVATE /GR- /W4 /WX)
   # Deep template instantiation (sol2) overflows the 1 MB default stack; LLVM links its own tools the same way.
   target_link_options(docs-digger PRIVATE /STACK:10000000)
-else()
-  target_compile_options(docs-digger PRIVATE -fno-rtti -Wall -Wextra -Werror)
 endif()
 
 # --- Tests ------------------------------------------------------------------------------------------------------

@@ -5,7 +5,7 @@
   "functions": [],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 1,
+  "schema_version": 2,
   "script_callbacks": [],
   "usertypes": [
     {
@@ -19,6 +19,7 @@
           "returns": [
             {
               "kind": "record",
+              "lua": "Color",
               "spelling": "Color"
             }
           ]
@@ -33,6 +34,7 @@
               "name": "r",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -40,6 +42,7 @@
               "name": "g",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -47,6 +50,7 @@
               "name": "b",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             },
@@ -54,6 +58,7 @@
               "name": "a",
               "type": {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             }
@@ -61,6 +66,7 @@
           "returns": [
             {
               "kind": "record",
+              "lua": "Color",
               "spelling": "Color"
             }
           ]
@@ -87,6 +93,7 @@
                   "type": {
                     "canonical": "Color",
                     "kind": "record",
+                    "lua": "Color",
                     "spelling": "const Color &"
                   }
                 }
@@ -94,6 +101,7 @@
               "returns": [
                 {
                   "kind": "bool",
+                  "lua": "boolean",
                   "spelling": "bool"
                 }
               ],
@@ -121,6 +129,7 @@
                   "type": {
                     "canonical": "std::basic_string<char>",
                     "kind": "string",
+                    "lua": "string",
                     "spelling": "std::string"
                   }
                 }
@@ -128,6 +137,7 @@
               "returns": [
                 {
                   "kind": "record",
+                  "lua": "Color",
                   "spelling": "Color"
                 }
               ]
@@ -152,6 +162,7 @@
           },
           "type": {
             "kind": "float",
+            "lua": "number",
             "spelling": "float"
           }
         },
@@ -168,6 +179,7 @@
           },
           "type": {
             "kind": "float",
+            "lua": "number",
             "spelling": "float"
           }
         },
@@ -184,6 +196,7 @@
           },
           "type": {
             "kind": "float",
+            "lua": "number",
             "spelling": "float"
           }
         },
@@ -197,6 +210,7 @@
               "returns": [
                 {
                   "kind": "record",
+                  "lua": "Color",
                   "spelling": "Color"
                 }
               ]
@@ -237,6 +251,7 @@
                   "type": {
                     "canonical": "Entity",
                     "kind": "record",
+                    "lua": "Entity",
                     "spelling": "Entity &"
                   }
                 }
@@ -246,10 +261,12 @@
                   "inner": [
                     {
                       "kind": "record",
+                      "lua": "Movable",
                       "spelling": "Movable"
                     }
                   ],
                   "kind": "pointer",
+                  "lua": "Movable?",
                   "nullable": true,
                   "spelling": "Movable *"
                 }
@@ -273,6 +290,7 @@
               "returns": [
                 {
                   "kind": "float",
+                  "lua": "number",
                   "spelling": "float"
                 }
               ],
@@ -286,6 +304,7 @@
                   "type": {
                     "canonical": "Entity",
                     "kind": "record",
+                    "lua": "Entity",
                     "spelling": "Entity &"
                   }
                 },
@@ -294,6 +313,7 @@
                   "type": {
                     "canonical": "Entity",
                     "kind": "record",
+                    "lua": "Entity",
                     "spelling": "Entity &"
                   }
                 }
@@ -301,6 +321,7 @@
               "returns": [
                 {
                   "kind": "float",
+                  "lua": "number",
                   "spelling": "float"
                 }
               ],
@@ -327,6 +348,7 @@
           "type": {
             "canonical": "unsigned int",
             "kind": "int",
+            "lua": "integer",
             "spelling": "uint32_t"
           }
         },
@@ -344,6 +366,7 @@
           "type": {
             "canonical": "unsigned short",
             "kind": "int",
+            "lua": "integer",
             "spelling": "uint16_t"
           }
         },
@@ -361,6 +384,7 @@
                   "name": "dx",
                   "type": {
                     "kind": "float",
+                    "lua": "number",
                     "spelling": "float"
                   }
                 },
@@ -368,6 +392,7 @@
                   "name": "dy",
                   "type": {
                     "kind": "float",
+                    "lua": "number",
                     "spelling": "float"
                   }
                 }
@@ -396,6 +421,7 @@
           "type": {
             "canonical": "int",
             "kind": "int",
+            "lua": "integer",
             "spelling": "int32_t"
           }
         }
@@ -426,6 +452,7 @@
                   "type": {
                     "canonical": "Items",
                     "kind": "record",
+                    "lua": "Items",
                     "spelling": "Items &"
                   }
                 }
@@ -433,6 +460,7 @@
               "returns": [
                 {
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "int"
                 }
               ],
@@ -457,6 +485,7 @@
                 "type": {
                   "canonical": "Items",
                   "kind": "record",
+                  "lua": "Items",
                   "spelling": "Items &"
                 }
               }
@@ -464,6 +493,7 @@
             "returns": [
               {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             ],
@@ -478,6 +508,7 @@
           },
           "type": {
             "kind": "int",
+            "lua": "integer",
             "spelling": "int"
           }
         },
@@ -494,6 +525,7 @@
             "returns": [
               {
                 "kind": "bool",
+                "lua": "boolean",
                 "spelling": "bool"
               }
             ],
@@ -509,6 +541,7 @@
           },
           "type": {
             "kind": "bool",
+            "lua": "boolean",
             "spelling": "bool"
           }
         },
@@ -527,6 +560,7 @@
                   "type": {
                     "canonical": "Items",
                     "kind": "record",
+                    "lua": "Items",
                     "spelling": "Items &"
                   }
                 }
@@ -534,6 +568,7 @@
               "returns": [
                 {
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "int"
                 }
               ],
@@ -561,6 +596,7 @@
                   "type": {
                     "canonical": "Items",
                     "kind": "record",
+                    "lua": "Items",
                     "spelling": "Items &"
                   }
                 }
@@ -568,6 +604,7 @@
               "returns": [
                 {
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "int"
                 }
               ],
@@ -603,6 +640,7 @@
                 "type": {
                   "canonical": "Movable",
                   "kind": "record",
+                  "lua": "Movable",
                   "spelling": "Movable &"
                 }
               }
@@ -610,6 +648,7 @@
             "returns": [
               {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             ],
@@ -624,6 +663,7 @@
           },
           "type": {
             "kind": "float",
+            "lua": "number",
             "spelling": "float"
           }
         },
@@ -640,6 +680,7 @@
                   "type": {
                     "canonical": "Movable",
                     "kind": "record",
+                    "lua": "Movable",
                     "spelling": "Movable &"
                   }
                 }
@@ -648,6 +689,7 @@
                 {
                   "canonical": "int",
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "int32_t"
                 }
               ],
@@ -669,6 +711,7 @@
                 "type": {
                   "canonical": "Entity",
                   "kind": "record",
+                  "lua": "Entity",
                   "spelling": "Entity &"
                 }
               }
@@ -678,10 +721,12 @@
                 "inner": [
                   {
                     "kind": "record",
+                    "lua": "Entity",
                     "spelling": "Entity"
                   }
                 ],
                 "kind": "pointer",
+                "lua": "Entity?",
                 "nullable": true,
                 "spelling": "Entity *"
               }
@@ -698,6 +743,7 @@
                 "type": {
                   "canonical": "Entity",
                   "kind": "record",
+                  "lua": "Entity",
                   "spelling": "Entity &"
                 }
               },
@@ -708,10 +754,12 @@
                   "inner": [
                     {
                       "kind": "record",
+                      "lua": "Entity",
                       "spelling": "Entity"
                     }
                   ],
                   "kind": "pointer",
+                  "lua": "Entity?",
                   "nullable": true,
                   "spelling": "Entity *"
                 }
@@ -729,10 +777,12 @@
             "inner": [
               {
                 "kind": "record",
+                "lua": "Entity",
                 "spelling": "Entity"
               }
             ],
             "kind": "pointer",
+            "lua": "Entity?",
             "nullable": true,
             "spelling": "Entity *"
           }
@@ -747,6 +797,7 @@
           },
           "type": {
             "kind": "float",
+            "lua": "number",
             "spelling": "float"
           }
         }
@@ -768,6 +819,7 @@
               "type": {
                 "canonical": "Particle",
                 "kind": "record",
+                "lua": "Particle",
                 "spelling": "Particle &"
               }
             }
@@ -789,6 +841,7 @@
                 "type": {
                   "canonical": "Particle",
                   "kind": "record",
+                  "lua": "Particle",
                   "spelling": "const Particle &"
                 }
               }
@@ -796,6 +849,7 @@
             "returns": [
               {
                 "kind": "float",
+                "lua": "number",
                 "spelling": "float"
               }
             ],
@@ -811,6 +865,7 @@
                 "type": {
                   "canonical": "Particle",
                   "kind": "record",
+                  "lua": "Particle",
                   "spelling": "Particle &"
                 }
               },
@@ -818,6 +873,7 @@
                 "name": "v",
                 "type": {
                   "kind": "float",
+                  "lua": "number",
                   "spelling": "float"
                 }
               }
@@ -832,6 +888,7 @@
           },
           "type": {
             "kind": "float",
+            "lua": "number",
             "spelling": "float"
           }
         }
@@ -841,6 +898,72 @@
         "column": 5,
         "file": "usertypes.cpp",
         "line": 139
+      }
+    },
+    {
+      "bases": [
+        "Entity",
+        "Movable"
+      ],
+      "constructors": [
+        {
+          "cpp": "Torch::Torch",
+          "params": [],
+          "returns": [
+            {
+              "kind": "record",
+              "lua": "Torch",
+              "spelling": "Torch"
+            }
+          ]
+        },
+        {
+          "cpp": "Torch::Torch",
+          "doc": [
+            "Copies a torch."
+          ],
+          "params": [
+            {
+              "name": "other",
+              "type": {
+                "canonical": "Torch",
+                "kind": "record",
+                "lua": "Torch",
+                "spelling": "const Torch &"
+              }
+            }
+          ],
+          "returns": [
+            {
+              "kind": "record",
+              "lua": "Torch",
+              "spelling": "Torch"
+            }
+          ]
+        }
+      ],
+      "cpp": "Torch",
+      "members": [
+        {
+          "kind": "field",
+          "name": "is_lit",
+          "source": {
+            "column": 5,
+            "file": "usertypes.cpp",
+            "line": 187
+          },
+          "type": {
+            "kind": "bool",
+            "lua": "boolean",
+            "spelling": "bool"
+          }
+        }
+      ],
+      "name": "Torch",
+      "source": {
+        "column": 23,
+        "file": "usertypes.cpp",
+        "line": 185
       }
     }
   ],

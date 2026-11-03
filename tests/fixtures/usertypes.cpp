@@ -170,3 +170,20 @@ void register_usertypes(sol::state& lua)
     // Green channel, read only.
     */
 }
+
+// Bases and constructors given by assignments on the usertype instead of new_usertype arguments.
+struct Torch : Movable
+{
+    Torch() = default;
+    /// Copies a torch.
+    Torch(const Torch& other) = default;
+    bool is_lit;
+};
+
+void register_torch(sol::state& lua)
+{
+    auto torch_type = lua.new_usertype<Torch>("Torch");
+    torch_type["new"] = sol::constructors<Torch(), Torch(const Torch&)>{};
+    torch_type["is_lit"] = &Torch::is_lit;
+    torch_type[sol::base_classes] = sol::bases<Entity, Movable>();
+}

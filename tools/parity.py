@@ -34,8 +34,6 @@ ACCEPTED_PATTERNS = [
     (r'.* constructors$', 'param counts',
      'the old parser lists every C++ constructor of the class; the digger lists the ones sol::constructors<...> '
      'exposes to Lua'),
-    (r'CookFire$', 'bases',
-     'CookFire is registered without sol::bases; the old regex runs on into the next registration'),
     (r'(Triangle|Quad)\.(split|is_point_inside)$', 'doc differs',
      'math.hpp documents these in a `/* // just for the autodoc ... */` block of fake declarations, which the old text '
      'parser reads and Clang does not; overlunky should move the comments onto the real declarations'),

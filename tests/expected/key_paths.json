@@ -14,6 +14,7 @@
               "name": "a",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -21,6 +22,7 @@
               "name": "b",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -28,6 +30,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -50,6 +53,7 @@
               "name": "x",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -57,6 +61,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -79,6 +84,7 @@
               "name": "x",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -86,6 +92,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -103,7 +110,7 @@
   ],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 1,
+  "schema_version": 2,
   "script_callbacks": [],
   "usertypes": [],
   "values": [
@@ -116,6 +123,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int"
       }
     },
@@ -128,6 +136,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int"
       }
     },
@@ -141,6 +150,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int"
       }
     }

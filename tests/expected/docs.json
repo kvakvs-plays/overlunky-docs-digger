@@ -18,6 +18,7 @@
               "name": "depth",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -25,6 +26,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -51,6 +53,7 @@
               "name": "object",
               "type": {
                 "kind": "unknown",
+                "lua": "any",
                 "spelling": "sol::object"
               }
             },
@@ -58,6 +61,7 @@
               "name": "depth",
               "type": {
                 "kind": "unknown",
+                "lua": "integer?",
                 "spelling": "optional<int>"
               }
             }
@@ -65,6 +69,7 @@
           "returns": [
             {
               "kind": "unknown",
+              "lua": "table",
               "spelling": "table"
             }
           ]
@@ -91,6 +96,7 @@
               "name": "uid",
               "type": {
                 "kind": "unknown",
+                "lua": "integer",
                 "spelling": "uint32_t"
               }
             }
@@ -98,6 +104,7 @@
           "returns": [
             {
               "kind": "unknown",
+              "lua": "Entity",
               "spelling": "Entity*"
             }
           ]
@@ -123,6 +130,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -148,6 +156,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -174,6 +183,7 @@
               "name": "depth",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -181,6 +191,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -202,6 +213,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -218,7 +230,7 @@
     "options"
   ],
   "libraries": [],
-  "schema_version": 1,
+  "schema_version": 2,
   "script_callbacks": [],
   "usertypes": [],
   "values": [
@@ -235,6 +247,7 @@
       },
       "type": {
         "kind": "unknown",
+        "lua": "any",
         "spelling": "lua.create_named_table(\"options\")"
       }
     }

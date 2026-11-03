@@ -111,6 +111,9 @@ namespace dd {
         if (type.hidden) {
             object["hidden"] = true;
         }
+        if (!type.lua.empty()) {
+            object["lua"] = type.lua;
+        }
         return object;
     }
 

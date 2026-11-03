@@ -279,12 +279,16 @@ namespace dd {
             return false;
         }
         const clang::CXXRecordDecl* record = (*type)->getAsCXXRecordDecl();
+        Usertype& usertype = out_.usertypes[usertypeKey(*type)];
+        if (addBasesOrConstructors(usertype, {path.lastKey, assignment.getArg(1)}, record, root_, context)) {
+            return true;
+        }
         Member member = describeMember(assignment.getArg(1), record, root_, context);
         member.luaName = path.keys.front();
         applyDocFallbacks(member, assignment.getBeginLoc(), record, context);
         member.loc = loc;
         member.doc = docBefore(assignment.getBeginLoc(), context);
-        out_.usertypes[usertypeKey(*type)].members.emplace(MemberKey{member.luaName, loc}, std::move(member));
+        usertype.members.emplace(MemberKey{member.luaName, loc}, std::move(member));
         return true;
     }
 

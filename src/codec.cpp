@@ -56,10 +56,11 @@ namespace dd {
         };
         template <>
         struct Fields<TypeInfo> {
-            static constexpr auto list = std::make_tuple(
-                field("spelling", &TypeInfo::spelling), field("canonical", &TypeInfo::canonical),
-                field("kind", &TypeInfo::kind), field("inner", &TypeInfo::inner), field("returns", &TypeInfo::returns),
-                field("nullable", &TypeInfo::nullable), field("hidden", &TypeInfo::hidden));
+            static constexpr auto list =
+                std::make_tuple(field("spelling", &TypeInfo::spelling), field("canonical", &TypeInfo::canonical),
+                                field("kind", &TypeInfo::kind), field("inner", &TypeInfo::inner),
+                                field("returns", &TypeInfo::returns), field("nullable", &TypeInfo::nullable),
+                                field("hidden", &TypeInfo::hidden), field("lua", &TypeInfo::lua));
         };
         template <>
         struct Fields<Param> {

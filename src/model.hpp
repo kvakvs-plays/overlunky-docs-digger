@@ -17,7 +17,7 @@ namespace dd {
 
     // Version of the JSON output (schema/docs-digger.schema.json): raised with every change to its fields, so readers
     // can refuse output they do not know.
-    constexpr int SchemaVersion = 1;
+    constexpr int SchemaVersion = 2;
 
     // Where an extracted entity is written, so readers can jump to the binding and outputs stay comparable.
     struct SourceLoc {
@@ -83,6 +83,9 @@ namespace dd {
         bool nullable = false;
         // Injected by sol2 (sol::this_state, ...): not a Lua-visible parameter.
         bool hidden = false;
+        // The type in LuaLS notation (`integer`, `Entity?`, `fun(e: Entity): boolean`), set once every translation unit
+        // is parsed (lua_names.hpp), so all outputs write the same names.
+        std::string lua;
     };
 
     // Which end of a callback's arguments a value bound by make_safe_cb comes from.

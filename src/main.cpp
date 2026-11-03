@@ -1,6 +1,7 @@
 #include "bindings.hpp"
 #include "cache.hpp"
 #include "groups.hpp"
+#include "lua_names.hpp"
 #include "merge.hpp"
 #include "model.hpp"
 #include "runner.hpp"
@@ -14,6 +15,7 @@
 #include <llvm/Support/Threading.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include <map>
 #include <memory>
 #include <optional>
 #include <string>
@@ -68,6 +70,10 @@ namespace {
         llvm::cl::opt<std::string> groups{"groups",
                                           llvm::cl::desc("JSON rules that put functions into documentation groups"),
                                           llvm::cl::value_desc("file"), llvm::cl::cat(category)};
+
+        // Lua names for C++ types the type facts cannot name (config/lua_types.json).
+        llvm::cl::opt<std::string> luaTypes{"lua-types", llvm::cl::desc("JSON names of C++ types in the Lua outputs"),
+                                            llvm::cl::value_desc("file"), llvm::cl::cat(category)};
 
         // The per-TU result cache (dig.bat passes build/digger-cache.sqlite); empty for none.
         llvm::cl::opt<std::string> cache{"cache",
@@ -142,21 +148,42 @@ namespace {
         return true;
     }
 
-    // The --groups rules, empty without the option; nullopt after printing why the file cannot be used.
-    std::optional<dd::GroupConfig> loadGroupConfig(const Options& options) {
-        if (options.groups.empty()) {
-            return dd::GroupConfig{};
+    // The configuration files named on the command line; each is empty when its option is not given.
+    struct Configs {
+        // --groups rules.
+        dd::GroupConfig groups;
+        // --lua-types names.
+        std::map<std::string, std::string> luaTypes;
+    };
+
+    // True when error holds none; otherwise prints it.
+    bool succeeded(llvm::Error error) {
+        if (!error) {
+            return true;
         }
-        llvm::Expected<dd::GroupConfig> config = dd::loadGroups(options.groups);
-        if (!config) {
-            llvm::errs() << "docs-digger: " << llvm::toString(config.takeError()) << '\n';
+        llvm::errs() << "docs-digger: " << llvm::toString(std::move(error)) << '\n';
+        return false;
+    }
+
+    // Reads the configuration files; nullopt after printing why one cannot be used.
+    std::optional<Configs> loadConfigs(const Options& options) {
+        Configs configs;
+        if (!options.groups.empty()) {
+            llvm::Expected<dd::GroupConfig> groups = dd::loadGroups(options.groups);
+            if (!groups) {
+                succeeded(groups.takeError());
+                return std::nullopt;
+            }
+            configs.groups = std::move(*groups);
+        }
+        if (!options.luaTypes.empty() && !succeeded(dd::loadLuaTypes(options.luaTypes, configs.luaTypes))) {
             return std::nullopt;
         }
-        return std::move(*config);
+        return configs;
     }
 
     // Runs the steps that need every translation unit; false when the runtime enum file cannot be read.
-    bool merge(const Options& options, const dd::GroupConfig& groups, dd::Extraction& extraction) {
+    bool merge(const Options& options, const Configs& configs, dd::Extraction& extraction) {
         dd::resolveAliases(extraction);
         dd::attachVtableHooks(extraction);
         dd::attachOwnedBindings(extraction);
@@ -171,7 +198,8 @@ namespace {
         dd::checkProse(extraction);
         dd::keepUsedAliases(extraction);
         dd::collectGlobalVariables(extraction);
-        dd::assignGroups(extraction, groups);
+        dd::assignGroups(extraction, configs.groups);
+        dd::assignLuaNames(extraction, dd::luaNaming(extraction, configs.luaTypes));
         return true;
     }
 
@@ -212,8 +240,8 @@ namespace {
             llvm::errs() << "docs-digger: no translation units selected\n";
             return 1;
         }
-        const std::optional<dd::GroupConfig> groups = loadGroupConfig(options);
-        if (!groups) {
+        const std::optional<Configs> configs = loadConfigs(options);
+        if (!configs) {
             return 1;
         }
         dd::FileHashes hashes;
@@ -224,7 +252,7 @@ namespace {
         const unsigned failed = dd::runAll(settings, database, hashes, extraction);
         const std::size_t total = settings.sources.size();
         llvm::errs() << "docs-digger: merging the results of " << total << " translation units\n";
-        if (!merge(options, *groups, extraction)) {
+        if (!merge(options, *configs, extraction)) {
             return 1;
         }
         if (failed != 0) {

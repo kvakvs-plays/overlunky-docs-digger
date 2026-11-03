@@ -10,7 +10,7 @@
   "properties": {
     "schema_version": {
       "description": "Version of this schema. Raised with every change to the fields or their meaning.",
-      "const": 1
+      "const": 2
     },
     "functions": {
       "description": "Lua functions bound with `root[\"a\"][\"name\"] = <callable>` or documented by a commented-out binding, ordered by owner, name and source.",
@@ -90,7 +90,11 @@
         },
         "returns": {"description": "Return types of a `function` kind with a known signature (`std::function`).", "type": "array", "items": {"$ref": "#/$defs/Type"}},
         "nullable": {"description": "Lua may pass or get nil here (optional, raw pointer, `sol::object`).", "type": "boolean"},
-        "hidden": {"description": "Injected by sol2 (`sol::this_state`, ...): not a Lua-visible parameter.", "type": "boolean"}
+        "hidden": {"description": "Injected by sol2 (`sol::this_state`, ...): not a Lua-visible parameter.", "type": "boolean"},
+        "lua": {
+          "description": "The type in LuaLS notation, built from the facts above (P16): `integer`, `number`, `boolean`, `string`, `nil`; usertype, enum table and alias names; `T?` for nullable pointers and optionals; `T[]` and `table<K, V>` for containers; `[A, B]` for tuples inside containers; `fun(p1: A): R` for `std::function`, `function` for other callables; `table`, `userdata` or `any` for sol2 handles; `any` for variadic values (the parameter itself is `...`). --lua-types (config/lua_types.json) names what the facts cannot. Text-only types are converted word by word.",
+          "type": "string"
+        }
       }
     },
     "Param": {

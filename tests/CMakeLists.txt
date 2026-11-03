@@ -7,6 +7,13 @@ if(NOT EXISTS "${SOL2_INCLUDE_DIR}/sol/sol.hpp")
     "with submodules.")
 endif()
 
+# Unit tests of pure helper logic (GoogleTest), linked like the digger itself.
+include("${PROJECT_SOURCE_DIR}/cmake/GoogleTest.cmake")
+add_executable(docs-digger-unit unit/lua_names_test.cpp)
+target_link_libraries(docs-digger-unit PRIVATE docs-digger-lib dd_gtest)
+dd_llvm_target_settings(docs-digger-unit)
+add_test(NAME unit COMMAND docs-digger-unit)
+
 # The schema tests check the golden files against schema/docs-digger.schema.json with tools/check_schema.py.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 

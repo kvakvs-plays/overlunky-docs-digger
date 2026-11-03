@@ -70,6 +70,10 @@ namespace dd {
                 {"sol::nested", {TypeKind::Unknown, Transparent, false}},
                 {"sol::as_table_t", {TypeKind::Unknown, Transparent, false}},
                 {"sol::as_returns_t", {TypeKind::Unknown, Transparent, false}},
+                // sol2 pushes the object a smart pointer or reference wrapper holds.
+                {"std::unique_ptr", {TypeKind::Unknown, Transparent, false}},
+                {"std::shared_ptr", {TypeKind::Unknown, Transparent, false}},
+                {"std::reference_wrapper", {TypeKind::Unknown, Transparent, false}},
             };
             return rules;
         }
@@ -219,6 +223,13 @@ namespace dd {
             }
             if (pointee->isFunctionType()) {
                 info.kind = TypeKind::Function;
+                return;
+            }
+            // sol2 passes the calling state to a `lua_State*` parameter, like sol::this_state.
+            if (const clang::RecordDecl* record = pointee->getAsRecordDecl();
+                record && record->getName() == "lua_State") {
+                info.kind = TypeKind::LuaObject;
+                info.hidden = true;
                 return;
             }
             info.kind = TypeKind::Pointer;

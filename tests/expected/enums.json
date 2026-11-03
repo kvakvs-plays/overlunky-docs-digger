@@ -10,6 +10,7 @@
       "type": {
         "canonical": "int",
         "kind": "int",
+        "lua": "integer",
         "spelling": "int32_t"
       }
     },
@@ -23,6 +24,7 @@
       "type": {
         "canonical": "unsigned int",
         "kind": "int",
+        "lua": "integer",
         "spelling": "uint32_t"
       }
     },
@@ -39,10 +41,12 @@
           {
             "canonical": "unsigned int",
             "kind": "int",
+            "lua": "ENT_TYPE",
             "spelling": "ENT_TYPE"
           }
         ],
         "kind": "container",
+        "lua": "ENT_TYPE[]",
         "spelling": "std::vector<ENT_TYPE>"
       }
     },
@@ -56,6 +60,7 @@
       "type": {
         "canonical": "unsigned char",
         "kind": "int",
+        "lua": "integer",
         "spelling": "uint8_t"
       }
     }
@@ -338,6 +343,7 @@
               "type": {
                 "canonical": "State",
                 "kind": "record",
+                "lua": "State",
                 "spelling": "State &"
               }
             }
@@ -345,6 +351,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -367,6 +374,7 @@
               "name": "flags",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -374,6 +382,7 @@
               "name": "bit",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -381,6 +390,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -407,6 +417,7 @@
               "name": "flags",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -414,6 +425,7 @@
               "name": "bit",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -421,6 +433,7 @@
           "returns": [
             {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           ]
@@ -444,6 +457,7 @@
               "type": {
                 "canonical": "unsigned int",
                 "kind": "int",
+                "lua": "ENT_TYPE",
                 "spelling": "ENT_TYPE"
               }
             },
@@ -452,6 +466,7 @@
               "type": {
                 "canonical": "unsigned char",
                 "kind": "int",
+                "lua": "SHORT_TILE_CODE",
                 "spelling": "SHORT_TILE_CODE"
               }
             },
@@ -463,10 +478,12 @@
                   {
                     "canonical": "unsigned int",
                     "kind": "int",
+                    "lua": "ENT_TYPE",
                     "spelling": "ENT_TYPE"
                   }
                 ],
                 "kind": "container",
+                "lua": "Ids",
                 "spelling": "Ids"
               }
             }
@@ -477,10 +494,12 @@
               "inner": [
                 {
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "int"
                 }
               ],
               "kind": "container",
+              "lua": "integer[]",
               "spelling": "Holder<int>"
             }
           ]
@@ -503,6 +522,7 @@
               "name": "x",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -511,6 +531,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -555,7 +576,7 @@
       }
     }
   ],
-  "schema_version": 1,
+  "schema_version": 2,
   "script_callbacks": [
     {
       "doc": [
@@ -573,10 +594,12 @@
           {
             "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
             "kind": "function",
+            "lua": "function",
             "spelling": "sol::function"
           }
         ],
         "kind": "optional",
+        "lua": "function?",
         "nullable": true,
         "spelling": "sol::optional<sol::function>"
       }
@@ -594,6 +617,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int"
       }
     },
@@ -607,6 +631,7 @@
       "type": {
         "canonical": "std::basic_string<char>",
         "kind": "string",
+        "lua": "string",
         "spelling": "std::string"
       }
     },
@@ -619,6 +644,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int"
       }
     },
@@ -635,6 +661,7 @@
       "type": {
         "canonical": "sol::basic_table_core<false, sol::basic_reference<false>>",
         "kind": "lua_object",
+        "lua": "table",
         "spelling": "sol::table"
       }
     },
@@ -649,10 +676,12 @@
         "inner": [
           {
             "kind": "record",
+            "lua": "Player",
             "spelling": "Player"
           }
         ],
         "kind": "container",
+        "lua": "Player[]",
         "spelling": "std::vector<Player>"
       }
     },
@@ -670,10 +699,12 @@
         "inner": [
           {
             "kind": "record",
+            "lua": "State",
             "spelling": "State"
           }
         ],
         "kind": "pointer",
+        "lua": "State?",
         "nullable": true,
         "spelling": "State *"
       }

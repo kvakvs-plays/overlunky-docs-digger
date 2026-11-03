@@ -21,6 +21,8 @@ namespace dd {
         std::vector<std::string> keys;
         // The object the first operator[] is applied to.
         const clang::Expr* root = nullptr;
+        // The expression of the last key (the one assigned to), for keys that are not strings (`sol::base_classes`).
+        const clang::Expr* lastKey = nullptr;
     };
 
     // Splits the left side of an assignment into its keys and root.

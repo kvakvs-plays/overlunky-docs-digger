@@ -52,8 +52,9 @@ The scripts enter the Visual Studio environment themselves (`tools\dev-env.cmd`)
 - `dig.bat [options]`: builds Release, configures overlunky into `build\overlunky` for its `compile_commands.json`
   (configure only, nothing of overlunky is built) and runs the digger on all `src/game_api` translation units. It passes
   the runtime enum dump `docs/game_data/lua_enums.txt` (`--runtime-enums`), the function groups `config\groups.json`
-  (`--groups`) and the result cache `build\digger-cache.sqlite` (`--cache`). Its own arguments go to the digger, for
-  example `dig.bat -o F:\out\api.json --jobs 8`; give `-o` an absolute path.
+  (`--groups`), the Lua type names `config\lua_types.json` (`--lua-types`) and the result cache
+  `build\digger-cache.sqlite` (`--cache`). Its own arguments go to the digger, for example
+  `dig.bat -o F:\out\api.json --jobs 8`; give `-o` an absolute path.
 - `quality.bat [changed|all]`: the quality gate (below).
 
 `build\digger\Release\docs-digger.exe --help` lists all options. The 101 translation units are parsed in parallel
@@ -70,7 +71,7 @@ field and enum value has a description there, and no other fields exist. In shor
 
 | Field | Contents |
 |---|---|
-| `schema_version` | Version of the format; raised with every change to fields or their meaning. Currently 1. |
+| `schema_version` | Version of the format; raised with every change to fields or their meaning. Currently 2. |
 | `functions` | Lua functions: name, owner table, `group`, doc and directives, overloads with typed params and returns. |
 | `values` | Lua values that are not functions (`players`, `state`), with their C++ type. |
 | `usertypes` | `new_usertype<T>` types: bases, constructors, members (fields, properties, methods, vtable hooks). |
@@ -82,9 +83,12 @@ field and enum value has a description there, and no other fields exist. In shor
 | `events` | Callback signature per key of `ON`, `THEME_OVERRIDE` and other enum-keyed callbacks. |
 
 Types keep their C++ spelling plus a `kind` (`int`, `optional`, `container`, `function`, ...), inner types,
-`nullable` and `hidden` (parameters sol2 injects). A parameter that receives a Lua function has a `callback`: its
-params, returns, `nil_allowed`, `nil_meaning` and how it was found (`origin`). Mapping C++ type names to Lua names is
-left to the output stage.
+`nullable` and `hidden` (parameters sol2 injects), and `lua`, the type in LuaLS notation (`integer`, `Entity?`,
+`ENT_TYPE[]`, `table<string, integer>`, `fun(p1: Entity): boolean`). The Lua names come from the type facts: records
+become their usertype's name, enums and typedefs named like a Lua enum table or an alias keep that name; the few
+types the facts cannot name are listed in `config/lua_types.json` (`{"names": {"ImVec2": "Vec2"}}`, keyed by canonical
+type, spelling or unqualified name). A parameter that receives a Lua function has a `callback`: its params, returns,
+`nil_allowed`, `nil_meaning` and how it was found (`origin`).
 
 `python tools\check_schema.py schema\docs-digger.schema.json <output.json>` checks an output against the schema
 (standard library only). The tests run it on every golden file and CI on the real output, so a field that the schema
@@ -126,6 +130,9 @@ of its tests does:
   `--runtime-enums`, a `<name>.groups.json` as `--groups`. The fixture then runs through the result cache twice (fill,
   then read), and both outputs must be the same.
 - `schema.<name>` checks the golden file against the schema.
+
+`unit` runs the GoogleTest unit tests of pure helper logic (`tests/unit/`, the Lua type names); they link
+`docs-digger-lib`, which holds all of the digger but `main()`. GoogleTest is pinned in `cmake/GoogleTest.cmake`.
 
 After an intended output change, run `set DD_UPDATE_GOLDEN=1` and then `test.bat`, and review the diff of
 `tests/expected/`. Every newly covered binding or callback pattern gets a fixture and a golden file in the same change.
@@ -177,7 +184,7 @@ CMakeLists.txt            the digger; tests; quality targets
 build.bat, test.bat, dig.bat, quality.bat
 cmake/                    pinned downloads (LLVMPackage.cmake, Download.cmake), zlib/zstd/SQLite builds,
                           overlunky configure, quality checks
-config/groups.json        function group rules
+config/                   function group rules, Lua type names
 schema/                   JSON Schema of the output
 src/main.cpp              command line, steps after all translation units, output
 src/runner.cpp            parallel parsing, progress, ordered merge; cache.cpp and codec.cpp: the result cache
@@ -185,7 +192,7 @@ src/bindings.cpp          AST matchers: lua[...] = ..., enum tables, libraries, 
 src/usertypes.cpp         new_usertype and its members
 src/callbacks.cpp         callback flows, dispatch sites, vtable hooks (AST); callback_join.cpp joins them
 src/resolve.cpp, types.cpp, comments.cpp   sol2 expressions, type classification, comments and directives
-src/merge.cpp, groups.cpp steps after all translation units (no AST)
+src/merge.cpp, groups.cpp, lua_names.cpp   steps after all translation units (no AST)
 src/model.hpp/.cpp        the data model and its JSON
 tests/                    fixtures, golden files, RunGolden.cmake
 tools/                    parity.py, check_schema.py, dev-env.cmd, analyzer pins

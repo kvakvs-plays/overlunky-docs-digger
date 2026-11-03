@@ -9,6 +9,7 @@
       },
       "type": {
         "kind": "int",
+        "lua": "integer",
         "spelling": "int"
       }
     }
@@ -126,6 +127,7 @@
             "name": "screen",
             "type": {
               "kind": "int",
+              "lua": "integer",
               "spelling": "int"
             }
           }
@@ -161,6 +163,7 @@
             "type": {
               "canonical": "std::basic_string<char>",
               "kind": "string",
+              "lua": "string",
               "spelling": "std::string"
             }
           }
@@ -214,6 +217,7 @@
             "name": "render_ctx",
             "type": {
               "kind": "record",
+              "lua": "RenderContext",
               "spelling": "RenderContext"
             }
           }
@@ -222,6 +226,7 @@
         "returns": [
           {
             "kind": "bool",
+            "lua": "boolean",
             "spelling": "bool"
           }
         ],
@@ -263,6 +268,7 @@
                     "name": "",
                     "type": {
                       "kind": "float",
+                      "lua": "number",
                       "spelling": "float"
                     }
                   },
@@ -270,6 +276,7 @@
                     "name": "",
                     "type": {
                       "kind": "float",
+                      "lua": "number",
                       "spelling": "float"
                     }
                   }
@@ -286,6 +293,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             },
@@ -299,6 +307,7 @@
                     "name": "",
                     "type": {
                       "kind": "float",
+                      "lua": "number",
                       "spelling": "float"
                     }
                   },
@@ -306,6 +315,7 @@
                     "name": "",
                     "type": {
                       "kind": "float",
+                      "lua": "number",
                       "spelling": "float"
                     }
                   }
@@ -314,6 +324,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -327,6 +338,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -356,10 +368,12 @@
                 "inner": [
                   {
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "int"
                   }
                 ],
                 "kind": "container",
+                "lua": "integer[]",
                 "spelling": "std::vector<int>"
               }
             },
@@ -373,6 +387,7 @@
                     "name": "uid",
                     "type": {
                       "kind": "int",
+                      "lua": "integer",
                       "spelling": "int"
                     }
                   }
@@ -380,6 +395,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -393,6 +409,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -402,10 +419,12 @@
               "inner": [
                 {
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "int"
                 }
               ],
               "kind": "container",
+              "lua": "integer[]",
               "spelling": "std::vector<int>"
             }
           ]
@@ -437,6 +456,7 @@
                     "name": "text",
                     "type": {
                       "kind": "unknown",
+                      "lua": "string",
                       "spelling": "string"
                     }
                   }
@@ -449,6 +469,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -482,6 +503,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             },
@@ -489,6 +511,7 @@
               "name": "event",
               "type": {
                 "kind": "enum",
+                "lua": "ON",
                 "spelling": "ON"
               }
             }
@@ -497,6 +520,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -529,6 +553,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -543,6 +568,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             },
@@ -550,6 +576,7 @@
               "name": "frames",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             }
@@ -558,6 +585,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -583,6 +611,7 @@
               "name": "uid",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -598,10 +627,12 @@
                       "inner": [
                         {
                           "kind": "record",
+                          "lua": "Entity",
                           "spelling": "Entity"
                         }
                       ],
                       "kind": "pointer",
+                      "lua": "Entity?",
                       "nullable": true,
                       "spelling": "Entity *"
                     }
@@ -610,6 +641,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -623,6 +655,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -634,24 +667,29 @@
                   "inner": [
                     {
                       "kind": "record",
+                      "lua": "Entity",
                       "spelling": "Entity"
                     }
                   ],
                   "kind": "pointer",
+                  "lua": "Entity?",
                   "nullable": true,
                   "spelling": "Entity *"
                 }
               ],
               "kind": "function",
+              "lua": "fun(p1: Entity?): boolean?",
               "returns": [
                 {
                   "inner": [
                     {
                       "kind": "bool",
+                      "lua": "boolean",
                       "spelling": "bool"
                     }
                   ],
                   "kind": "optional",
+                  "lua": "boolean?",
                   "nullable": true,
                   "spelling": "std::optional<bool>"
                 }
@@ -686,10 +724,12 @@
                       "inner": [
                         {
                           "kind": "record",
+                          "lua": "Entity",
                           "spelling": "Entity"
                         }
                       ],
                       "kind": "pointer",
+                      "lua": "Entity?",
                       "nullable": true,
                       "spelling": "Entity *"
                     }
@@ -707,6 +747,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -715,6 +756,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -746,6 +788,7 @@
                     "name": "x",
                     "type": {
                       "kind": "float",
+                      "lua": "number",
                       "spelling": "float"
                     }
                   }
@@ -753,6 +796,7 @@
                 "returns": [
                   {
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "int"
                   }
                 ],
@@ -767,6 +811,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -775,6 +820,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -801,6 +847,7 @@
               "name": "uid",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -818,6 +865,7 @@
                     "name": "",
                     "type": {
                       "kind": "record",
+                      "lua": "RenderContext",
                       "spelling": "RenderContext"
                     }
                   },
@@ -827,10 +875,12 @@
                       "inner": [
                         {
                           "kind": "record",
+                          "lua": "Entity",
                           "spelling": "Entity"
                         }
                       ],
                       "kind": "pointer",
+                      "lua": "Entity?",
                       "nullable": true,
                       "spelling": "Entity *"
                     }
@@ -840,6 +890,7 @@
                     "name": "",
                     "type": {
                       "kind": "int",
+                      "lua": "integer",
                       "spelling": "int"
                     }
                   }
@@ -848,6 +899,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -861,6 +913,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -869,6 +922,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -894,6 +948,7 @@
               "name": "uid",
               "type": {
                 "kind": "int",
+                "lua": "integer",
                 "spelling": "int"
               }
             },
@@ -908,6 +963,7 @@
                     "name": "",
                     "type": {
                       "kind": "record",
+                      "lua": "RenderContext",
                       "spelling": "RenderContext"
                     }
                   },
@@ -917,10 +973,12 @@
                       "inner": [
                         {
                           "kind": "record",
+                          "lua": "Entity",
                           "spelling": "Entity"
                         }
                       ],
                       "kind": "pointer",
+                      "lua": "Entity?",
                       "nullable": true,
                       "spelling": "Entity *"
                     }
@@ -930,6 +988,7 @@
                     "name": "",
                     "type": {
                       "kind": "int",
+                      "lua": "integer",
                       "spelling": "int"
                     }
                   }
@@ -937,6 +996,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -950,6 +1010,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -958,6 +1019,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -989,6 +1051,7 @@
                     "name": "",
                     "type": {
                       "kind": "float",
+                      "lua": "number",
                       "spelling": "float"
                     }
                   },
@@ -996,6 +1059,7 @@
                     "name": "",
                     "type": {
                       "kind": "float",
+                      "lua": "number",
                       "spelling": "float"
                     }
                   }
@@ -1005,10 +1069,12 @@
                     "inner": [
                       {
                         "kind": "int",
+                        "lua": "integer",
                         "spelling": "int"
                       }
                     ],
                     "kind": "optional",
+                    "lua": "integer?",
                     "nullable": true,
                     "spelling": "std::optional<int>"
                   }
@@ -1023,6 +1089,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -1031,6 +1098,7 @@
             {
               "canonical": "int",
               "kind": "int",
+              "lua": "CallbackId",
               "spelling": "CallbackId"
             }
           ]
@@ -1058,10 +1126,12 @@
                 "inner": [
                   {
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "int"
                   }
                 ],
                 "kind": "container",
+                "lua": "integer[]",
                 "spelling": "std::vector<int>"
               }
             },
@@ -1075,6 +1145,7 @@
                     "name": "",
                     "type": {
                       "kind": "int",
+                      "lua": "integer",
                       "spelling": "int"
                     }
                   },
@@ -1082,6 +1153,7 @@
                     "name": "",
                     "type": {
                       "kind": "int",
+                      "lua": "integer",
                       "spelling": "int"
                     }
                   }
@@ -1089,6 +1161,7 @@
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ]
@@ -1098,17 +1171,21 @@
                 "inner": [
                   {
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "int"
                   },
                   {
                     "kind": "int",
+                    "lua": "integer",
                     "spelling": "int"
                   }
                 ],
                 "kind": "function",
+                "lua": "fun(p1: integer, p2: integer): boolean",
                 "returns": [
                   {
                     "kind": "bool",
+                    "lua": "boolean",
                     "spelling": "bool"
                   }
                 ],
@@ -1121,10 +1198,12 @@
               "inner": [
                 {
                   "kind": "int",
+                  "lua": "integer",
                   "spelling": "int"
                 }
               ],
               "kind": "container",
+              "lua": "integer[]",
               "spelling": "std::vector<int>"
             }
           ]
@@ -1156,6 +1235,7 @@
               "type": {
                 "canonical": "sol::basic_protected_function<sol::basic_reference<false>, false, sol::basic_reference<false>>",
                 "kind": "function",
+                "lua": "function",
                 "spelling": "sol::function"
               }
             }
@@ -1172,7 +1252,7 @@
   ],
   "global_variables": [],
   "libraries": [],
-  "schema_version": 1,
+  "schema_version": 2,
   "script_callbacks": [],
   "usertypes": [],
   "values": []
