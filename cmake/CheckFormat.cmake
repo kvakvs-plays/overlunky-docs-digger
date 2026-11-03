@@ -1,5 +1,6 @@
 # Formatting gate: clang-format --dry-run over the C++ sources in src/ and tests/ (cmake -P, see QualityCommon.cmake).
 # tests/fixtures/ is skipped: fixtures imitate overlunky sources and golden outputs depend on their line numbers.
+# src/html/ is skipped: the HTML generators are not C++, and their node_modules link to thirdparty/.
 include("${CMAKE_CURRENT_LIST_DIR}/QualityCommon.cmake")
 
 if(QUALITY_SCOPE STREQUAL "changed")
@@ -8,7 +9,7 @@ else()
     file(GLOB_RECURSE inputs RELATIVE "${project_root}"
         "${project_root}/src/*.cpp" "${project_root}/src/*.hpp" "${project_root}/src/*.h" "${project_root}/src/*.inl"
         "${project_root}/tests/*.cpp" "${project_root}/tests/*.hpp" "${project_root}/tests/*.h")
-    list(FILTER inputs EXCLUDE REGEX "^tests/fixtures/")
+    list(FILTER inputs EXCLUDE REGEX "^(tests/fixtures|src/html)/")
 endif()
 if(NOT inputs)
     message(STATUS "No C++ files to check in src/ or tests/; clang-format skipped.")

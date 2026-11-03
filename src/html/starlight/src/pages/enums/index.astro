@@ -1,0 +1,23 @@
+---
+// The enum overview: what enums are, and every table.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import {Code} from '@astrojs/starlight/components';
+import {enums, url} from '../../lib/api.mjs';
+
+const example = `set_callback(function()
+    if state.theme == THEME.COSMIC_OCEAN then
+        x, y, l = get_position(players[1].uid)
+        spawn(ENT_TYPE.ITEM_JETPACK, x, y, l, 0, 0)
+    end
+end, ON.LEVEL)`;
+---
+
+<StarlightPage frontmatter={{title: 'Enums', description: 'Enum tables of the Overlunky/Playlunky Lua API'}}>
+    <p>Enums are like numbers but in text that's easier to remember.</p>
+    <div data-pagefind-ignore>
+        <Code code={example} lang="lua" />
+    </div>
+    <p class="dd-list">
+        {[...enums.keys()].map((name) => <a href={url(`/enums/${name}/`)}>{name}</a>)}
+    </p>
+</StarlightPage>

@@ -1,0 +1,24 @@
+---
+// Lua libraries, unsafe mode and modules (hand-written text), and the standard libraries scripts get.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import TextPage from '../components/TextPage.astro';
+import {api} from '../lib/api.mjs';
+import {textHeadings} from '../lib/render.mjs';
+import text from '../text/libraries.md?raw';
+
+// Libraries every script gets (load_libraries) and those unsafe mode adds, as overlunky opens them.
+const opened = (fn) => api.libraries.filter((l) => l.function === fn).flatMap((l) => l.names);
+const safe = opened('load_libraries');
+const unsafe = opened('load_unsafe_libraries').filter((name) => !safe.includes(name));
+const headings = [...textHeadings(text), {depth: 2, slug: 'standard-libraries', text: 'Standard libraries'}];
+---
+
+<StarlightPage frontmatter={{title: 'Lua libraries', description: 'Lua libraries available to scripts'}} headings={headings}>
+    <TextPage text={text} />
+    <h2 id="standard-libraries">Standard libraries</h2>
+    <p>Every script gets these standard Lua libraries:</p>
+    <ul>
+        {safe.map((name) => <li id={name}><a href={`https://www.lua.org/manual/5.4/manual.html#pdf-${name}`}>{name}</a></li>)}
+    </ul>
+    <p>Unsafe mode adds: {unsafe.map((name, i) => <>{i > 0 && ', '}<code id={`unsafe-${name}`}>{name}</code></>)}.</p>
+</StarlightPage>

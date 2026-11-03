@@ -1,0 +1,14 @@
+---
+// The key of a qualified name (`FRAME` of `ON.FRAME`) as a word of its own, for search only. Pagefind drops the dot
+// and indexes `ON.FRAME` as `onframe`, so a search for the bare key (`PRE_LEVEL_GENERATION`) would only find its
+// parts. Hidden on screen and from screen readers, which read the qualified name beside it.
+interface Props {
+    // The key (`FRAME`, `ITEM_JETPACK`).
+    name: string;
+    // Pagefind weight, as the qualified name's.
+    weight: number;
+}
+const {name, weight} = Astro.props;
+---
+
+<span class="sr-only" aria-hidden="true" data-pagefind-weight={weight}>{` ${name}`}</span>

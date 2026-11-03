@@ -1,0 +1,30 @@
+---
+// All usertypes by section and group, as generate.py's type list; old group anchors land here.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import {slug, typeSections, url} from '../../lib/api.mjs';
+
+const headings = typeSections.flatMap((s) => [
+    {depth: 2, slug: slug(s.section), text: s.section},
+    ...s.groups.map((g) => ({depth: 3, slug: slug(g.group), text: g.group})),
+]);
+---
+
+<StarlightPage frontmatter={{title: 'Types', description: 'All usertypes of the Overlunky/Playlunky Lua API'}} headings={headings}>
+    {
+        typeSections.map((s) => (
+            <>
+                <h2 id={slug(s.section)}>{s.section}</h2>
+                {s.groups.map((g) => (
+                    <>
+                        <h3 id={slug(g.group)}>{g.group}</h3>
+                        <p class="dd-list">
+                            {g.types.map((u) => (
+                                <a href={url(`/types/${u.name}/`)}>{u.name}</a>
+                            ))}
+                        </p>
+                    </>
+                ))}
+            </>
+        ))
+    }
+</StarlightPage>

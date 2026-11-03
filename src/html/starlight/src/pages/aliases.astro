@@ -1,0 +1,39 @@
+---
+// Aliases: names that tell what an integer or string stands for.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import Doc from '../components/Doc.astro';
+import SearchSymbols from '../components/SearchSymbols.astro';
+import {aliases} from '../lib/api.mjs';
+import {typeHtml} from '../lib/render.mjs';
+---
+
+<StarlightPage frontmatter={{title: 'Aliases', description: 'Type aliases of the Overlunky/Playlunky Lua API'}}>
+    <SearchSymbols names={[...aliases.keys()]} />
+    <p>
+        Used to clarify what kind of values can be passed and returned from a function, even if the underlying type is
+        really just an integer or a string. This should help to avoid bugs where one would for example just pass a random
+        integer to a function expecting a callback id.
+    </p>
+    <table>
+        <thead>
+            <tr><th>Name</th><th>Type</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            {
+                [...aliases.values()].map((a) => (
+                    <tr id={a.name}>
+                        <td>
+                            <code data-pagefind-weight="10">{a.name}</code>
+                        </td>
+                        <td>
+                            <code set:html={typeHtml(a.type.lua)} />
+                        </td>
+                        <td>
+                            <Doc lines={a.doc} />
+                        </td>
+                    </tr>
+                ))
+            }
+        </tbody>
+    </table>
+</StarlightPage>

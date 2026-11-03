@@ -1,0 +1,30 @@
+---
+// One function of a group page: name, marks, example, signatures, doc and source link.
+import Doc from './Doc.astro';
+import Example from './Example.astro';
+import Signature from './Signature.astro';
+import {qualifiedName, sourceLink} from '../lib/api.mjs';
+
+interface Props {
+    // A Function of the JSON.
+    f: any;
+}
+const {f} = Astro.props;
+const name = qualifiedName(f);
+// The function's own comment, else that of the bound C++ declaration.
+const doc = f.doc?.length ? f.doc : f.overloads.find((o) => o.doc?.length)?.doc;
+---
+
+<section class="dd-entry">
+    <h2 id={name}><span data-pagefind-weight="10">{name}</span></h2>
+    <p class="dd-marks">
+        {f.deprecated && <span class="dd-tag dd-warn">deprecated</span>}
+        {f.doc_only && <span class="dd-tag" title="Declared in a comment; the types are text">documented only</span>}
+        {f.defined_in_lua && <span class="dd-tag">written in Lua</span>}
+        {f.alias_of && <span class="dd-tag">same as {f.alias_of.join('.')}</span>}
+        <a class="dd-source" href={sourceLink(f.source)}>source</a>
+    </p>
+    <Example name={name} />
+    {f.overloads.map((sig) => <Signature name={name} sig={sig} />)}
+    <Doc lines={doc} />
+</section>

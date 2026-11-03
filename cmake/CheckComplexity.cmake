@@ -1,4 +1,5 @@
-# Cyclomatic complexity gate: Lizard over the C++ sources in src/ (cmake -P, see QualityCommon.cmake).
+# Cyclomatic complexity gate: Lizard over the C++ sources in src/ (cmake -P, see QualityCommon.cmake). src/html/ (the
+# HTML generators, with node_modules linked from thirdparty/) is excluded.
 include("${CMAKE_CURRENT_LIST_DIR}/QualityCommon.cmake")
 if(NOT DEFINED COMPLEXITY_MAX_CCN)
     set(COMPLEXITY_MAX_CCN 10)
@@ -21,7 +22,7 @@ if(QUALITY_SCOPE STREQUAL "changed")
 endif()
 # -w prints only the functions over a threshold; Lizard exits non-zero when there are any.
 execute_process(
-    COMMAND "${QUALITY_PYTHON}" -m lizard -l cpp -w -C "${COMPLEXITY_MAX_CCN}" ${inputs}
+    COMMAND "${QUALITY_PYTHON}" -m lizard -l cpp -w -C "${COMPLEXITY_MAX_CCN}" -x "src/html/*" ${inputs}
     WORKING_DIRECTORY "${project_root}"
     RESULT_VARIABLE lizard_result)
 if(NOT lizard_result STREQUAL "0")

@@ -1,0 +1,18 @@
+---
+// Keeps links to the old single page working: `index.html#spawn_entity` lands on the home page, and this script
+// sends it on to the page that has that item now (map: /old-anchors.json).
+import {base} from '../lib/api.mjs';
+---
+
+<script is:inline define:vars={{base}}>
+    const anchor = decodeURIComponent(location.hash.slice(1));
+    if (anchor && !document.getElementById(anchor)) {
+        fetch(`${base}/old-anchors.json`)
+            .then((response) => response.json())
+            .then((map) => {
+                if (map[anchor]) {
+                    location.replace(base + map[anchor]);
+                }
+            });
+    }
+</script>

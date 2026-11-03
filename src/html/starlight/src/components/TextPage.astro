@@ -1,0 +1,25 @@
+---
+// A hand-written Markdown text (src/text/*.md) cut at its `## ` headings: each section gets an anchor, the example
+// named like its heading (`io`, `json`) and the text, with old single-page links resolved like the API docs.
+import Doc from './Doc.astro';
+import Example from './Example.astro';
+import {slug} from '../lib/api.mjs';
+import {textSections} from '../lib/render.mjs';
+
+interface Props {
+    // The Markdown text.
+    text: string;
+}
+const {intro, sections} = textSections(Astro.props.text);
+---
+
+<Doc lines={intro} />
+{
+    sections.map((s) => (
+        <>
+            <h2 id={slug(s.title)}>{s.title}</h2>
+            <Example name={s.title} />
+            <Doc lines={s.body} />
+        </>
+    ))
+}

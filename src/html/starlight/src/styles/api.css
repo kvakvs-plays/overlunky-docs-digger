@@ -1,0 +1,94 @@
+/* API entries: signatures, parameter lists, marks and the value tables. Colours come from Starlight's tokens, so
+   light and dark themes both work. */
+
+.dd-entry {
+    border-top: 1px solid var(--sl-color-hairline);
+    padding-top: 0.5rem;
+}
+
+.dd-signature {
+    background: var(--sl-color-gray-6);
+    border: 1px solid var(--sl-color-hairline-light);
+    border-radius: 0.25rem;
+    padding: 0.5rem 0.75rem;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: var(--sl-text-sm);
+}
+
+.dd-params dt {
+    font-weight: normal;
+}
+
+.dd-params dd {
+    margin-inline-start: 1.5rem;
+    color: var(--sl-color-gray-2);
+}
+
+.dd-tag {
+    display: inline-block;
+    margin-inline-start: 0.4rem;
+    padding: 0 0.4rem;
+    border-radius: 0.25rem;
+    background: var(--sl-color-gray-5);
+    color: var(--sl-color-gray-1);
+    font-size: var(--sl-text-xs);
+}
+
+.dd-warn {
+    background: var(--sl-color-orange-low);
+    color: var(--sl-color-orange-high);
+}
+
+.dd-marks .dd-tag:first-child {
+    margin-inline-start: 0;
+}
+
+.dd-source {
+    margin-inline-start: 0.6rem;
+    font-size: var(--sl-text-xs);
+}
+
+.dd-member {
+    margin-top: 1.25rem;
+}
+
+.dd-member h3 {
+    font-family: var(--__sl-font-mono);
+    font-size: var(--sl-text-lg);
+}
+
+.dd-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1rem;
+}
+
+.dd-list a {
+    margin: 0;
+}
+
+.dd-columns {
+    columns: 16rem;
+}
+
+.dd-values td {
+    vertical-align: top;
+}
+
+.dd-file {
+    font-size: var(--sl-text-xs);
+    max-height: none;
+    white-space: pre;
+    overflow-x: auto;
+}
+
+.dd-button {
+    display: inline-block;
+    padding: 0.4rem 0.9rem;
+    border-radius: 0.3rem;
+    background: var(--sl-color-accent);
+    color: var(--sl-color-black);
+    text-decoration: none;
+    font-weight: 600;
+}

@@ -1,0 +1,10 @@
+---
+// The C++ standard containers scripts meet (vector, map, set, span) and their extra methods.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import TextPage from '../components/TextPage.astro';
+import text from '../text/containers.md?raw';
+---
+
+<StarlightPage frontmatter={{title: 'STD library containers', description: 'C++ containers in Lua'}}>
+    <TextPage text={text} />
+</StarlightPage>

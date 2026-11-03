@@ -22,13 +22,15 @@ def git_lines(root, *args):
 
 
 def changed_files(root, base):
-    """Changed or untracked C++ files under src/ and tests/ that still exist, relative to root."""
+    """Changed or untracked C++ files under src/ and tests/ that still exist, relative to root; src/html/ (the HTML
+    generators) is not C++ code of the digger."""
     names = git_lines(root, 'diff', '--name-only', base, '--') + git_lines(
         root, 'ls-files', '--others', '--exclude-standard')
     suffixes = SOURCE_SUFFIXES | HEADER_SUFFIXES
     return sorted({
         n for n in names
-        if n.startswith(('src/', 'tests/')) and pathlib.PurePosixPath(n).suffix in suffixes and (root / n).is_file()
+        if n.startswith(('src/', 'tests/')) and not n.startswith('src/html/') and
+        pathlib.PurePosixPath(n).suffix in suffixes and (root / n).is_file()
     })
 
 
@@ -36,8 +38,8 @@ def includers(root, headers):
     """Translation units under src/ that directly include one of the given headers."""
     spellings = {f'"{h[len("src/"):]}"' for h in headers}
     units = []
-    for path in sorted((root / 'src').rglob('*')):
-        if path.suffix in SOURCE_SUFFIXES:
+    for path in sorted((root / 'src').rglob('*.c*')):
+        if path.suffix in SOURCE_SUFFIXES and not path.relative_to(root).as_posix().startswith('src/html/'):
             text = path.read_text(encoding='utf-8', errors='replace')
             if any(spelling in text for spelling in spellings):
                 units.append(path.relative_to(root).as_posix())

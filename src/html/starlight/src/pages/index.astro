@@ -1,0 +1,24 @@
+---
+// Home: the "read this first" text, the definition file downloads, and the redirect of old single-page links.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import Downloads from '../components/Downloads.astro';
+import OldAnchors from '../components/OldAnchors.astro';
+import TextPage from '../components/TextPage.astro';
+import {downloads} from '../lib/api.mjs';
+import {textHeadings} from '../lib/render.mjs';
+import text from '../text/home.md?raw';
+
+const headings = [
+    ...textHeadings(text),
+    ...downloads.map((d) => ({depth: 3, slug: `download-${d.style}`, text: d.label})),
+];
+---
+
+<StarlightPage
+    frontmatter={{title: 'Overlunky/Playlunky Lua API', description: 'Documentation for the unofficial Spelunky 2 Lua modding API'}}
+    headings={headings}
+>
+    <OldAnchors />
+    <TextPage text={text} />
+    <Downloads />
+</StarlightPage>

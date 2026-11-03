@@ -1,6 +1,6 @@
 """Parity report: the digger's JSON against overlunky's old regex parser (docs/parse_source.py) as the oracle.
 
-Usage: python tools/parity.py <overlunky root> <docs-digger JSON> [<directory of the digger's Lua files>]
+Usage: python tools/parity.py <overlunky root> <docs-digger JSON> [<directory of the digger's Lua files> [<built site>]]
 
 Checks every global function the old parser reports (ps.funcs, ps.deprecated_funcs):
   presence, deprecated flag, parameter counts and documentation text;
@@ -12,6 +12,7 @@ the events (ps.events), and the global variables against the old hardcoded not_f
 the vtable hook members (P7: set_pre_<name> / set_post_<name> names and NoDoc flags);
 the group of every old function against generate.py's func_cats (P14);
 with a Lua directory, every function, class, member, enum value and alias of the old docs/game_data/spel2.lua (DIG-6);
+with a built site, every heading anchor of the old docs/index.html in the site's old-anchors.json (DIG-7);
 and lists every type the digger left unclassified. The callback report (DIG-4) counts callback parameters and events
 per origin and lists the unresolved ones and the conflicts (doc fixes for overlunky, not failures). Differences that are understood are listed in ACCEPTED and
 ACCEPTED_PATTERNS with their reason; anything else makes the script exit with 1.
@@ -20,6 +21,8 @@ import json
 import os
 import re
 import sys
+
+import check_site  # noqa: E402 (tools/, the script's own directory)
 
 # Understood differences, by Lua name: why the old and the new result differ and why the new one is right.
 ACCEPTED = {
@@ -557,6 +560,20 @@ def read_lua_files(paths):
     return texts
 
 
+def check_site_anchors(report, overlunky_root, site_dir):
+    """DIG-7: every section, function, type, enum and event anchor (h1 to h3) of the old index.html is in the site's
+    old-anchors.json, which the home page's redirect script uses, and lands on a built page (tools/check_site.py).
+    Returns the lines to print."""
+    headings, signatures, unmapped = check_site.unmapped_old_anchors(
+        site_dir, os.path.join(overlunky_root, 'docs', 'index.html'))
+    for anchor, why in unmapped:
+        report.add(anchor, f'site: old anchor {why}')
+    return [f'site: {len(headings)} old heading anchors (h1-h3) checked',
+            f'site: {len(signatures)} old signature anchors (h4) are not mapped (accepted: their ids spell the old '
+            f'signature text, `nil-get_address-any-o`, which no generator can derive from the JSON; links to them land '
+            f'on the home page)']
+
+
 def check_lua_files(report, overlunky_root, lua_dir):
     """DIG-6: every function, class, member, enum value and alias the old docs/game_data/spel2.lua declares is in the
     digger's definition files. Returns the lines to print."""
@@ -586,6 +603,7 @@ def main():
     """Runs both parsers' results through the checks and prints the report."""
     overlunky_root, digger_file = os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])
     lua_dir = os.path.abspath(sys.argv[3]) if len(sys.argv) > 3 else None  # before the old parser changes directory
+    site_dir = os.path.abspath(sys.argv[4]) if len(sys.argv) > 4 else None
     with open(digger_file, encoding='utf-8') as f:
         digger = json.load(f)
     ps = load_old_parser(overlunky_root)
@@ -615,6 +633,7 @@ def main():
     check_type_groups(report, type_groups, digger)
     callbacks = callback_report(report, digger)
     lua_lines = check_lua_files(report, overlunky_root, lua_dir) if lua_dir else []
+    site_lines = check_site_anchors(report, overlunky_root, site_dir) if site_dir else []
 
     unknown = unknown_types(digger)
     doc_only = sorted(f['name'] for f in digger['functions'] + digger['values'] if f.get('doc_only'))
@@ -631,7 +650,7 @@ def main():
     print(f'global variables: {digger["global_variables"]}')
     print(f'groups: {len(groups)} old functions in {len(set(groups.values()))} groups compared')
     print(f'type groups: {len(type_groups)} old usertypes in {len(set(type_groups.values()))} groups compared')
-    for line in lua_lines:
+    for line in lua_lines + site_lines:
         print(line)
     print(f'doc-only functions (text signatures, kinds not classified): {doc_only}')
     print()

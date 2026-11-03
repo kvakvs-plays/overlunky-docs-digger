@@ -1,0 +1,58 @@
+---
+// One page per enum table: its values with their numbers and docs. Every value name is searchable.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import Doc from '../../components/Doc.astro';
+import Example from '../../components/Example.astro';
+import SearchKey from '../../components/SearchKey.astro';
+import SearchSymbols from '../../components/SearchSymbols.astro';
+import {enums, eventTables, sourceLink, url} from '../../lib/api.mjs';
+
+export function getStaticPaths() {
+    return [...enums.values()].map((e) => ({params: {name: e.name}, props: {e}}));
+}
+const {e} = Astro.props;
+// A value written in code wins over the runtime file's copy of the same key.
+const values = [...new Map(e.values.filter((v) => v.name && !v.nodoc).reverse().map((v) => [v.name, v])).values()].reverse();
+const hints = e.values.filter((v) => !v.name);
+// Tables with an events page (ON) leave their keys' search to that page.
+const events = eventTables.some((t) => t.table === e.name);
+---
+
+<StarlightPage frontmatter={{title: e.name, description: `The ${e.name} enum of the Overlunky/Playlunky Lua API`}}>
+    <SearchSymbols names={events ? [e.name] : [e.name, ...values.flatMap((v) => [v.name, `${e.name}.${v.name}`])]} />
+    <p class="dd-marks">
+        {e.filled_at_runtime && <span class="dd-tag">filled at runtime</span>}
+        {e.source && <a class="dd-source" href={sourceLink(e.source)}>source</a>}
+    </p>
+    {events && (
+        <p>
+            The callback of every value is on the <a href={url(`/events/${e.name}/`)}>{e.name} events</a> page.
+        </p>
+    )}
+    <Example name={e.name} />
+    <Doc lines={e.doc} />
+    {hints.map((v) => <Doc lines={v.text.replace(/^\.\.\.|\.\.\.$/g, '')} />)}
+    <table class="dd-values">
+        <thead>
+            <tr><th>Name</th><th>Value</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+            {
+                values.map((v) => (
+                    <tr id={v.name}>
+                        <td>
+                            <code data-pagefind-weight="6">{`${e.name}.${v.name}`}</code>
+                            <SearchKey name={v.name} weight={6} />
+                        </td>
+                        <td>
+                            <code>{v.value ?? v.text}</code>
+                        </td>
+                        <td>
+                            <Doc lines={v.doc} />
+                        </td>
+                    </tr>
+                ))
+            }
+        </tbody>
+    </table>
+</StarlightPage>

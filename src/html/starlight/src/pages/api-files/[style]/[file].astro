@@ -1,0 +1,23 @@
+---
+// One Lua definition file to read in the browser (plain text, kept out of the search index).
+import fs from 'node:fs';
+import path from 'node:path';
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import {downloads, downloadsDir, url} from '../../../lib/api.mjs';
+
+export function getStaticPaths() {
+    return downloads.flatMap((d) =>
+        d.files.map((f) => ({params: {style: d.style, file: f.replace(/\.lua$/, '')}, props: {d, f}})),
+    );
+}
+const {d, f} = Astro.props;
+const text = fs.readFileSync(path.join(downloadsDir, d.style, f), 'utf-8');
+---
+
+<StarlightPage frontmatter={{title: `${f} (${d.label})`, pagefind: false, tableOfContents: false}}>
+    <p>
+        <a href={url(`/downloads/${d.style}/${f}`)} download>Download {f}</a>
+        {d.zip && <> or <a href={url(`/downloads/${d.zip}`)} download>all {d.label} files</a></>}.
+    </p>
+    <pre class="dd-file"><code>{text}</code></pre>
+</StarlightPage>

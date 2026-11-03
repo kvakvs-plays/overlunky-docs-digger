@@ -1,0 +1,33 @@
+---
+// Global variables (`state`, `players`, ...): type, example and doc.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import Doc from '../components/Doc.astro';
+import Example from '../components/Example.astro';
+import SearchSymbols from '../components/SearchSymbols.astro';
+import {globals, sourceLink} from '../lib/api.mjs';
+import {typeHtml} from '../lib/render.mjs';
+
+const headings = globals.map((g) => ({depth: 2, slug: g.name, text: g.name}));
+---
+
+<StarlightPage frontmatter={{title: 'Global variables', description: 'Variables every script can use'}} headings={headings}>
+    <SearchSymbols names={globals.map((g) => g.name)} />
+    <p>These variables are always there to use.</p>
+    {
+        globals.map((g) => (
+            <section class="dd-entry">
+                <h2 id={g.name}>
+                    <span data-pagefind-weight="10">{g.name}</span>
+                </h2>
+                {g.value && (
+                    <p class="dd-marks">
+                        <code set:html={typeHtml(g.value.type.lua)} />
+                        <a class="dd-source" href={sourceLink(g.value.source)}>source</a>
+                    </p>
+                )}
+                <Example name={g.name} />
+                <Doc lines={g.value?.doc} />
+            </section>
+        ))
+    }
+</StarlightPage>

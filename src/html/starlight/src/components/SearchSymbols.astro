@@ -1,0 +1,15 @@
+---
+// The symbols a page is about, as the Pagefind meta field `symbols`: astro.config.mjs weighs a match there above a
+// mention in text, so searching a name finds the page that defines it first. Pagefind splits compound words
+// (`VanillaMovableBehavior` and `get_entity` also index `movable` and `entity`), so the names are written lower case
+// without separators: the field then matches whole names only (`entity` boosts Entity, not the page of get_entity).
+// Pagefind drops dots, so a dotted query is one word (`ON.FRAME` is `onframe`): pages list qualified names too. Names
+// with `_` (which Pagefind keeps) are matched by the headings and rows in the text (see SearchKey.astro).
+interface Props {
+    // Lua names (`Entity`, `spawn_entity`, `FRAME`).
+    names: string[];
+}
+const words = [...new Set(Astro.props.names.map((name) => name.toLowerCase().replace(/[^a-z0-9]/g, '')))];
+---
+
+<span data-pagefind-meta={`symbols:${words.join(' ')}`}></span>

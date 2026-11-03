@@ -1,0 +1,35 @@
+---
+// The Lua definition files to download: a ZIP per dialect, and each file to view or save on its own.
+import {downloads, url} from '../lib/api.mjs';
+---
+
+{
+    downloads.length === 0 ? (
+        <p>No definition files were given to this build.</p>
+    ) : (
+        downloads.map((d) => (
+            <section class="dd-downloads">
+                <h3 id={`download-${d.style}`}>{d.label}</h3>
+                <p>For {d.about}.</p>
+                {d.zip && (
+                    <p>
+                        <a class="dd-button" href={url(`/downloads/${d.zip}`)} download>
+                            Download all ({d.zip})
+                        </a>
+                    </p>
+                )}
+                <ul>
+                    {d.files.map((f) => (
+                        <li>
+                            <a href={url(`/api-files/${d.style}/${f.replace(/\.lua$/, '')}/`)}>{f}</a> (
+                            <a href={url(`/downloads/${d.style}/${f}`)} download>
+                                download
+                            </a>
+                            )
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        ))
+    )
+}

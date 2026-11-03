@@ -1,0 +1,79 @@
+---
+// One page per usertype: bases, derived types, constructors, fields and methods.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import Doc from '../../components/Doc.astro';
+import Example from '../../components/Example.astro';
+import MemberEntry from '../../components/MemberEntry.astro';
+import SearchSymbols from '../../components/SearchSymbols.astro';
+import Signature from '../../components/Signature.astro';
+import {baseType, derivedTypes, membersOf, sourceLink, url, usertypes} from '../../lib/api.mjs';
+
+export function getStaticPaths() {
+    return [...usertypes.values()].map((u) => ({params: {name: u.name}, props: {u}}));
+}
+const {u} = Astro.props;
+const members = membersOf(u);
+const fields = members.filter((m) => m.kind !== 'method' && !m.meta);
+const methods = members.filter((m) => m.kind === 'method' && !m.meta);
+const meta = members.filter((m) => m.meta);
+const bases = (u.bases ?? []).map((b) => baseType(b)?.name ?? b);
+const derived = (derivedTypes.get(u.name) ?? []).sort();
+const sections = [
+    ['constructors', 'Constructors', u.constructors ?? []],
+    ['fields', 'Fields', fields],
+    ['methods', 'Methods', methods],
+    ['operators', 'Operators', meta],
+].filter(([, , items]) => items.length);
+const headings = sections.map(([slug, text]) => ({depth: 2, slug, text}));
+const link = (name) => (usertypes.has(name) ? url(`/types/${name}/`) : undefined);
+---
+
+<StarlightPage
+    frontmatter={{title: u.name, description: `${u.name} (${u.group}) in the Overlunky/Playlunky Lua API`}}
+    headings={headings}
+>
+    <SearchSymbols names={[u.name]} />
+    <p class="dd-marks">
+        <span class="dd-tag">{u.group}</span>
+        {u.no_constructor && <span class="dd-tag">no constructor</span>}
+        <a class="dd-source" href={sourceLink(u.source)}>source</a>
+    </p>
+    {
+        bases.length > 0 && (
+            <p>
+                Derived from{' '}
+                {bases.map((b, i) => (
+                    <>
+                        {i > 0 && ', '}
+                        {link(b) ? <a href={link(b)}>{b}</a> : <code>{b}</code>}
+                    </>
+                ))}
+            </p>
+        )
+    }
+    {
+        derived.length > 0 && (
+            <p>
+                Derived types:{' '}
+                {derived.map((d, i) => (
+                    <>
+                        {i > 0 && ', '}
+                        <a href={link(d)}>{d}</a>
+                    </>
+                ))}
+            </p>
+        )
+    }
+    <Example name={u.name} />
+    <Doc lines={u.doc?.length ? u.doc : u.cpp_doc} />
+    {
+        sections.map(([slug, text, items]) => (
+            <>
+                <h2 id={slug}>{text}</h2>
+                {slug === 'constructors'
+                    ? items.map((sig) => <Signature name={`${u.name}.new`} sig={sig} />)
+                    : items.map((m) => <MemberEntry owner={u.name} m={m} />)}
+            </>
+        ))
+    }
+</StarlightPage>

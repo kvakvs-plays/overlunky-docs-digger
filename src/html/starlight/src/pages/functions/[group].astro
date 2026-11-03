@@ -1,0 +1,55 @@
+---
+// One page per function group (generate.py's sections), and one for deprecated functions and script callbacks.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import {Aside} from '@astrojs/starlight/components';
+import Doc from '../../components/Doc.astro';
+import FunctionEntry from '../../components/FunctionEntry.astro';
+import SearchSymbols from '../../components/SearchSymbols.astro';
+import {deprecatedGroup, functionPages, qualifiedName, sourceLink} from '../../lib/api.mjs';
+import {typeHtml} from '../../lib/render.mjs';
+
+export function getStaticPaths() {
+    return functionPages.map((page) => ({params: {group: page.slug}, props: {page}}));
+}
+const {page} = Astro.props;
+const headings = [
+    ...page.functions.map((f) => qualifiedName(f)),
+    ...page.scriptCallbacks.map((c) => c.name),
+].map((name) => ({depth: 2, slug: name, text: name}));
+---
+
+<StarlightPage frontmatter={{title: page.group, description: `${page.group} of the Overlunky/Playlunky Lua API`}} headings={headings}>
+    {
+        page.group.startsWith('Game patch') && (
+            <Aside type="caution">
+                These functions modify the game code, which is hard to keep track and reverse for online rollback
+                mechanics. If you care about online compatibility of your mod, consider using them only during level
+                generation etc.
+            </Aside>
+        )
+    }
+    {
+        page.group === deprecatedGroup && (
+            <Aside type="caution">
+                These functions still exist but their usage is discouraged, they all have alternatives mentioned here so
+                please use those!
+            </Aside>
+        )
+    }
+    <SearchSymbols names={headings.map((h) => h.slug)} />
+    {page.functions.map((f) => <FunctionEntry f={f} />)}
+    {
+        page.scriptCallbacks.map((c) => (
+            <section class="dd-entry">
+                <h2 id={c.name}>
+                    <span data-pagefind-weight="10">{c.name}</span>
+                </h2>
+                <p class="dd-marks">
+                    <span class="dd-tag">global your script defines</span> <code set:html={typeHtml(c.type.lua)} />
+                    <a class="dd-source" href={sourceLink(c.source)}>source</a>
+                </p>
+                <Doc lines={c.doc} />
+            </section>
+        ))
+    }
+</StarlightPage>

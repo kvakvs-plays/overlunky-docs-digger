@@ -1,12 +1,13 @@
 # Builds and tests docs-digger, runs it over an overlunky checkout and uploads the extracted Lua API as the artifact
-# `docs-digger-api` (docs-digger-api.json, schema/docs-digger.schema.json), the LuaLS definition files as
-# `docs-digger-lua`, and the parity report against overlunky's old docs/parse_source.py as `parity-report`. Windows only: overlunky parses with the MSVC STL and the Windows SDK.
+# `docs-digger-api` (docs-digger-api.json, schema/docs-digger.schema.json), the Lua definition files as
+# `docs-digger-lua` (lua/ for LuaLS, lua-emmylua/), and the parity report against overlunky's old
+# docs/parse_source.py as `parity-report`. Windows only: overlunky parses with the MSVC STL and the Windows SDK.
+# The site job builds and checks the HTML reference from those artifacts (`docs-digger-site`); where it is hosted is
+# not decided yet, so nothing publishes it.
+# Kept up to date but not run automatically for now (the outputs are built by hand): start it from the Actions tab.
 name: Dig
 
 on:
-  push:
-    branches: [master]
-  pull_request:
   workflow_dispatch:
     inputs:
       overlunky_repository:
@@ -88,11 +89,13 @@ jobs:
             digger/schema/docs-digger.schema.json
           if-no-files-found: error
 
-      - name: Upload the LuaLS definition files
+      - name: Upload the Lua definition files
         uses: actions/upload-artifact@v4
         with:
           name: docs-digger-lua
-          path: digger/build/lua/*.lua
+          path: |
+            digger/build/lua/*.lua
+            digger/build/lua-emmylua/*.lua
           if-no-files-found: error
 
       - name: Upload the parity report
@@ -102,3 +105,57 @@ jobs:
           name: parity-report
           path: parity-report.txt
           if-no-files-found: ignore
+
+  site:
+    name: HTML reference (Windows)
+    needs: dig
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      DD_OVERLUNKY_ROOT: ${{ github.workspace }}\overlunky
+      # Set DD_SITE_URL and DD_SITE_BASE here once the hosting is decided (default: spelunky-fyi.github.io/overlunky).
+    steps:
+      - name: Check out docs-digger
+        uses: actions/checkout@v5
+        with:
+          path: digger
+
+      # Only docs/: the examples and the old index.html, whose anchors the site keeps working.
+      - name: Check out overlunky's docs
+        uses: actions/checkout@v5
+        with:
+          repository: ${{ inputs.overlunky_repository || 'spelunky-fyi/overlunky' }}
+          ref: ${{ inputs.overlunky_ref || 'main' }}
+          path: overlunky
+          sparse-checkout: docs
+
+      - name: Restore Node.js and the site packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            digger/thirdparty/node-v*
+            digger/thirdparty/node-starlight
+          key: site-${{ runner.os }}-${{ hashFiles('digger/cmake/NodePackage.cmake', 'digger/src/html/*/package-lock.json') }}
+
+      - name: Download the API
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-digger-api
+
+      - name: Download the Lua definition files
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-digger-lua
+          path: digger/build
+
+      # Builds, then checks links, old anchors and search (site.bat).
+      - name: Build and check the site
+        shell: cmd
+        run: digger\site.bat starlight "%GITHUB_WORKSPACE%\docs-digger-api.json"
+
+      - name: Upload the site
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-digger-site
+          path: digger/build/site/starlight
+          if-no-files-found: error

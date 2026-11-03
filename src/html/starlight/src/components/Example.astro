@@ -1,0 +1,19 @@
+---
+// The example of a symbol from overlunky's docs/examples/<name>.md or .lua, if there is one.
+import Doc from './Doc.astro';
+import {examples} from '../lib/api.mjs';
+
+interface Props {
+    // Symbol name as the example file is named (`spawn_entity`, `ON.LEVEL`, `CustomTheme`).
+    name: string;
+}
+const texts = examples.get(Astro.props.name) ?? [];
+---
+
+{
+    texts.map((text) => (
+        <div class="dd-example">
+            <Doc lines={text} />
+        </div>
+    ))
+}

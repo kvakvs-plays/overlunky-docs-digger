@@ -1,0 +1,60 @@
+---
+// One callable form: the Lua signature, its parameters (optional, callback signature) and returns (nil meaning). Kept
+// out of the search index: type names in every signature would outrank the symbols' own entries.
+import {escape, paramName, paramTypeHtml, signatureHtml, typeHtml, visibleParams} from '../lib/render.mjs';
+import {url} from '../lib/api.mjs';
+
+interface Props {
+    // Name as called (`spawn`, `Entity:kill`, `Vec2.new`).
+    name: string;
+    // A Signature or a Callback of the JSON.
+    sig: any;
+}
+const {name, sig} = Astro.props;
+const params = visibleParams(sig);
+const returns = sig.returns ?? [];
+// Text for a parameter that receives a Lua function.
+const callbackNote = (cb) => {
+    if (cb.selector) {
+        return `The signature depends on the <a href="${url(`/events/${cb.selector}/`)}">${escape(cb.selector)}</a> value passed.`;
+    }
+    if (!cb.params) {
+        return 'Callback signature not known from the code.';
+    }
+    if (cb.returns?.length && cb.nil_allowed) {
+        return `Returning nil (or nothing): ${escape(cb.nil_meaning ?? 'allowed')}.`;
+    }
+    return '';
+};
+---
+
+<pre class="dd-signature" data-pagefind-ignore><code set:html={signatureHtml(name, sig)} /></pre>
+{
+    params.length > 0 && (
+        <dl class="dd-params" data-pagefind-ignore>
+            {params.map((p, i) => (
+                <>
+                    <dt>
+                        <code>{paramName(p, i)}</code>: <code set:html={paramTypeHtml(p)} />
+                        {p.omittable && <span class="dd-tag">optional</span>}
+                    </dt>
+                    {p.callback && callbackNote(p.callback) && <dd set:html={callbackNote(p.callback)} />}
+                </>
+            ))}
+        </dl>
+    )
+}
+{
+    returns.length > 0 && (
+        <p class="dd-returns" data-pagefind-ignore>
+            Returns{' '}
+            {returns.map((r, i) => (
+                <>
+                    {i > 0 && ', '}
+                    <code set:html={typeHtml(r.lua)} />
+                    {r.nullable && ' (may be nil)'}
+                </>
+            ))}
+        </p>
+    )
+}

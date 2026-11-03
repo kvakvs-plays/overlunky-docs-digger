@@ -1,0 +1,33 @@
+---
+// Automatic casting of entities, and the `as_<typename>` functions.
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import {casts, url} from '../lib/api.mjs';
+import {typeHtml} from '../lib/render.mjs';
+---
+
+<StarlightPage frontmatter={{title: 'Automatic casting of entities', description: 'Entity types and the as_ functions'}}>
+    <p>
+        When using <code>get_entity()</code> the returned entity will automatically be of the correct type. It is not
+        necessary to use the <code>as_&lt;typename&gt;</code> functions.
+    </p>
+    <p>
+        To figure out what type of entity you get back, consult the <a
+            href="https://github.com/spelunky-fyi/overlunky/blob/main/docs/entities-hierarchy.md">entity hierarchy list</a
+        >.
+    </p>
+    <p>
+        You can also use the types (uppercase <code>&lt;typename&gt;</code>) as <code>ENT_TYPE.&lt;typename&gt;</code> in
+        <code>get_entities</code> functions and <code>pre/post spawn</code> callbacks.
+    </p>
+    <p>For reference, the available <code>as_&lt;typename&gt;</code> functions are listed below:</p>
+    <ul class="dd-columns">
+        {
+            casts.map((m) => (
+                <li>
+                    <a href={url(`/types/Entity/#${m.name}`)} data-pagefind-weight="6">{m.name}</a>:{' '}
+                    <code set:html={typeHtml(m.overloads?.[0]?.returns?.[0]?.lua)} />
+                </li>
+            ))
+        }
+    </ul>
+</StarlightPage>

@@ -1,0 +1,75 @@
+---
+// Events of one enum-keyed callback table (`ON` for set_callback, `THEME_OVERRIDE` for CustomTheme): the callback
+// signature of every key, per storage (`override`, `pre`, `post`).
+import StarlightPage from '@astrojs/starlight/components/StarlightPage.astro';
+import Doc from '../../components/Doc.astro';
+import Example from '../../components/Example.astro';
+import SearchKey from '../../components/SearchKey.astro';
+import SearchSymbols from '../../components/SearchSymbols.astro';
+import Signature from '../../components/Signature.astro';
+import {eventTables, symbols, url} from '../../lib/api.mjs';
+
+export function getStaticPaths() {
+    return eventTables.map((t) => ({params: {table: t.table}, props: {t}}));
+}
+const {t} = Astro.props;
+// What registers the callbacks of a storage, for the signature's name.
+const registrars = {
+    'ScreenCallback::func': 'set_callback',
+    'ThemeOverride::func': 'CustomTheme:override',
+    'ThemeOverride::pre': 'CustomTheme:pre',
+    'ThemeOverride::post': 'CustomTheme:post',
+};
+const registrar = (storage) => registrars[storage] ?? storage;
+// Storages in the order above (override, pre, post), unknown ones last.
+const order = Object.keys(registrars);
+const byRegistrar = (a, b) =>
+    (order.indexOf(a.stored_in) + 1 || order.length + 1) - (order.indexOf(b.stored_in) + 1 || order.length + 1);
+const headings = t.keys.map((k) => ({depth: 2, slug: k.name, text: `${t.table}.${k.name}`}));
+const setCallback = symbols.get('set_callback');
+---
+
+<StarlightPage frontmatter={{title: `${t.table} events`, description: `Callbacks of the ${t.table} values`}} headings={headings}>
+    <SearchSymbols names={[t.table, ...t.keys.flatMap((k) => [k.name, `${t.table}.${k.name}`])]} />
+    {
+        t.table === 'ON' && (
+            <>
+                <Example name="set_callback" />
+                <p>
+                    These events are used in {setCallback ? <a href={url(setCallback)}>set_callback</a> : 'set_callback'}{' '}
+                    to call your callback function before or after something happens in the game. The named events
+                    related to game screens generally run on the first engine update when changing to said screen.
+                    Coming back from the options screen does not fire the parent screen event though (OPTIONS to LEVEL
+                    for example). If you need more fine-grained control over the screen events, use{' '}
+                    <code>SCREEN</code>, <code>PRE_LOAD_SCREEN</code> and <code>POST_LOAD_SCREEN</code> with the help of
+                    the <code>state.screen</code> variables.
+                </p>
+            </>
+        )
+    }
+    {
+        t.keys.map((k) => (
+            <section class="dd-entry">
+                <h2 id={k.name}>
+                    <span data-pagefind-weight="10">{`${t.table}.${k.name}`}</span>
+                    <SearchKey name={k.name} weight={10} />
+                </h2>
+                <Example name={`${t.table}.${k.name}`} />
+                <Doc lines={k.storages.find((s) => s.doc?.length)?.doc} />
+                {[...k.storages].sort(byRegistrar).map((s) => (
+                    <>
+                        {k.storages.length > 1 && <h3>{registrar(s.stored_in)}</h3>}
+                        {s.callback.params ? (
+                            <Signature name={`callback`} sig={s.callback} />
+                        ) : (
+                            <p>Callback signature not known from the code.</p>
+                        )}
+                        {s.callback.nil_allowed && s.callback.returns?.length > 0 && (
+                            <p>Returning nil (or nothing): {s.callback.nil_meaning ?? 'allowed'}.</p>
+                        )}
+                    </>
+                ))}
+            </section>
+        ))
+    }
+</StarlightPage>

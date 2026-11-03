@@ -1,0 +1,39 @@
+---
+// One usertype member: a field or property with its type, or a method with its signatures; doc and C++ doc.
+import Doc from './Doc.astro';
+import Signature from './Signature.astro';
+import {typeHtml} from '../lib/render.mjs';
+import {sourceLink} from '../lib/api.mjs';
+
+interface Props {
+    // The usertype's Lua name.
+    owner: string;
+    // A Member of the JSON.
+    m: any;
+}
+const {owner, m} = Astro.props;
+// A method of the object is called with `:`; a function the type table holds (`Vec2.new`) with `.`.
+const callName = (sig) => `${owner}${sig.self ? ':' : '.'}${m.name}`;
+const kinds = {field: '', readonly: 'read only', property: 'property', value: 'value'};
+const readOnly = m.kind === 'readonly' || (m.kind === 'property' && !m.setter);
+const doc = m.doc?.length ? m.doc : m.cpp_doc;
+---
+
+<div class="dd-member">
+    <h3 id={m.name}><span data-pagefind-weight="8">{m.name}</span></h3>
+    {
+        m.kind === 'method' ? (
+            m.overloads.map((sig) => <Signature name={callName(sig)} sig={sig} />)
+        ) : (
+            <p data-pagefind-ignore>
+                <code set:html={typeHtml(m.type?.lua)} />
+                {readOnly && <span class="dd-tag">read only</span>}
+                {kinds[m.kind] && !readOnly && <span class="dd-tag">{kinds[m.kind]}</span>}
+            </p>
+        )
+    }
+    {m.meta && <span class="dd-tag" title="Keyed by a sol::meta_function">metamethod</span>}
+    {m.deprecated && <span class="dd-tag dd-warn">deprecated</span>}
+    <Doc lines={doc} />
+    <a class="dd-source" href={sourceLink(m.source)}>source</a>
+</div>

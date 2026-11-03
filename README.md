@@ -7,9 +7,10 @@ documentation and exact C++ types. It replaces the regex-based extraction in ove
 finds everything that one finds, and adds what regexes cannot see: exact parameter and return types, nullable
 parameters, and the signatures of Lua callbacks (what they receive, what they may return, and what `nil` means).
 
-The output is data only; turning it into HTML pages or Lua type stubs is a later step. The work plan and the design
-notes are in `.agents/01-plan.md` (finished steps in `.agents/00-finished.md`); `AGENTS.md` has the rules for changing
-the code.
+From that JSON it also writes the Lua definition files for the Lua language server (`spel2.lua` and friends) and
+builds the HTML reference with search (`site.bat`), which replace overlunky's `generate_emmylua.py` and its Slate page.
+The work plan and the design notes are in `.agents/01-plan.md` (finished steps in `.agents/00-finished.md`);
+`AGENTS.md` has the rules for changing the code.
 
 ## Setup (Windows)
 
@@ -34,7 +35,8 @@ The Clang/LLVM development libraries are not available from winget. The first co
 `cmake/LLVMPackage.cmake`) and unpacks it into `thirdparty/` (git-ignored, about 4 GB). Later configures reuse it. To
 use another LLVM install, pass `-DClang_DIR=<llvm root>/lib/cmake/clang`. Everything else that is downloaded (zlib and
 zstd for LLVM, SQLite, the Lua headers for sol2, the analyzer venv) also goes to `thirdparty/`, pinned by version and
-SHA256. `build/` only holds output that a configure and build recreate.
+SHA256, and so does the Node.js that builds the HTML reference (`cmake/NodePackage.cmake`, fetched by `site.bat`; no
+Node install is needed). `build/` only holds output that a configure and build recreate.
 
 An overlunky checkout with submodules is expected at `../Playlunky/submodules/overlunky`
 (`git submodule update --init --recursive` in Playlunky). Elsewhere, set the environment variable `DD_OVERLUNKY_ROOT`
@@ -54,9 +56,12 @@ The scripts enter the Visual Studio environment themselves (`tools\dev-env.cmd`)
   the runtime enum dump `docs/game_data/lua_enums.txt` (`--runtime-enums`), the function groups `config\groups.json`
   (`--groups`), the Lua type names `config\lua_types.json` (`--lua-types`) and the result cache
   `build\digger-cache.sqlite` (`--cache`), and writes the LuaLS definition files into `build\lua` (`--lua-out`, with
-  `config\lua_prelude.lua` and the links of the published docs). When lua-language-server is on `PATH` or comes with
+  `config\lua_prelude.lua` and the links of the published docs) and the classic EmmyLua ones into `build\lua-emmylua`
+  (`--emmylua-out`). When lua-language-server is on `PATH` or comes with
   the VS Code Lua extension, it then checks those files and reports problems (the run does not fail on them). Its own
   arguments go to the digger, for example `dig.bat -o F:\out\api.json --jobs 8`; give `-o` an absolute path.
+- `site.bat [generator] [json]`: builds the HTML reference from `build\api.json` into `build\site\starlight` and checks
+  it (see "HTML reference").
 - `quality.bat [changed|all]`: the quality gate (below).
 
 `build\digger\Release\docs-digger.exe --help` lists all options. The 101 translation units are parsed in parallel
@@ -112,7 +117,8 @@ members. `--lua-prelude <file>` adds hand-written declarations (`config/lua_prel
 
 `--lua-style` picks the annotation dialect: `luals` (default) for lua-language-server, or `emmylua` for the more
 limited classic EmmyLua of older IDE plugins (`T|nil` instead of `T?` and `name?`, `table` instead of tuple types,
-`---@vararg`, descriptions after `@`, no `---@operator` or index fields).
+`---@vararg`, descriptions after `@`, no `---@operator` or index fields). `--emmylua-out <dir>` writes an EmmyLua set
+next to the `--lua-out` one in the same run (the HTML reference offers both for download).
 
 Enums are written as plain tables with `---@alias NAME integer`, as the old file did: a `---@enum` parameter rejects
 plain numbers (computed entity ids), and the literal values let LuaLS tell `ON.FRAME` from `ON.LEVEL`. Callbacks chosen
@@ -163,6 +169,41 @@ contains a `requires_base` substring (if any are given), and then matches when a
 `bases_contain` are substrings of a C++ base from `sol::bases<...>`. Generators use the groups for page grouping, so
 another generator gets the same structure without its own rules.
 
+## HTML reference
+
+`site.bat [generator] [json]` builds the HTML reference from the digger JSON (default `build\api.json`) with a generator
+of `src/html/<generator>/` (default `starlight`: [Astro Starlight](https://starlight.astro.build) with Pagefind search),
+into `build\site\<generator>`. It takes the examples from overlunky's `docs/examples/` (`DD_OVERLUNKY_ROOT`, as
+`dig.bat`) and the Lua definition files of `build\lua` and `build\lua-emmylua`, which the home page offers to view, to
+download one by one or as a ZIP per dialect (`tools/make_zip.py`: the same bytes on every build). The pinned Node.js
+runs `npm ci` into `thirdparty\node-<generator>` when the lockfile changes, linked into the generator directory as
+`node_modules`. A build takes about 15 s plus the checks. The site is served under `DD_SITE_BASE` (default
+`/overlunky`) of `DD_SITE_URL` (default `https://spelunky-fyi.github.io`); source links go to `DD_SITE_SOURCE_URL`.
+
+Pages: home (with the downloads), Lua libraries, global variables, STD containers, one page per function group (the
+groups of the JSON) and deprecated functions, one per usertype (bases, derived types, constructors, fields, methods),
+the types by section and group, one per enum, the events of `ON` and `THEME_OVERRIDE` with their callback signatures,
+casting and aliases. Every type name in a signature links to its page. The old single page's anchors keep working:
+`index.html#spawn_entity` lands on the home page, whose script looks the anchor up in `old-anchors.json` and moves on;
+the same map resolves the `(#anchor)` links of the doc comments (a link to an anchor nothing has stays as text and is
+named at the end of the build: a doc fix for overlunky).
+
+Search weighs a symbol's own page above mentions: each page lists the symbols it defines in a Pagefind meta field
+(`SearchSymbols.astro`), signatures are left out of the index, and the ranking is tuned on the sample list
+(`src/html/starlight/src/lib/ranking.mjs`).
+
+After the build `site.bat` checks the site:
+
+- `tools/check_site.py`: every internal link and `#fragment` resolves; every sample of `tools/site_samples.json` that the
+  old page had a heading for lands on its symbol through `old-anchors.json`; every heading anchor (h1 to h3) of
+  overlunky's old `docs/index.html` is mapped (`--compare <dir>` also compares two builds byte for byte);
+- `npm run check` of the generator: the search check (`scripts/check-search.mjs` runs Pagefind's own search code over
+  the built index): each sample's page is the first result, with the symbol's heading as its best sub-result. Samples
+  with an `accepted` reason may miss and are listed with their rank (`DD_SEARCH_RANKING` tries other weights).
+
+A generator is self-contained in its directory: its only inputs are the digger JSON, the examples and the staged
+downloads; grouping comes from the JSON, the sample list is plain data in `tools/`. The quality gate skips `src/html/`.
+
 ## Tests
 
 `test.bat` runs two tests per fixture:
@@ -191,7 +232,10 @@ Register new fixtures with `dd_add_golden_test(<name>)` in `tests/CMakeLists.txt
 compares its results with the digger's: functions (presence, deprecation, parameter counts, docs), usertypes and
 members, enums, aliases, libraries, casts, events, global variables, vtable hooks, and the group of every function
 against `generate.py`'s `func_cats`. Given the Lua directory, it also checks that every function, class, member, enum
-value and alias of the old `docs/game_data/spel2.lua` is declared in the new files. It prints which parity items (P1 to P16 of the plan) it covers, lists the accepted
+value and alias of the old `docs/game_data/spel2.lua` is declared in the new files; given a built site as well
+(`[build\lua build\site\starlight]`), that every heading anchor of the old `docs/index.html` is mapped. It also
+compares every usertype's section and group with `generate.py`'s `type_cats`. It prints which parity items (P1 to P16
+of the plan) it covers, lists the accepted
 differences with their reasons, and exits with 1 on anything unexplained or any unclassified type. Its callback report
 counts callback signatures per origin and lists the unresolved ones and the conflicts between the code and the
 `The callback signature is ...` / `Params:` docs: doc fixes for overlunky, not failures. Run it at the end of every
@@ -208,12 +252,16 @@ Format files you touch with `thirdparty\venv-quality\Scripts\clang-format.exe -i
 
 ## CI
 
-`.github/workflows/dig.yml` runs on `windows-latest` for pushes to `master`, pull requests and by hand
-(`workflow_dispatch`, with the overlunky repository and ref to dig; default `spelunky-fyi/overlunky` `main`). It
+`.github/workflows/dig.yml` runs on `windows-latest`. For now it only runs when started by hand (`workflow_dispatch`,
+with the overlunky repository and ref to dig; default `spelunky-fyi/overlunky` `main`): the outputs are built locally
+with `dig.bat` and `site.bat`, and the workflow is kept up to date with them. It
 fetches the LLVM package (cached with the other downloads in `thirdparty/`), builds with the package's clang-cl, runs
 the tests, digs a fresh overlunky checkout, checks the output against the schema and uploads three artifacts:
-`docs-digger-api` (`docs-digger-api.json` and the schema), `docs-digger-lua` (the LuaLS definition files) and
-`parity-report` (informative; a newer overlunky may bring differences the report does not explain yet).
+`docs-digger-api` (`docs-digger-api.json` and the schema), `docs-digger-lua` (`lua/` LuaLS and `lua-emmylua/` definition
+files) and `parity-report` (informative; a newer overlunky may bring differences the report does not explain yet).
+The `site` job then builds and checks the HTML reference from those artifacts (with overlunky's `docs/` only) and
+uploads it as `docs-digger-site`. Where the site is hosted is not decided yet, so nothing publishes it; set
+`DD_SITE_URL` and `DD_SITE_BASE` in that job when it is.
 
 The job lives in this repository, next to the digger and its pins, so overlunky does not need to build it. overlunky's
 Slate job (`build-docs.yml`, on Ubuntu) can take the JSON of the latest successful run:
@@ -229,10 +277,10 @@ gh run download "$run" -R kvakvs-plays/overlunky-docs-digger -n docs-digger-api 
 
 ```
 CMakeLists.txt            the digger; tests; quality targets
-build.bat, test.bat, dig.bat, quality.bat
-cmake/                    pinned downloads (LLVMPackage.cmake, Download.cmake), zlib/zstd/SQLite builds,
-                          overlunky configure, quality checks
-config/                   function group rules, Lua type names, Lua prelude
+build.bat, test.bat, dig.bat, site.bat, quality.bat
+cmake/                    pinned downloads (LLVMPackage.cmake, NodePackage.cmake, Download.cmake), zlib/zstd/SQLite
+                          builds, overlunky configure, quality checks
+config/                   function and type group rules, Lua type names, Lua prelude
 schema/                   JSON Schema of the output
 src/main.cpp              command line, steps after all translation units, output
 src/runner.cpp            parallel parsing, progress, ordered merge; cache.cpp and codec.cpp: the result cache
@@ -243,6 +291,8 @@ src/resolve.cpp, types.cpp, comments.cpp   sol2 expressions, type classification
 src/merge.cpp, groups.cpp, lua_names.cpp   steps after all translation units (no AST)
 src/emit_lua.cpp          the LuaLS / EmmyLua definition files
 src/model.hpp/.cpp        the data model and its JSON
+src/html/starlight/       the HTML reference generator (Astro Starlight project; package.json and lockfile pinned)
 tests/                    fixtures, golden JSON and Lua files, unit tests, RunGolden.cmake, RunLuacheck.cmake
-tools/                    parity.py, check_schema.py, dev-env.cmd, analyzer pins
+tools/                    parity.py, check_schema.py, check_site.py, site_samples.json, make_zip.py, dev-env.cmd,
+                          analyzer pins
 ```

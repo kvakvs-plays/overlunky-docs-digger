@@ -89,6 +89,11 @@ namespace {
                 clEnumValN(dd::LuaStyle::EmmyLua, "emmylua", "classic EmmyLua: no `?`, tuples or operators")),
             llvm::cl::init(dd::LuaStyle::LuaLS), llvm::cl::cat(category)};
 
+        // A second directory with the same files in the classic EmmyLua dialect, so one run gives both downloads.
+        llvm::cl::opt<std::string> emmyluaOut{
+            "emmylua-out", llvm::cl::desc("Also write the definition files in the classic EmmyLua dialect into <dir>"),
+            llvm::cl::value_desc("dir"), llvm::cl::cat(category)};
+
         // Under the 500 KB LuaLS preloads by default, with a margin.
         llvm::cl::opt<std::size_t> luaMaxFileSize{
             "lua-max-file-size", llvm::cl::desc("Largest Lua definition file in bytes; more continues in _2, _3"),
@@ -177,13 +182,23 @@ namespace {
         return true;
     }
 
-    // Writes the LuaLS definition files when --lua-out is given; false after printing why it failed.
+    // Writes one set of definition files in style into dir; false after printing why it failed.
+    bool writeLuaStyle(dd::LuaFileSettings settings, dd::LuaStyle style, const std::string& dir,
+                       const dd::Extraction& extraction) {
+        settings.style = style;
+        if (llvm::Error error = dd::writeLuaFiles(dd::luaFiles(extraction, settings), dir)) {
+            llvm::errs() << "docs-digger: " << llvm::toString(std::move(error)) << '\n';
+            return false;
+        }
+        return true;
+    }
+
+    // Writes the Lua definition files of --lua-out and --emmylua-out; false after printing why it failed.
     bool writeLua(const Options& options, const dd::Extraction& extraction) {
-        if (options.luaOut.empty()) {
+        if (options.luaOut.empty() && options.emmyluaOut.empty()) {
             return true;
         }
         dd::LuaFileSettings settings;
-        settings.style = options.luaStyle;
         settings.docUrl = options.luaDocUrl;
         settings.maxFileSize = options.luaMaxFileSize;
         if (!options.luaPrelude.empty()) {
@@ -195,11 +210,9 @@ namespace {
             }
             settings.prelude = (*prelude)->getBuffer().rtrim().str() + "\n";
         }
-        if (llvm::Error error = dd::writeLuaFiles(dd::luaFiles(extraction, settings), options.luaOut)) {
-            llvm::errs() << "docs-digger: " << llvm::toString(std::move(error)) << '\n';
-            return false;
-        }
-        return true;
+        return (options.luaOut.empty() || writeLuaStyle(settings, options.luaStyle, options.luaOut, extraction)) &&
+            (options.emmyluaOut.empty() ||
+             writeLuaStyle(settings, dd::LuaStyle::EmmyLua, options.emmyluaOut, extraction));
     }
 
     // The configuration files named on the command line; each is empty when its option is not given.

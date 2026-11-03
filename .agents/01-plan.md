@@ -152,7 +152,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   build.bat, test.bat     build / build + CTest (clang-cl, Ninja Multi-Config, build/digger)
   dig.bat                 overlunky compile database (build/overlunky) + run the digger on it
   quality.bat             clang-format, Lizard, clang-tidy gate
-  cmake/                  downloads (LLVM pin in LLVMPackage.cmake), zlib/zstd/SQLite/GoogleTest builds, overlunky configure, quality checks
+  cmake/                  downloads (LLVM pin in LLVMPackage.cmake, Node pin in NodePackage.cmake), zlib/zstd/SQLite/GoogleTest builds, overlunky configure, quality checks
   config/groups.json      function-group rules ported from generate.py func_cats (P14)
   config/lua_types.json   Lua names for C++ types the type facts cannot name (P16, DIG-6a)
   config/lua_prelude.lua  hand-written Lua declarations put at the start of spel2.lua (DIG-6b)
@@ -175,7 +175,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   src/callback_join.cpp   callback steps after all TUs, no AST: C1, joins, events, vtable members, C7 prose
   src/lua_names.cpp       DIG-6: Lua spelling of every TypeInfo (P16, rules in config/lua_types.json)
   src/emit_lua.cpp        DIG-6: LuaLS definition files (---@meta), split under the size limit
-  src/html/starlight/     DIG-7: Astro Starlight project that renders the JSON; site.bat builds it.
+  src/html/starlight/     DIG-7: Astro Starlight project that renders the JSON; site.bat builds and checks it
                           Self-contained, so another generator can sit next to it (src/html/<name>/)
   tests/fixtures/*.cpp    small sources using the real sol2 headers from <overlunky>/src/sol2
   tests/expected/*        golden outputs (*.txt key-path lists in DIG-0, *.json from DIG-1)
@@ -184,6 +184,7 @@ F:\Projects\Spelunky\docs-digger\   (separate from overlunky; takes the overlunk
   tests/unit/*.cpp        GoogleTest unit tests of pure helpers (Lua names), linking docs-digger-lib
   tools/parity.py         loads <overlunky>/docs/parse_source.py results, diffs them with digger JSON (reuses the old parser as the oracle)
   tools/check_schema.py   checks outputs against the schema (standard library only; CTest schema.<name>, CI)
+  tools/check_site.py     DIG-7: link, old-anchor and two-build checks of a built site (any generator); site_samples.json, make_zip.py
 ```
 
 Expected size: about 1,500 to 2,000 lines of C++ in total. Most of it goes to sol2 pattern
@@ -693,43 +694,97 @@ Generators checked (2026-11):
 - **LDoc / LuaLS doc export** from the DIG-6 files: generic output that loses the callback, event and
   group structure.
 
-Substeps (one commit each): **DIG-7a** type groups in the JSON (the page grouping a second generator would
-need too; schema version 3); **DIG-7b** the Starlight project, `site.bat` and the pages with links and
-examples; **DIG-7c** search weights, the old-anchor redirect, the checks (links, search samples, anchors,
-determinism) and the CI site job.
+Substeps: **DIG-7a** type groups in the JSON (the page grouping a second generator would need too; schema
+version 3); **DIG-7b** the Starlight project, `site.bat` and the pages with links and examples; **DIG-7c**
+search weights, the old-anchor redirect, the checks (links, search samples, anchors, determinism) and the CI
+site job. 7b and 7c went into one commit: the search check reshaped the pages it measures.
 
 Steps:
 
 - [ ] Confirm the choice with the overlunky maintainers, since the site replaces the published docs.
-- [ ] Isolation: the whole Starlight project (`package.json`, lockfile, config, components, styles,
+- [x] Isolation: the whole Starlight project (`package.json`, lockfile, config, components, styles,
       the redirect script) lives in `src/html/starlight/`, so the generator can later be swapped or made
       switchable (`src/html/<name>/`). Its only inputs are the digger JSON and `docs/examples/`; nothing
       outside the directory includes or depends on it, and the C++ build doesn't touch it. Anything a
       second generator would need too (page grouping, the old-anchor map, the sample symbol list for
       the checks) is written by the digger or kept as plain data outside the directory, not in Astro code.
-- [ ] `src/html/starlight/` with pinned versions and a lockfile; `site.bat [generator] <json>` (default
+      Done: page grouping is in the JSON (DIG-7a), the samples in `tools/site_samples.json`, the generic
+      checks in `tools/check_site.py` and `tools/make_zip.py`. The old-anchor map is the one exception: it
+      maps old anchors to this generator's URLs, so each generator writes its own `old-anchors.json`, and
+      the generator-neutral checks read it from the build.
+- [x] `src/html/starlight/` with pinned versions and a lockfile; `site.bat [generator] <json>` (default
       `starlight`) runs that generator's build (`npm ci` and `astro build`), output under
       `build/site/<generator>`. Node is a host requirement in `README.md`. Downloads stay under
       `thirdparty/` as for every other tool: `site.bat` installs the packages into
       `thirdparty/node-<generator>/` and links `node_modules` there (directory junction, git-ignored). The clang-format, Lizard and
       clang-tidy gate covers C++ only; `quality.bat` must skip this directory.
-- [ ] Pages: home (ported text of `_home.md`), global variables, one page per function group, one per
+      Done (Astro 7.4.5, Starlight 0.42.8, satteri 0.10.5 for the doc Markdown, Pagefind 1.6 through
+      Starlight); found there:
+  - Astro 7.4.5 needs Node >= 22.23.4 and the host had 22.22.2, so Node is not a host requirement after
+    all: `cmake/NodePackage.cmake` pins Node 24.22.2 (SHA256 from nodejs.org) into `thirdparty/`, and
+    `site.bat` puts it first on PATH. `npm ci` runs only when the lockfile or the Node directory changed
+    (a stamp next to the install). The gate's globs and Lizard exclude `src/html/` (the `node_modules`
+    junction would lead them into thousands of files);
+  - Starlight renders the sidebar into every page, about 128 KB each (85 of the 97 MB of 662 pages; about
+    10 KB gzipped): kept, the per-type links are what the old page's table of contents offered;
+  - Starlight 0.42 adds the base to manual sidebar links itself, and warns about an empty `i18n`
+    collection and about its own 404 route next to a docs 404 page (`disable404Route`); the link check
+    found the doubled base.
+- [x] Pages: home (ported text of `_home.md`), global variables, one page per function group, one per
       usertype (grouped in the sidebar the way `generate.py` groups types), enums, events (`ON`,
       `THEME_OVERRIDE`, each with its callback signature), casting, aliases. A function shows its Lua
       signature (DIG-6 names), params with type, optional and callback signature, returns with the nil
       meaning, deprecated and doc-only marks, a link to the source line on GitHub, and its example from
       `docs/examples/`.
-- [ ] Search: symbol names weigh more than prose (`data-pagefind-weight` / meta), so typing a function,
+      Done, plus pages for Lua libraries and STD containers (the rest of `generate.py`'s hand-written text,
+      in `src/text/*.md`) and an all-types page by section and group. Functions of namespace tables (`io`,
+      `os`) get their group's page; `TYPE_MAP[...]` keys are left out as in the Lua files. A method that
+      takes its object first shows it as the `:` of the call. Added on request: the home page offers the
+      Lua definition files of both dialects, each file to view (a page, kept out of search) or download,
+      and a ZIP per dialect; `dig.bat` writes both sets in one run (`--emmylua-out`).
+- [x] Search: symbol names weigh more than prose (`data-pagefind-weight` / meta), so typing a function,
       type or enum value name finds it first; enum values (thousands in ENT_TYPE) are searchable.
-- [ ] Links: every type name in a signature links to its page; usertypes show base classes and derived
+      Done; found by running Pagefind's own search code in Node over the built index
+      (`scripts/check-search.mjs`) and reading its ranking code:
+  - Pagefind also indexes the parts of compound words (`VanillaMovableBehavior` gives `movable`,
+    `get_entity` gives `entity`, at a fraction of the weight) and extends the last query word as a prefix;
+    heading weights alone put `DummyPurchasableEntity` above `Entity`;
+  - signatures repeat type names on every entry and outranked the symbols' own entries: signatures,
+    parameter lists and member types are kept out of the index (`data-pagefind-ignore`);
+  - each page lists the symbols it defines in a meta field `symbols` that the ranking weighs
+    (`metaWeights`, Pagefind 1.6), written lower case without separators so it matches whole names only.
+    Pagefind keeps `_` in words but drops dots (`ON.FRAME` is the word `onframe`), so the field holds
+    qualified names too, and event headings and enum rows carry the bare key as a hidden extra word
+    (`SearchKey.astro`) for `PRE_LEVEL_GENERATION`-style queries. Ranking: `termFrequency` 0 (presence,
+    not repetition), `pageLength` 0.1, `termSimilarity` 9, `metaWeights.symbols` 10 (`ranking.mjs`,
+    found by a grid over the samples);
+  - the meta boost cannot tell a whole word from a prefix (it uses the query term's IDF), so a short name
+    that starts longer ones loses first place: `Player` (4th, after `PlayerInputs`), `THEME` (3rd, after
+    `THEME_OVERRIDE`), `state` (2nd, after `StateMemory`), `players` (11th: stemmed to `player`). These
+    four samples are accepted with that reason; tried and dropped: a hidden weight-10 name on type pages
+    (it became the best sub-result of two-word queries), and an `event` word on event headings (the
+    page title already gives it; no sample changed).
+- [x] Links: every type name in a signature links to its page; usertypes show base classes and derived
       types.
-- [ ] Old links: the old single-page anchors (`index.html#spawn_entity`) still work through a small
+- [x] Old links: the old single-page anchors (`index.html#spawn_entity`) still work through a small
       redirect script that maps anchor ids to the new pages.
+      Done: `old-anchors.json` (1279 entries: Slate ids of every symbol, group and section) and a script on
+      the home page; the doc comments' `(#anchor)` links resolve through the same map (case-insensitive as a
+      fallback, which fixes `#Get_frame`). One link points at nothing (`#JournalPageStory`, not a bound
+      type): it stays as text and the build names it, a doc fix for overlunky.
 - [ ] CI: a site job takes the JSON artifact of the DIG-5 Windows job, builds the site and deploys it
       (GitHub Pages). Replacing the Slate job is decided together with the maintainers.
-- [ ] `tools/parity.py`: every anchor of the old `index.html` maps to a page of the new site, or is
+      Partly: the `site` job builds and checks the site from the `dig` job's artifacts and uploads
+      `docs-digger-site`. On request there is no deploy job (the hosting is not decided), and the workflow
+      only runs by hand for now: outputs are built locally with `dig.bat` and `site.bat`, and the workflow is
+      kept in step with them. Open until the hosting is decided.
+- [x] `tools/parity.py`: every anchor of the old `index.html` maps to a page of the new site, or is
       listed as an accepted difference.
-- [ ] keep the grouping of functions used in the old doc generator, and everything reasonably should be placed in
+      Done (`parity.py <overlunky> <json> <lua dir> <site dir>`, through `check_site.py --old-index`,
+      which `site.bat` also runs): all 1195 heading anchors (h1 to h3) map to built pages. The 366 h4
+      anchors are accepted as a class: their ids spell the old signature text (`nil-get_address-any-o`),
+      which no generator can derive from the JSON; they land on the home page.
+- [x] keep the grouping of functions used in the old doc generator, and everything reasonably should be placed in
       those categories, or add missing catch-all category if necessary
       DIG-7a: usertypes get `group` and `section` like functions (directive, then the `types` rules of
       `config/groups.json` ported from `generate.py` `type_cats`, then the fallback `Generic types` /
@@ -739,11 +794,16 @@ Steps:
 
 Definition of done:
 
-- [ ] The site builds without warnings, and a link check finds no broken internal links.
-- [ ] For a sample list of symbols (functions, members, enum values, events), search shows the symbol
+- [x] The site builds without warnings, and a link check finds no broken internal links.
+      662 pages, 451,179 links, 0 broken (`tools/check_site.py`).
+- [x] For a sample list of symbols (functions, members, enum values, events), search shows the symbol
       as the first result.
-- [ ] Old anchor links from the sample list land on the right item.
-- [ ] Building twice from the same JSON gives the same pages.
+      38 samples (`tools/site_samples.json`): all functions, members, enum values and events are first,
+      with the symbol's heading as the best sub-result; 4 type and global names are accepted (see Search).
+- [x] Old anchor links from the sample list land on the right item.
+- [x] Building twice from the same JSON gives the same pages.
+      Byte for byte, downloads included (`check_site.py --compare`): `cmake -E tar` ZIPs kept access times
+      in their local headers, so `tools/make_zip.py` writes them.
 
 ## 7. Risks and open questions
 

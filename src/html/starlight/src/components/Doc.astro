@@ -1,0 +1,17 @@
+---
+// Doc comment lines: Markdown as HTML, fenced code blocks through Expressive Code.
+import {Code} from '@astrojs/starlight/components';
+import {docSegments} from '../lib/render.mjs';
+
+interface Props {
+    // Doc lines from the JSON, or one Markdown text.
+    lines?: string[] | string;
+}
+const segments = docSegments(Astro.props.lines);
+---
+
+{
+    segments.map((s) =>
+        s.code !== undefined ? <Code code={s.code} lang={s.lang} /> : <Fragment set:html={s.html} />,
+    )
+}
