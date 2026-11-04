@@ -617,7 +617,9 @@ def documented(api, path):
         return True if parts[1] in api.types else "no such type"
     if parts[0] == "enums" and len(parts) == 2:
         return True if parts[1] in api.enums else "no such enum"
-    return True if parts[0] in ("events", "globals", "text") else "unknown layout"
+    if parts[0] == "events" and len(parts) == 3:
+        return True if parts[2] in api.enums.get(parts[1], ()) else "no such event"
+    return True if parts[0] in ("globals", "text") else "unknown layout"
 
 
 def main():
