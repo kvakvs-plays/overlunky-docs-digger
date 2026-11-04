@@ -55,7 +55,8 @@ namespace dd {
         }
 
         // A Lua name found by name rather than by kind: the usertype of a record, a configured name, or an enum table
-        // or alias the type is written with.
+        // or alias the type is written with. The written name wins over a name configured for the canonical type,
+        // so a kept alias (`BucketItem`) is not replaced by what it resolves to.
         std::optional<std::string> namedType(const TypeInfo& type, const LuaNaming& naming) {
             if (type.kind == TypeKind::Record) {
                 if (const auto usertype = naming.usertypes.find(canonicalOf(type));
@@ -65,13 +66,13 @@ namespace dd {
             }
             const std::string bare = bareName(type.spelling);
             const llvm::StringRef name = unqualified(bare);
-            if (std::optional<std::string> lua = configured(naming, {canonicalOf(type), bare, name})) {
+            if (std::optional<std::string> lua = configured(naming, {bare, name})) {
                 return lua;
             }
             if (naming.enums.contains(name.str()) || naming.aliases.contains(name.str())) {
                 return name.str();
             }
-            return std::nullopt;
+            return configured(naming, {canonicalOf(type)});
         }
 
         // `T?`, without doubling the mark.

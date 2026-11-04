@@ -47,6 +47,17 @@ namespace {
         EXPECT_EQ(dd::luaType(type(TypeKind::Int, "CallbackId", {}, "int"), naming()), "CallbackId");
     }
 
+    TEST(LuaNames, AliasBeatsConfiguredCanonical) {
+        dd::LuaNaming withVariant = naming();
+        withVariant.aliases.insert("BucketItem");
+        const std::string variant = "std::variant<bool, long long>";
+        withVariant.names.emplace(variant, "boolean|integer");
+        // Written with the alias: the alias name. Written out (the alias's own definition): the configured union.
+        EXPECT_EQ(dd::luaType(type(TypeKind::Record, "BucketItem", {}, variant), withVariant), "BucketItem");
+        EXPECT_EQ(dd::luaType(type(TypeKind::Record, "std::variant<bool, int64_t>", {}, variant), withVariant),
+                  "boolean|integer");
+    }
+
     TEST(LuaNames, Records) {
         EXPECT_EQ(dd::luaType(type(TypeKind::Record, "const Movable &", {}, "Movable"), naming()), "Movable");
         EXPECT_EQ(dd::luaType(type(TypeKind::Record, "ImVec2"), naming()), "Vec2");
